@@ -39,7 +39,9 @@ export default function AdminLogin() {
       if (result?.error) {
         setError("Invalid credentials. Please try again.");
       } else {
-        router.push("/admin");
+        // Force a full page reload to ensure the new session cookie is picked up
+        // by the NextAuth SessionProvider and we don't get bounced back by cached state.
+        window.location.href = "/admin";
       }
     } catch (err) {
       setError("An unexpected error occurred.");

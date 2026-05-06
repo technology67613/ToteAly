@@ -8,18 +8,25 @@ if (!supabaseUrl || !supabaseAnonKey) {
   console.warn('Supabase credentials missing. App will fall back to mock data if not configured.');
 }
 
+const isConfigured = Boolean(
+  supabaseUrl && 
+  supabaseUrl !== 'your_supabase_url_here' && 
+  supabaseUrl.includes('supabase.co') &&
+  supabaseAnonKey
+);
+
 /**
  * Helper to check if Supabase is properly configured
  */
-export const isSupabaseConfigured = () => {
-  return supabaseUrl !== 'your_supabase_url_here' && supabaseUrl !== '' && supabaseUrl.includes('supabase.co');
-};
+export function isSupabaseConfigured() {
+  return isConfigured;
+}
 
-export const supabase = isSupabaseConfigured()
+export const supabase = isConfigured
   ? createClient(supabaseUrl, supabaseAnonKey)
   : null as any;
 
 // Admin client for server-side operations that bypass RLS
-export const supabaseAdmin = isSupabaseConfigured()
+export const supabaseAdmin = isConfigured
   ? createClient(supabaseUrl, supabaseServiceKey || supabaseAnonKey)
   : null as any;
