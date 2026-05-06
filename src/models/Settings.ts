@@ -1,9 +1,8 @@
 export interface ISettings {
-  announcement?: string;
-  heroText?: string;
-  heroSubtext?: string;
+  id?: string;
+  site_name?: string;
+  maintenance_mode?: boolean;
+  logo_url?: string;
+  contact_email?: string;
+  updated_at?: Date | string;
 }
-
-// Mock model for compatibility
-const Settings = {};
-export default Settings;

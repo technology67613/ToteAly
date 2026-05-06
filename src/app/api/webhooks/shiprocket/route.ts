@@ -9,7 +9,6 @@ import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 export async function POST(request: NextRequest) {
   try {
     const payload = await request.json();
-    console.log("Shiprocket Webhook Received:", payload);
 
     const { order_id, status } = payload;
 
@@ -47,7 +46,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Order not found" }, { status: 404 });
     }
 
-    console.log(`Order ${order_id} status updated to ${mappedStatus} via webhook.`);
     return NextResponse.json({ success: true });
   } catch (error: any) {
     console.error("Webhook Error:", error);

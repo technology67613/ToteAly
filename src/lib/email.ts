@@ -66,6 +66,10 @@ export function hasSmtpConfig() {
 }
 
 function getTransporter() {
+  if (!hasSmtpConfig()) {
+    console.error("Missing SMTP Config. Cannot initialize nodemailer transport.");
+    throw new Error("Missing SMTP Config");
+  }
   return nodemailer.createTransport({
     host: process.env.EMAIL_HOST,
     port: Number(process.env.EMAIL_PORT),
@@ -538,7 +542,6 @@ export async function sendOrderConfirmationEmail(to: string, orderDetails: Order
       });
     }
 
-    console.log("Order confirmation email sent: %s", customerInfo.messageId);
     return customerInfo;
   } catch (error) {
     console.error("Order email sending error:", error);
