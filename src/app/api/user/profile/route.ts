@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { isSupabaseAdminConfigured, isSupabaseConfigured, supabaseAdmin as supabase } from "@/lib/supabase";
+import { v5 as uuidv5 } from "uuid";
+
+const TOTEALY_NAMESPACE = "1b671a64-40d5-491e-99b0-da01ff1f3341";
 
 export const runtime = "nodejs";
 
@@ -70,8 +73,9 @@ export async function PUT(request: NextRequest) {
 
     const body = await request.json();
     const existingProfile = await getProfileByEmail(session.user.email);
+    const deterministicId = uuidv5(session.user.id || session.user.email, TOTEALY_NAMESPACE);
     const payload = {
-      id: existingProfile?.id || crypto.randomUUID(),
+      id: existingProfile?.id || deterministicId,
       email: session.user.email,
       name: body.name || session.user.name || "",
       phone: body.phone || "",

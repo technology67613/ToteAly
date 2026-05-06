@@ -5,27 +5,8 @@ export const runtime = "nodejs";
 
 export async function GET() {
   try {
-    if (!isSupabaseConfigured()) {
-      if (process.env.NODE_ENV !== "development") {
-        return NextResponse.json({ error: "Supabase is required for admin stats." }, { status: 503 });
-      }
-
-      return NextResponse.json({
-        revenue: `₹${15420}`,
-        orders: 42,
-        products: 12,
-        customers: 86,
-        delta: {
-          revenue: "+12.5%",
-          orders: "+5 today",
-          products: "Ready",
-          customers: "+2 new"
-        }
-      });
-    }
-
-    if (!isSupabaseAdminConfigured()) {
-      return NextResponse.json({ error: "SUPABASE_SERVICE_ROLE_KEY is required for admin stats." }, { status: 500 });
+    if (!isSupabaseConfigured() || !isSupabaseAdminConfigured()) {
+      return NextResponse.json({ error: "Supabase and SUPABASE_SERVICE_ROLE_KEY are required for admin stats." }, { status: 503 });
     }
 
     // 1. Fetch Counts

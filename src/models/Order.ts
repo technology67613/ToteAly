@@ -1,15 +1,21 @@
 export interface IOrder {
-  _id?: string;
-  user: any;
-  products: any[];
-  totalAmount: number;
-  paymentId: string;
-  shippingDetails: any;
-  status: string;
-  createdAt?: Date | string;
-  updatedAt?: Date | string;
+  id?: string;
+  user_id?: string;
+  total_amount: number;
+  status: "Pending" | "Confirmed" | "Shipped" | "Delivered" | "Cancelled";
+  payment_status: "Pending" | "Paid" | "Failed";
+  payment_id?: string;
+  shipping_details?: Record<string, any>;
+  created_at?: Date | string;
 }
 
-// Mock model for compatibility
-const Order = {};
-export default Order;
+export interface IOrderItem {
+  id?: string;
+  order_id?: string;
+  product_id?: string;
+  name: string;
+  price: number;
+  quantity: number;
+  is_customized: boolean;
+  customization_details?: Record<string, any>;
+}

@@ -2,6 +2,9 @@ import NextAuth from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { supabaseAdmin as supabase, isSupabaseAdminConfigured } from "@/lib/supabase";
+import { v5 as uuidv5 } from "uuid";
+
+const TOTEALY_NAMESPACE = "1b671a64-40d5-491e-99b0-da01ff1f3341";
 
 export const authOptions = {
   providers: [
@@ -43,10 +46,14 @@ export const authOptions = {
             .eq('email', user.email)
             .maybeSingle();
 
+          // Generate a deterministic UUID based on the user's email if they don't have an ID
+          // Or from the user id from the provider (Google)
+          const deterministicId = uuidv5(user.id || user.email, TOTEALY_NAMESPACE);
+
           const { error } = await supabase
             .from('profiles')
             .upsert({
-              id: existingProfile?.id || crypto.randomUUID(),
+              id: existingProfile?.id || deterministicId,
               email: user.email,
               name: user.name,
               avatar_url: user.image,

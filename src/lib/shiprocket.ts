@@ -25,7 +25,7 @@ export async function createShiprocketOrder(order: any) {
     if (!token) throw new Error('Could not authenticate with Shiprocket');
 
     const shiprocketOrderData = {
-      order_id: order._id.toString(),
+      order_id: order.id.toString(),
       order_date: new Date(order.createdAt).toISOString().slice(0, 16).replace('T', ' '),
       pickup_location: "Primary", // This must match the pickup location name in Shiprocket dashboard
       billing_customer_name: order.shippingDetails.name.split(' ')[0],
@@ -63,7 +63,6 @@ export async function createShiprocketOrder(order: any) {
     });
 
     const data = await res.json();
-    console.log('Shiprocket Order Response:', data);
     return data;
   } catch (error) {
     console.error('Shiprocket Order Creation Error:', error);

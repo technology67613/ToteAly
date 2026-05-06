@@ -1,13 +1,11 @@
 export interface IUser {
-  _id?: string;
-  name: string;
+  id?: string;
   email: string;
-  image?: string;
+  name?: string;
   role: "user" | "admin";
-  createdAt?: Date | string;
-  updatedAt?: Date | string;
+  avatar_url?: string;
+  phone?: string;
+  address?: Record<string, any>;
+  updated_at?: Date | string;
+  created_at?: Date | string;
 }
-
-// Mock model for compatibility
-const User = {};
-export default User;
