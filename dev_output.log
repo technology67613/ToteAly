@@ -1,0 +1,168 @@
+
+> frontend@0.1.0 dev
+> next dev
+
+▲ Next.js 16.2.4 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://192.168.0.2:3000
+✓ Ready in 578ms
+Attention: Next.js now collects completely anonymous telemetry regarding usage.
+This information is used to shape Next.js' roadmap and prioritize features.
+You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL:
+https://nextjs.org/telemetry
+
+
+○ Compiling / ...
+ GET / 200 in 6.0s (next.js: 5.2s, application-code: 805ms)
+[browser] Image with src "/mockups/plain.png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[browser] Image with src "/mockups/regular.png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+Supabase credentials missing. App will fall back to mock data if not configured.
+⨯ Error: supabaseUrl is required.
+    at module evaluation (src/lib/supabase.ts:11:37)
+    at module evaluation (src/app/api/products/route.ts:2:1)
+    at Object.<anonymous> (.next/dev/server/app/api/products/route.js:9:3)
+   9 | }
+  10 |
+> 11 | export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+     |                                     ^
+  12 |
+  13 | // Admin client for server-side operations that bypass RLS
+  14 | export const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey || supabaseAnonK... {
+  page: '/api/products'
+}
+⨯ Error: supabaseUrl is required.
+    at module evaluation (src/lib/supabase.ts:11:37)
+    at module evaluation (src/app/api/products/route.ts:2:1)
+    at Object.<anonymous> (.next/dev/server/app/api/products/route.js:9:3)
+   9 | }
+  10 |
+> 11 | export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+     |                                     ^
+  12 |
+  13 | // Admin client for server-side operations that bypass RLS
+  14 | export const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey || supabaseAnonK... {
+  page: '/api/auth/session'
+}
+○ Compiling /api/products ...
+ GET /api/auth/session 500 in 4.3s (next.js: 4.0s, application-code: 272ms)
+ GET /api/products?featured=true 500 in 4.3s (next.js: 4.3s, application-code: 16ms)
+⨯ Error: supabaseUrl is required.
+    at module evaluation (src/lib/supabase.ts:11:37)
+    at module evaluation (src/app/api/products/route.ts:2:1)
+    at Object.<anonymous> (.next/dev/server/app/api/products/route.js:9:3)
+   9 | }
+  10 |
+> 11 | export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+     |                                     ^
+  12 |
+  13 | // Admin client for server-side operations that bypass RLS
+  14 | export const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey || supabaseAnonK... {
+  page: '/api/auth/_log'
+}
+ POST /api/auth/_log 500 in 99ms (next.js: 67ms, application-code: 32ms)
+[browser] [next-auth][error][CLIENT_FETCH_ERROR]
+https://next-auth.js.org/errors#client_fetch_error Unexpected token '<', "<!DOCTYPE "... is not valid JSON {
+  error: {
+    message: [32m`Unexpected token '<', "<!DOCTYPE "... is not valid JSON`[39m,
+    name: [32m'SyntaxError'[39m,
+    stack: [32m`SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON`[39m
+  },
+  message: [32m`Unexpected token '<', "<!DOCTYPE "... is not valid JSON`[39m,
+  url: [32m'/api/auth/session'[39m
+}
+    at new Promise (<anonymous>) (<anonymous>)
+[browser] Image with src "/mockups/black.png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[browser] Image with src "/mockups/premium.png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+Instagram Fetch failed, returning fallback gallery. The operation was aborted due to timeout
+ GET /api/social/instagram 200 in 6.4s (next.js: 1323ms, application-code: 5.0s)
+ GET / 200 in 124ms (next.js: 7ms, application-code: 117ms)
+Supabase credentials missing. App will fall back to mock data if not configured.
+⨯ ReferenceError: Cannot access 'isSupabaseConfigured' before initialization
+    at Module.eval (src/lib/supabase.ts:11:25)
+    at module evaluation (src/app/api/products/route.ts:2:1)
+    at Object.<anonymous> (.next/dev/server/app/api/products/route.js:9:3)
+   9 | }
+  10 |
+> 11 | export const supabase = isSupabaseConfigured()
+     |                         ^
+  12 |   ? createClient(supabaseUrl, supabaseAnonKey)
+  13 |   : null as any;
+  14 | {
+  page: '/api/products'
+}
+[browser] Image with src "/mockups/plain.png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[browser] Image with src "/mockups/regular.png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+ GET /api/products?featured=true 500 in 174ms (next.js: 155ms, application-code: 19ms)
+⨯ ReferenceError: Cannot access 'isSupabaseConfigured' before initialization
+    at Module.eval (src/lib/supabase.ts:11:25)
+    at module evaluation (src/app/api/products/route.ts:2:1)
+    at Object.<anonymous> (.next/dev/server/app/api/products/route.js:9:3)
+   9 | }
+  10 |
+> 11 | export const supabase = isSupabaseConfigured()
+     |                         ^
+  12 |   ? createClient(supabaseUrl, supabaseAnonKey)
+  13 |   : null as any;
+  14 | {
+  page: '/api/auth/session'
+}
+ GET /api/auth/session 500 in 118ms (next.js: 93ms, application-code: 25ms)
+[browser] [next-auth][error][CLIENT_FETCH_ERROR]
+https://next-auth.js.org/errors#client_fetch_error Unexpected token '<', "<!DOCTYPE "... is not valid JSON {
+  error: {
+    message: [32m`Unexpected token '<', "<!DOCTYPE "... is not valid JSON`[39m,
+    name: [32m'SyntaxError'[39m,
+    stack: [32m`SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON`[39m
+  },
+  message: [32m`Unexpected token '<', "<!DOCTYPE "... is not valid JSON`[39m,
+  url: [32m'/api/auth/session'[39m
+}
+    at new Promise (<anonymous>) (<anonymous>)
+⨯ ReferenceError: Cannot access 'isSupabaseConfigured' before initialization
+    at Module.eval (src/lib/supabase.ts:11:25)
+    at module evaluation (src/app/api/products/route.ts:2:1)
+    at Object.<anonymous> (.next/dev/server/app/api/products/route.js:9:3)
+   9 | }
+  10 |
+> 11 | export const supabase = isSupabaseConfigured()
+     |                         ^
+  12 |   ? createClient(supabaseUrl, supabaseAnonKey)
+  13 |   : null as any;
+  14 | {
+  page: '/api/auth/_log'
+}
+[browser] Image with src "/mockups/black.png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+ POST /api/auth/_log 500 in 98ms (next.js: 73ms, application-code: 24ms)
+[browser] Image with src "/mockups/premium.png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+Instagram Fetch failed, returning fallback gallery. The operation was aborted due to timeout
+ GET /api/social/instagram 200 in 5.1s (next.js: 134ms, application-code: 5.0s)
+ GET / 200 in 205ms (next.js: 6ms, application-code: 199ms)
+Supabase credentials missing. App will fall back to mock data if not configured.
+ GET /api/products?featured=true 200 in 51ms (next.js: 20ms, application-code: 31ms)
+[browser] Image with src "/mockups/plain.png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[browser] Image with src "/mockups/regular.png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[browser] Image with src "/mockups/premium.png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+Supabase credentials missing. App will fall back to mock data if not configured.
+[next-auth][warn][NEXTAUTH_URL]
+https://next-auth.js.org/warnings#nextauth_url
+[next-auth][warn][NO_SECRET]
+https://next-auth.js.org/warnings#no_secret
+ GET /api/auth/session 200 in 1415ms (next.js: 1388ms, application-code: 27ms)
+Instagram Fetch failed, returning fallback gallery. The operation was aborted due to timeout
+ GET /api/social/instagram 200 in 5.1s (next.js: 62ms, application-code: 5.0s)
+ GET / 200 in 138ms (next.js: 6ms, application-code: 132ms)
+ GET /api/products?featured=true 200 in 9ms (next.js: 4ms, application-code: 6ms)
+[browser] Image with src "/mockups/plain.png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[browser] Image with src "/mockups/regular.png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+ GET /api/auth/session 200 in 50ms (next.js: 33ms, application-code: 18ms)
+[browser] Image with src "/mockups/premium.png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+Instagram Fetch failed, returning fallback gallery. Unexpected token '<', "<html>
+<h"... is not valid JSON
+ GET /api/social/instagram 200 in 154ms (next.js: 6ms, application-code: 148ms)
+Supabase credentials missing. App will fall back to mock data if not configured.
+ GET /contact?type=bulk 200 in 966ms (next.js: 781ms, application-code: 185ms)
+ GET /api/auth/session 200 in 54ms (next.js: 39ms, application-code: 15ms)
+Supabase credentials missing. App will fall back to mock data if not configured.
+ GET /admin/login 200 in 967ms (next.js: 698ms, proxy.ts: 95ms, application-code: 174ms)
+ GET /api/auth/session 200 in 53ms (next.js: 36ms, application-code: 17ms)
+Supabase credentials missing. App will fall back to mock data if not configured.

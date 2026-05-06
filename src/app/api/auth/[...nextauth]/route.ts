@@ -1,0 +1,106 @@
+import NextAuth from "next-auth";
+import GoogleProvider from "next-auth/providers/google";
+import CredentialsProvider from "next-auth/providers/credentials";
+import { supabase, isSupabaseConfigured } from "@/lib/supabase";
+
+export const authOptions = {
+  providers: [
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID || "",
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
+    }),
+    CredentialsProvider({
+      name: "Credentials",
+      credentials: {
+        username: { label: "Username", type: "text" },
+        password: { label: "Password", type: "password" }
+      },
+      async authorize(credentials) {
+        if (
+          credentials?.username === process.env.ADMIN_USERNAME &&
+          credentials?.password === process.env.ADMIN_PASSWORD
+        ) {
+          return {
+            id: "admin-id",
+            name: "Admin",
+            email: process.env.ADMIN_USERNAME, // We use this for session role check
+            role: "admin",
+          };
+        }
+        return null;
+      }
+    }),
+  ],
+  callbacks: {
+    async signIn({ user, account, profile }: any) {
+      if (!user.email) return false;
+
+      try {
+        // Sync user with Supabase profiles table
+        // We use service role behavior or just ensure the user can at least upsert their own profile
+        const { error } = await supabase
+          .from('profiles')
+          .upsert({
+            id: user.id, // This will be the Google sub ID
+            email: user.email,
+            name: user.name,
+            avatar_url: user.image,
+            updated_at: new Date().toISOString(),
+          }, { onConflict: 'email' });
+
+        if (error) {
+          console.error("Supabase Sync Error during Sign In:", error);
+          // We still return true to allow login even if sync fails (optional behavior)
+        }
+        return true;
+      } catch (err) {
+        console.error("Auth Sign-In Error:", err);
+        return true;
+      }
+    },
+    async session({ session, token }: any) {
+      if (session.user) {
+        // Default values from token
+        (session.user as any).id = token.sub;
+        (session.user as any).role = token.role || "user";
+
+        // If Supabase is available, we try to get the latest role/id from DB
+        if (token.email && isSupabaseConfigured()) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('id, role')
+            .eq('email', token.email)
+            .single();
+
+          if (profile) {
+            (session.user as any).id = profile.id;
+            (session.user as any).role = profile.role || "user";
+          }
+        }
+        
+        // Final override for hardcoded admin if email matches
+        if (token.email === process.env.ADMIN_USERNAME) {
+           (session.user as any).role = "admin";
+        }
+      }
+      return session;
+    },
+    async jwt({ token, user }: any) {
+      if (user) {
+        token.role = (user as any).role || "user";
+      }
+      return token;
+    }
+  },
+  pages: {
+    signIn: '/login',
+  },
+  session: {
+    strategy: "jwt" as const,
+  },
+  secret: process.env.NEXTAUTH_SECRET,
+};
+
+const handler = NextAuth(authOptions);
+
+export { handler as GET, handler as POST };

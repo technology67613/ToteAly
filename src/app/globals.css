@@ -1,0 +1,65 @@
+@import "tailwindcss";
+
+:root {
+  --color-brand-cream: #FFF8F0;
+  --color-brand-beige: #F5ECD7;
+  --color-brand-pink: #FF69B4;
+  --color-brand-dark-rose: #900C3F;
+
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-noto-serif), ui-serif, Georgia, serif;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--color-brand-cream);
+  color: var(--color-brand-dark-rose);
+  overflow-x: hidden;
+}
+
+@media print {
+  /* Hide everything by default */
+  body * {
+    visibility: hidden;
+  }
+
+  /* Show only the print container and its children */
+  .print-container, 
+  .print-container * {
+    visibility: visible !important;
+  }
+
+  /* Position the print container at the top left of the page */
+  .print-container {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: white !important;
+    min-height: 100% !important;
+    display: block !important;
+  }
+
+  /* Ensure colors and backgrounds are printed correctly */
+  body {
+    background: white !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  @page {
+    margin: 1cm;
+    size: A4;
+  }
+
+  /* Fix for some browsers hiding content in absolute containers */
+  html, body {
+    height: auto !important;
+    overflow: visible !important;
+  }
+}
