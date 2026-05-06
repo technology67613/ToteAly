@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Ticket, Plus, Trash2, Calendar, Percent, Banknote } from "lucide-react";
+import { Ticket, Plus, Trash2, Calendar, Percent, Banknote, X, Rocket, Activity, Zap } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface Coupon {
   id: string;
@@ -30,9 +31,14 @@ export const AdminMarketingTab = () => {
   }, []);
 
   const fetchCoupons = async () => {
-    const res = await fetch('/api/admin/coupons');
-    if (res.ok) setCoupons(await res.json());
-    setLoading(false);
+    try {
+      const res = await fetch('/api/admin/coupons');
+      if (res.ok) setCoupons(await res.json());
+    } catch (e) {
+      console.error("Failed to fetch coupons", e);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleAdd = async (e: React.FormEvent) => {
@@ -55,106 +61,180 @@ export const AdminMarketingTab = () => {
   };
 
   return (
-    <div className="flex flex-col gap-8">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-serif font-bold">Campaigns & Coupons</h2>
+    <div className="space-y-10">
+      <div className="flex justify-between items-center bg-white p-8 rounded-[16px] border border-[var(--admin-border)] shadow-[0_2px_12px_rgba(0,0,0,0.06)]">
+        <div>
+          <h2 className="text-2xl font-serif font-bold text-[var(--admin-text-primary)]">Campaigns & Coupons</h2>
+          <p className="text-[11px] font-bold text-[var(--admin-text-muted)] uppercase tracking-widest mt-1">Boost sales with promotional offers</p>
+        </div>
         <button 
           onClick={() => setShowAdd(true)}
-          className="flex items-center gap-2 px-6 py-3 bg-[#900C3F] text-white rounded-xl font-bold text-sm hover:bg-[#FF69B4] transition-all"
+          className="flex items-center gap-3 px-6 py-3 bg-[var(--admin-primary)] text-white rounded-xl text-[11px] font-bold uppercase tracking-widest hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg shadow-[var(--admin-primary)]/20"
         >
           <Plus size={18} /> New Coupon
         </button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {coupons.map((coupon) => (
-          <div key={coupon.id} className="bg-white rounded-3xl border border-[#F5ECD7] p-8 flex flex-col gap-6 relative overflow-hidden group">
-            <div className="flex justify-between items-start">
-              <div className="w-12 h-12 bg-[#900C3F]/5 rounded-2xl flex items-center justify-center text-[#900C3F]">
-                <Ticket size={24} />
+        <AnimatePresence>
+          {coupons.map((coupon, idx) => (
+            <motion.div 
+              key={coupon.id} 
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              transition={{ delay: idx * 0.1 }}
+              className="bg-white rounded-[24px] border border-[var(--admin-border)] p-8 flex flex-col gap-8 relative overflow-hidden group hover:shadow-xl transition-all duration-500"
+            >
+              <div className="flex justify-between items-start">
+                <div className="w-14 h-14 bg-[var(--admin-light)] rounded-2xl flex items-center justify-center text-[var(--admin-primary)]">
+                  <Ticket size={28} />
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className={`px-2 py-1 rounded-md text-[9px] font-bold uppercase tracking-widest ${coupon.is_active ? "bg-emerald-50 text-emerald-600" : "bg-slate-50 text-slate-500"}`}>
+                    {coupon.is_active ? "Active" : "Draft"}
+                  </span>
+                  <button 
+                    onClick={() => handleDelete(coupon.id)}
+                    className="w-8 h-8 flex items-center justify-center rounded-lg text-rose-300 hover:text-rose-600 hover:bg-rose-50 transition-all"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
               </div>
-              <button 
-                onClick={() => handleDelete(coupon.id)}
-                className="text-red-400 hover:text-red-600 transition-colors"
-              >
-                <Trash2 size={18} />
-              </button>
-            </div>
-            
-            <div>
-              <p className="text-[10px] font-bold text-[#900C3F]/40 uppercase tracking-widest mb-1">Coupon Code</p>
-              <p className="font-mono text-2xl font-bold text-[#900C3F] tracking-tighter">{coupon.code}</p>
-            </div>
+              
+              <div className="space-y-1">
+                <p className="text-[10px] font-bold text-[var(--admin-text-muted)] uppercase tracking-[0.2em]">Campaign Code</p>
+                <p className="font-mono text-3xl font-bold text-[var(--admin-primary)] tracking-tighter group-hover:tracking-normal transition-all duration-500">{coupon.code}</p>
+              </div>
 
-            <div className="grid grid-cols-2 gap-4 border-t border-[#F5ECD7] pt-6">
-              <div>
-                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Discount</p>
-                <p className="font-bold flex items-center gap-1">
-                  {coupon.discount_type === 'percentage' ? <Percent size={14} /> : <Banknote size={14} />}
-                  {coupon.discount_value}{coupon.discount_type === 'percentage' ? '%' : ' OFF'}
-                </p>
+              <div className="grid grid-cols-2 gap-6 border-t border-[var(--admin-border)] pt-8">
+                <div className="space-y-1">
+                  <p className="text-[10px] font-bold text-[var(--admin-text-muted)] uppercase tracking-widest flex items-center gap-1">
+                    <Zap size={10} className="text-amber-500" /> Discount
+                  </p>
+                  <p className="font-serif text-lg font-bold text-[var(--admin-text-primary)]">
+                    {coupon.discount_value}{coupon.discount_type === 'percentage' ? '%' : ' FIXED'}
+                  </p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-[10px] font-bold text-[var(--admin-text-muted)] uppercase tracking-widest flex items-center gap-1">
+                    <Activity size={10} className="text-[var(--admin-primary)]" /> Usage
+                  </p>
+                  <p className="font-serif text-lg font-bold text-[var(--admin-text-primary)]">{coupon.usage_count} / ∞</p>
+                </div>
               </div>
-              <div>
-                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Used</p>
-                <p className="font-bold">{coupon.usage_count} times</p>
-              </div>
-            </div>
 
-            <div className="flex items-center gap-2 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-              <Calendar size={12} />
-              Expires: {coupon.expiry_date ? new Date(coupon.expiry_date).toLocaleDateString() : 'Never'}
-            </div>
+              <div className="flex items-center gap-2 text-[10px] font-bold text-[var(--admin-text-muted)] uppercase tracking-[0.1em] bg-[var(--admin-light)]/50 px-3 py-2 rounded-lg">
+                <Calendar size={12} className="text-[var(--admin-primary)]" />
+                Valid Until: {coupon.expiry_date ? new Date(coupon.expiry_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Always Iconic'}
+              </div>
+              
+              {/* Background accent */}
+              <div className="absolute -right-6 -top-6 w-24 h-24 bg-[var(--admin-primary)]/5 rounded-full blur-2xl group-hover:bg-[var(--admin-primary)]/10 transition-all" />
+            </motion.div>
+          ))}
+        </AnimatePresence>
+
+        {coupons.length === 0 && !loading && (
+          <div className="col-span-full py-20 flex flex-col items-center gap-6 bg-white rounded-[24px] border border-[var(--admin-border)]">
+             <div className="w-20 h-20 bg-[var(--admin-light)] rounded-full flex items-center justify-center text-[var(--admin-primary)]/20">
+               <Ticket size={40} />
+             </div>
+             <div className="text-center space-y-2">
+               <p className="text-xl font-serif font-bold text-[var(--admin-text-primary)]">No Active Campaigns</p>
+               <p className="text-sm text-[var(--admin-text-muted)] max-w-xs mx-auto">Create your first discount coupon to start driving more sales.</p>
+             </div>
+             <button 
+              onClick={() => setShowAdd(true)}
+              className="px-6 py-3 border border-[var(--admin-primary)] text-[var(--admin-primary)] rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-[var(--admin-primary)] hover:text-white transition-all"
+             >
+              Create First Coupon
+             </button>
           </div>
-        ))}
+        )}
       </div>
 
-      {showAdd && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-6">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={() => setShowAdd(false)} />
-          <form onSubmit={handleAdd} className="relative bg-white w-full max-w-lg rounded-[40px] p-10 flex flex-col gap-6">
-            <h2 className="text-3xl font-serif font-bold mb-4">Create Iconic Coupon</h2>
-            
-            <div className="flex flex-col gap-2">
-              <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Unique Code</label>
-              <input 
-                value={newCoupon.code}
-                onChange={e => setNewCoupon({...newCoupon, code: e.target.value.toUpperCase()})}
-                placeholder="e.g. ICONIC20" 
-                className="px-6 py-4 rounded-2xl bg-[#F8F9FA] border border-[#F5ECD7] font-mono text-lg" 
-                required
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-6">
-              <div className="flex flex-col gap-2">
-                <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Type</label>
-                <select 
-                  value={newCoupon.discount_type}
-                  onChange={e => setNewCoupon({...newCoupon, discount_type: e.target.value as any})}
-                  className="px-6 py-4 rounded-2xl bg-[#F8F9FA] border border-[#F5ECD7] font-bold"
-                >
-                  <option value="percentage">Percentage (%)</option>
-                  <option value="fixed">Fixed Amount (₹)</option>
-                </select>
+      <AnimatePresence>
+        {showAdd && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-6">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-black/40 backdrop-blur-sm" 
+              onClick={() => setShowAdd(false)} 
+            />
+            <motion.form 
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              onSubmit={handleAdd} 
+              className="relative bg-white w-full max-w-lg rounded-[32px] overflow-hidden shadow-2xl"
+            >
+              <div className="p-8 border-b border-[var(--admin-border)] flex justify-between items-center bg-[var(--admin-light)]/30">
+                <div>
+                  <h2 className="text-2xl font-serif font-bold text-[var(--admin-text-primary)]">Create Iconic Coupon</h2>
+                  <p className="text-[10px] font-bold text-[var(--admin-text-muted)] uppercase tracking-widest mt-1">Configure your campaign logic</p>
+                </div>
+                <button type="button" onClick={() => setShowAdd(false)} className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-white transition-all">
+                  <X size={20} className="text-[var(--admin-text-muted)]" />
+                </button>
               </div>
-              <div className="flex flex-col gap-2">
-                <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Value</label>
-                <input 
-                  type="number"
-                  value={newCoupon.discount_value}
-                  onChange={e => setNewCoupon({...newCoupon, discount_value: parseInt(e.target.value)})}
-                  className="px-6 py-4 rounded-2xl bg-[#F8F9FA] border border-[#F5ECD7] font-bold"
-                  required
-                />
-              </div>
-            </div>
 
-            <button type="submit" className="mt-4 py-5 bg-[#900C3F] text-white rounded-[32px] font-bold text-lg hover:bg-[#FF69B4] shadow-xl">
-              Launch Campaign
-            </button>
-          </form>
-        </div>
-      )}
+              <div className="p-8 space-y-6">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--admin-text-muted)]">Unique Code</label>
+                  <input 
+                    value={newCoupon.code}
+                    onChange={e => setNewCoupon({...newCoupon, code: e.target.value.toUpperCase()})}
+                    placeholder="e.g. ICONIC20" 
+                    className="w-full px-6 py-4 rounded-xl bg-[var(--admin-light)]/50 border border-[var(--admin-border)] font-mono text-xl text-[var(--admin-primary)] focus:bg-white focus:ring-2 focus:ring-[var(--admin-primary)]/10 focus:outline-none transition-all" 
+                    required
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--admin-text-muted)]">Type</label>
+                    <select 
+                      value={newCoupon.discount_type}
+                      onChange={e => setNewCoupon({...newCoupon, discount_type: e.target.value as any})}
+                      className="w-full px-5 py-4 rounded-xl bg-[var(--admin-light)]/50 border border-[var(--admin-border)] font-bold text-sm focus:bg-white focus:outline-none transition-all appearance-none"
+                    >
+                      <option value="percentage">Percentage (%)</option>
+                      <option value="fixed">Fixed Amount (₹)</option>
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--admin-text-muted)]">Value</label>
+                    <input 
+                      type="number"
+                      value={newCoupon.discount_value}
+                      onChange={e => setNewCoupon({...newCoupon, discount_value: parseInt(e.target.value)})}
+                      className="w-full px-5 py-4 rounded-xl bg-[var(--admin-light)]/50 border border-[var(--admin-border)] font-bold text-sm focus:bg-white focus:outline-none transition-all"
+                      required
+                    />
+                  </div>
+                </div>
+                
+                <div className="p-4 bg-[var(--admin-primary)]/5 rounded-2xl border border-[var(--admin-primary)]/10">
+                  <p className="text-[10px] font-bold text-[var(--admin-primary)] uppercase tracking-widest mb-1">Live Preview</p>
+                  <p className="text-sm font-medium text-[var(--admin-text-primary)]">
+                    Customers will save <span className="font-bold">{newCoupon.discount_value}{newCoupon.discount_type === 'percentage' ? '%' : '₹'}</span> on their iconic order.
+                  </p>
+                </div>
+              </div>
+
+              <div className="p-8 bg-[var(--admin-light)]/30 border-t border-[var(--admin-border)]">
+                <button type="submit" className="w-full py-5 bg-[var(--admin-primary)] text-white rounded-2xl font-bold text-sm uppercase tracking-widest hover:scale-[1.01] active:scale-[0.99] transition-all shadow-xl shadow-[var(--admin-primary)]/20 flex items-center justify-center gap-3">
+                  <Rocket size={18} /> Launch Campaign
+                </button>
+              </div>
+            </motion.form>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

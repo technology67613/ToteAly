@@ -106,7 +106,7 @@ export default function ProductDetail() {
           
           <div className="relative aspect-[4/5] bg-white rounded-[40px] overflow-hidden border border-[#F5ECD7] shadow-2xl">
             <Image
-              src={product.images[0] || "/mockups/plain.png"} 
+              src={(product.images && product.images.length > 0) ? product.images[0] : "/mockups/plain.png"} 
               alt={product.title} 
               fill
               className="object-cover"
