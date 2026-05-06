@@ -21,6 +21,12 @@ interface AdminInventoryTabProps {
 }
 
 export const AdminInventoryTab = ({ products, onEdit, onDelete, onNew }: AdminInventoryTabProps) => {
+  const [activeTab, setActiveTab] = React.useState('All Products');
+
+  const filteredProducts = products.filter(p => 
+    activeTab === 'All Products' ? true : p.category === activeTab
+  );
+
   const getStockColor = (stock: number) => {
     if (stock > 50) return "bg-emerald-500";
     if (stock > 10) return "bg-amber-500";
@@ -37,11 +43,12 @@ export const AdminInventoryTab = ({ products, onEdit, onDelete, onNew }: AdminIn
     <div className="space-y-8">
       <div className="flex justify-between items-center">
         <div className="flex gap-4">
-          {['ALL', 'PLAIN', 'BLACK', 'PREMIUM'].map((tab, i) => (
+          {['All Products', 'Plain Totes', 'Premium', 'Hampers'].map((tab) => (
             <button 
               key={tab}
+              onClick={() => setActiveTab(tab)}
               className={`px-5 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all ${
-                i === 0 ? "bg-[var(--admin-primary)] text-white shadow-lg shadow-[var(--admin-primary)]/20" : "text-[var(--admin-text-muted)] hover:bg-[var(--admin-light)]"
+                activeTab === tab ? "bg-[var(--admin-primary)] text-white shadow-lg shadow-[var(--admin-primary)]/20" : "text-[var(--admin-text-muted)] hover:bg-[var(--admin-light)]"
               }`}
             >
               {tab}
@@ -57,7 +64,7 @@ export const AdminInventoryTab = ({ products, onEdit, onDelete, onNew }: AdminIn
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {products.map((p, idx) => {
+        {filteredProducts.map((p, idx) => {
           const prodId = p.id || p._id || "prod";
           const stockPercentage = Math.min(100, (p.stock / 100) * 100);
           

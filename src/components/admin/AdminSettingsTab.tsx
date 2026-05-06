@@ -1,25 +1,54 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Save, ShieldCheck, Truck, Mail, Store, AlertTriangle, RefreshCcw } from "lucide-react";
 import { motion } from "framer-motion";
 
 export const AdminSettingsTab = () => {
   const [settings, setSettings] = useState<any>({
-    store_name: "Tote-ally Iconic",
-    support_email: "support@totealy.com",
+    site_name: "Tote-ally Iconic",
+    contact_email: "support@totealy.com",
     gst_number: "",
     free_shipping_threshold: 999,
     base_shipping_cost: 50,
     announcement_bar: "Free Shipping on orders above ₹999!"
   });
+  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  const handleSave = () => {
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const res = await fetch('/api/admin/settings');
+        if (res.ok) {
+          const data = await res.json();
+          setSettings(prev => ({ ...prev, ...data }));
+        }
+      } catch (e) {
+        console.error("Failed to load settings", e);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchSettings();
+  }, []);
+
+  const handleSave = async () => {
     setSaving(true);
-    setTimeout(() => {
+    try {
+      const res = await fetch('/api/admin/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(settings)
+      });
+      if (!res.ok) throw new Error("Failed to save");
+    } catch (e) {
+      console.error(e);
+      alert("Failed to save settings to cloud.");
+    } finally {
       setSaving(false);
-      // In a real app, toast notification would be triggered here
-    }, 1000);
+    }
   };
+
+  if (loading) return <div className="p-20 text-center text-[var(--admin-text-muted)] animate-pulse font-bold uppercase tracking-widest text-xs">Synchronizing with Cloud Config...</div>;
 
   return (
     <motion.div 
@@ -59,8 +88,8 @@ export const AdminSettingsTab = () => {
             <div className="space-y-2">
               <label className="text-[10px] font-bold uppercase tracking-widest text-[var(--admin-text-muted)]">Store Name</label>
               <input 
-                value={settings.store_name}
-                onChange={e => setSettings({...settings, store_name: e.target.value})}
+                value={settings.site_name || settings.store_name}
+                onChange={e => setSettings({...settings, site_name: e.target.value})}
                 className="w-full px-5 py-3.5 rounded-xl bg-[var(--admin-light)]/30 border border-[var(--admin-border)] font-bold text-sm focus:bg-white focus:ring-2 focus:ring-[var(--admin-primary)]/10 focus:outline-none transition-all" 
               />
             </div>
@@ -152,8 +181,8 @@ export const AdminSettingsTab = () => {
             <div className="space-y-2">
               <label className="text-[10px] font-bold uppercase tracking-widest text-[var(--admin-text-muted)]">Support Email</label>
               <input 
-                value={settings.support_email}
-                onChange={e => setSettings({...settings, support_email: e.target.value})}
+                value={settings.contact_email || settings.support_email}
+                onChange={e => setSettings({...settings, contact_email: e.target.value})}
                 className="w-full px-5 py-3.5 rounded-xl bg-[var(--admin-light)]/30 border border-[var(--admin-border)] font-bold text-sm focus:bg-white focus:ring-2 focus:ring-[var(--admin-primary)]/10 focus:outline-none transition-all" 
               />
             </div>

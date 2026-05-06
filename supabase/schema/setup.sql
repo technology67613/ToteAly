@@ -106,10 +106,27 @@ CREATE TABLE IF NOT EXISTS public.settings (
   maintenance_mode BOOLEAN DEFAULT false,
   logo_url TEXT,
   contact_email TEXT,
+  gst_number TEXT,
+  free_shipping_threshold INTEGER DEFAULT 999,
+  base_shipping_cost INTEGER DEFAULT 50,
+  announcement_bar TEXT DEFAULT 'Free Shipping on orders above ₹999!',
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 6. NEWSLETTER SUBSCRIBERS TABLE
+-- 6. COUPONS TABLE (MARKETING)
+CREATE TABLE IF NOT EXISTS public.coupons (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  code TEXT UNIQUE NOT NULL,
+  discount_type TEXT DEFAULT 'percentage' CHECK (discount_type IN ('percentage', 'fixed')),
+  discount_value INTEGER NOT NULL,
+  min_order_value INTEGER DEFAULT 0,
+  expiry_date TIMESTAMPTZ,
+  is_active BOOLEAN DEFAULT true,
+  usage_count INTEGER DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 7. NEWSLETTER SUBSCRIBERS TABLE
 CREATE TABLE IF NOT EXISTS public.newsletter_subscribers (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   email TEXT UNIQUE NOT NULL,

@@ -274,7 +274,7 @@ export default function AdminPage() {
                           </div>
                           <div className="h-[350px] w-full">
                             <ResponsiveContainer width="100%" height="100%">
-                              <AreaChart data={CHART_DATA}>
+                              <AreaChart data={stats?.trend ? Object.entries(stats.trend).map(([name, revenue]) => ({ name, revenue })) : CHART_DATA}>
                                 <defs>
                                   <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
                                     <stop offset="5%" stopColor="var(--admin-primary)" stopOpacity={0.1}/>
