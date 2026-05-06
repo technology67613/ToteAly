@@ -133,7 +133,7 @@ export const AdminOrdersTab = ({ orders, loading, onRefresh, onUpdateStatus }: A
                        </button>
                        {o.payment_status !== 'paid' && (
                          <button 
-                          onClick={() => onUpdateStatus?.(o.id, 'paid')}
+                          onClick={(e) => { e.stopPropagation(); onUpdateStatus?.(o.id, 'paid'); }}
                           className="px-3 py-2 bg-emerald-50 text-emerald-600 rounded-lg text-[9px] font-bold uppercase tracking-widest hover:bg-emerald-600 hover:text-white transition-all"
                          >
                            Paid
@@ -143,6 +143,21 @@ export const AdminOrdersTab = ({ orders, loading, onRefresh, onUpdateStatus }: A
                   </td>
                 </motion.tr>
               ))}
+              {orders.length === 0 && (
+                <tr>
+                  <td colSpan={5} className="px-8 py-20 text-center">
+                    <div className="flex flex-col items-center gap-6">
+                      <div className="w-20 h-20 bg-[var(--admin-light)] rounded-full flex items-center justify-center text-[var(--admin-primary)]/20">
+                        <ShoppingBag size={40} />
+                      </div>
+                      <div className="space-y-2">
+                        <p className="text-lg font-serif font-bold text-[var(--admin-text-primary)]">No orders yet</p>
+                        <p className="text-sm text-[var(--admin-text-muted)] max-w-xs mx-auto">When customers place orders, they will appear here in real-time.</p>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
