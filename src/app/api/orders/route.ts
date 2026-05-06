@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { supabase, isSupabaseConfigured, isSupabaseAdminConfigured } from "@/lib/supabase";
+import { supabase, supabaseAdmin, isSupabaseConfigured, isSupabaseAdminConfigured } from "@/lib/supabase";
 import { sendOrderConfirmationEmail } from "@/lib/email";
 import { createShiprocketOrder } from "@/lib/shiprocket";
 import { OrderCreateSchema } from "@/lib/validations";
@@ -101,7 +101,7 @@ export async function POST(request: NextRequest) {
     const initialPaymentStatus = isManualUPI ? 'Pending' : 'Paid';
 
     // 2. Create the Order
-    const { data: order, error: orderError } = await supabase
+    const { data: order, error: orderError } = await supabaseAdmin
       .from('orders')
       .insert([{
         user_id: profileId,
@@ -131,7 +131,7 @@ export async function POST(request: NextRequest) {
       }
     }));
 
-    const { error: itemsError } = await supabase
+    const { error: itemsError } = await supabaseAdmin
       .from('order_items')
       .insert(orderItems);
 
@@ -199,7 +199,7 @@ export async function GET(request: NextRequest) {
 
     if (id) {
        // Single Order Lookup (Public Tracking)
-       const { data: order, error } = await supabase
+       const { data: order, error } = await supabaseAdmin
          .from('orders')
          .select(`
            *,
@@ -236,7 +236,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Efficient filtering at the SQL level
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('orders')
       .select(`
         *,
