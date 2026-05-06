@@ -1,4 +1,4 @@
-import React from 'react';
+import { useRouter } from 'next/navigation';
 import { Users, Search, Download, Filter, User } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -11,6 +11,8 @@ interface Customer {
 }
 
 export const AdminCustomersTab = ({ customers }: { customers: Customer[] }) => {
+  const router = useRouter();
+
   return (
     <motion.div 
       initial={{ opacity: 0, y: 20 }}
@@ -57,6 +59,7 @@ export const AdminCustomersTab = ({ customers }: { customers: Customer[] }) => {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ delay: idx * 0.05 }}
+                    onClick={() => router.push(`/admin/customers/${customerId}`)}
                     className="group hover:bg-[var(--admin-light)]/20 transition-colors cursor-pointer"
                   >
                     <td className="px-8 py-6">

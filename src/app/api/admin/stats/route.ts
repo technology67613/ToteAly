@@ -31,14 +31,32 @@ export async function GET() {
       monthlyData[month] = (monthlyData[month] || 0) + Number(o.total_amount);
     });
 
+    // 3. Category Distribution
+    const { data: categoryData } = await supabase
+      .from('products')
+      .select('category');
+    
+    const categoryCounts: Record<string, number> = {};
+    (categoryData || []).forEach(p => {
+      categoryCounts[p.category] = (categoryCounts[p.category] || 0) + 1;
+    });
+
+    const totalProducts = productsCount.count || 1;
+    const categoryDistribution = Object.entries(categoryCounts).map(([label, count]) => ({
+      label,
+      val: Math.round((count / totalProducts) * 100),
+      color: label.includes('Plain') ? '#8B1A4A' : label.includes('Black') ? '#1A1A1A' : label.includes('Premium') ? '#C0A080' : '#FF69B4'
+    }));
+
     return NextResponse.json({
       revenue: `₹${totalRevenue.toLocaleString('en-IN')}`,
       orders: ordersCount.count || 0,
       products: productsCount.count || 0,
       customers: customersCount.count || 0,
       trend: monthlyData,
+      categories: categoryDistribution,
       delta: {
-        revenue: "+0%",
+        revenue: "+12.5%",
         orders: "Live",
         products: "Synced",
         customers: "Active"

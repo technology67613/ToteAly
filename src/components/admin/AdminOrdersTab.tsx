@@ -70,7 +70,8 @@ export const AdminOrdersTab = ({ orders, loading, onRefresh, onUpdateStatus }: A
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: idx * 0.05 }}
-                  className="group hover:bg-[var(--admin-light)]/20 transition-colors"
+                  onClick={() => handleView(o.id)}
+                  className="group hover:bg-[var(--admin-light)]/20 transition-colors cursor-pointer"
                 >
                   <td className="px-8 py-6">
                     <div className="flex flex-col">

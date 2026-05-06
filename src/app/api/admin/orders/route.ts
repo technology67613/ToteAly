@@ -6,6 +6,7 @@ export const runtime = "nodejs";
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
+    const id = searchParams.get("id");
     const page = parseInt(searchParams.get("page") || "1");
     const limit = parseInt(searchParams.get("limit") || "50");
     const offset = (page - 1) * limit;
@@ -21,12 +22,32 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const { data, error } = await supabase
+    let query = supabase
       .from('orders')
       .select(`
         *,
-        order_items (*)
-      `)
+        order_items (*),
+        profiles:user_id (*)
+      `);
+
+    if (id) {
+      const { data, error } = await query.eq('id', id).single();
+      if (error) throw error;
+      
+      return NextResponse.json({
+        ...data,
+        _id: data.id,
+        user: data.profiles || {
+          name: data.shipping_details?.name,
+          email: data.shipping_details?.email,
+        },
+        products: data.order_items,
+        totalAmount: data.total_amount,
+        shippingDetails: data.shipping_details,
+      });
+    }
+
+    const { data, error } = await query
       .range(offset, offset + limit - 1)
       .order('created_at', { ascending: false });
 

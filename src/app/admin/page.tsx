@@ -306,27 +306,27 @@ export default function AdminPage() {
                        <div className="bg-white p-8 rounded-[24px] border border-[var(--admin-border)] shadow-sm flex flex-col">
                           <h3 className="font-serif text-xl font-bold text-[var(--admin-text-primary)] mb-8">Popular Categories</h3>
                           <div className="flex-1 space-y-6">
-                            {[
-                              { label: 'Plain Totes', val: 65, color: '#8B1A4A' },
-                              { label: 'Black Edition', val: 45, color: '#1A1A1A' },
-                              { label: 'Premium Canvas', val: 30, color: '#C0A080' },
-                              { label: 'Custom Prints', val: 85, color: '#FF69B4' },
-                            ].map((cat) => (
-                              <div key={cat.label} className="space-y-3">
-                                <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-widest">
-                                  <span className="text-[var(--admin-text-primary)]">{cat.label}</span>
-                                  <span className="text-[var(--admin-text-muted)]">{cat.val}%</span>
-                                </div>
-                                <div className="w-full bg-[var(--admin-light)] h-2 rounded-full overflow-hidden">
-                                   <motion.div 
-                                    initial={{ width: 0 }}
-                                    animate={{ width: `${cat.val}%` }}
-                                    transition={{ duration: 1.5, ease: "easeOut" }}
-                                    style={{ backgroundColor: cat.color }}
-                                    className="h-full rounded-full" 
-                                   />
-                                </div>
-                              </div>
+                            {(stats?.categories || [
+                               { label: 'Plain Totes', val: 65, color: '#8B1A4A' },
+                               { label: 'Black Edition', val: 45, color: '#1A1A1A' },
+                               { label: 'Premium Canvas', val: 30, color: '#C0A080' },
+                               { label: 'Custom Prints', val: 85, color: '#FF69B4' },
+                            ]).map((cat: any) => (
+                               <div key={cat.label} className="space-y-3">
+                                 <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-widest">
+                                   <span className="text-[var(--admin-text-primary)]">{cat.label}</span>
+                                   <span className="text-[var(--admin-text-muted)]">{cat.val}%</span>
+                                 </div>
+                                 <div className="w-full bg-[var(--admin-light)] h-2 rounded-full overflow-hidden">
+                                    <motion.div 
+                                     initial={{ width: 0 }}
+                                     animate={{ width: `${cat.val}%` }}
+                                     transition={{ duration: 1.5, ease: "easeOut" }}
+                                     style={{ backgroundColor: cat.color }}
+                                     className="h-full rounded-full" 
+                                    />
+                                 </div>
+                               </div>
                             ))}
                           </div>
                           <button className="mt-10 w-full py-3.5 border border-[var(--admin-border)] rounded-xl text-[10px] font-bold uppercase tracking-widest text-[var(--admin-text-muted)] hover:bg-[var(--admin-light)] transition-all flex items-center justify-center gap-2">

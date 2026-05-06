@@ -21,9 +21,7 @@ export default function OrderDetailPage() {
         const res = await fetch(`/api/admin/orders?id=${id}`);
         if (res.ok) {
           const data = await res.json();
-          // Find specific order if list returned or handle single object
-          const singleOrder = Array.isArray(data) ? data.find((o: any) => o.id === id) : data;
-          setOrder(singleOrder);
+          setOrder(data);
         }
       } catch (e) {
         console.error(e);
@@ -56,6 +54,22 @@ export default function OrderDetailPage() {
     { label: 'Delivered', icon: CheckCircle2, date: null, active: order.status === 'delivered' },
   ];
 
+  const handleFulfilled = async () => {
+    try {
+      const res = await fetch('/api/admin/orders', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: order.id, status: 'delivered', payment_status: 'paid' })
+      });
+      if (res.ok) {
+        const updated = await res.json();
+        setOrder({ ...order, status: updated.status, payment_status: updated.payment_status });
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[var(--admin-background)] pb-20">
       {/* Top Header */}
@@ -76,8 +90,12 @@ export default function OrderDetailPage() {
           <button className="flex items-center gap-2 px-5 py-2.5 border border-[var(--admin-border)] rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-[var(--admin-light)] transition-all">
             <Printer size={16} /> Print Invoice
           </button>
-          <button className="flex items-center gap-2 px-5 py-2.5 bg-[var(--admin-primary)] text-white rounded-xl text-[10px] font-bold uppercase tracking-widest shadow-lg shadow-[var(--admin-primary)]/20 hover:scale-[1.02] active:scale-[0.98] transition-all">
-            Mark as Fulfilled
+          <button 
+            onClick={handleFulfilled}
+            disabled={order.status === 'delivered'}
+            className="flex items-center gap-2 px-5 py-2.5 bg-[var(--admin-primary)] text-white rounded-xl text-[10px] font-bold uppercase tracking-widest shadow-lg shadow-[var(--admin-primary)]/20 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50"
+          >
+            <CheckCircle2 size={16} /> {order.status === 'delivered' ? 'Completed' : 'Mark as Fulfilled'}
           </button>
         </div>
       </header>

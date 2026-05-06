@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { X, Image as ImageIcon, Save, Plus, Trash2, Sparkles } from "lucide-react";
+import { X, Image as ImageIcon, Save, Plus, Trash2, Sparkles, RefreshCcw } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface ProductModalProps {
@@ -18,9 +18,11 @@ export const ProductModal = ({ isOpen, onClose, product, onSave }: ProductModalP
     category: "Plain Totes",
     description: "",
     stock: 50,
-    images: ["/mockups/plain.png"],
+    images: [] as string[],
     isCustomizable: true
   });
+  const [newImageUrl, setNewImageUrl] = useState("");
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (product) {
@@ -30,7 +32,7 @@ export const ProductModal = ({ isOpen, onClose, product, onSave }: ProductModalP
         category: product.category || "Plain Totes",
         description: product.description || "",
         stock: product.stock || 0,
-        images: product.images || ["/mockups/plain.png"],
+        images: product.images || [],
         isCustomizable: product.isCustomizable ?? true
       });
     } else {
@@ -40,11 +42,30 @@ export const ProductModal = ({ isOpen, onClose, product, onSave }: ProductModalP
         category: "Plain Totes",
         description: "",
         stock: 50,
-        images: ["/mockups/plain.png"],
+        images: [],
         isCustomizable: true
       });
     }
   }, [product, isOpen]);
+
+  const handleAddImage = () => {
+    if (!newImageUrl) return;
+    setFormData(prev => ({ ...prev, images: [...prev.images, newImageUrl] }));
+    setNewImageUrl("");
+  };
+
+  const removeImage = (index: number) => {
+    setFormData(prev => ({ ...prev, images: prev.images.filter((_, i) => i !== index) }));
+  };
+
+  const handleLocalSave = async () => {
+    setSaving(true);
+    try {
+      await onSave(formData);
+    } finally {
+      setSaving(false);
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -156,32 +177,53 @@ export const ProductModal = ({ isOpen, onClose, product, onSave }: ProductModalP
           {/* Images */}
           <div className="space-y-4">
              <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--admin-text-muted)]">Product Media</label>
+             <div className="flex gap-3 mb-4">
+                <input 
+                  value={newImageUrl}
+                  onChange={e => setNewImageUrl(e.target.value)}
+                  placeholder="Paste Image URL"
+                  className="flex-1 px-4 py-2 bg-[var(--admin-light)] border border-[var(--admin-border)] rounded-xl text-xs"
+                />
+                <button 
+                  onClick={handleAddImage}
+                  className="px-4 py-2 bg-[var(--admin-primary)] text-white rounded-xl text-[10px] font-bold uppercase tracking-widest"
+                >
+                  Add
+                </button>
+             </div>
              <div className="grid grid-cols-4 gap-4">
                 {formData.images.map((img, i) => (
-                  <div key={i} className="aspect-square bg-[var(--admin-light)] rounded-xl border-2 border-dashed border-[var(--admin-border)] flex items-center justify-center relative group">
-                    <img src={img} className="w-full h-full object-cover rounded-lg" alt="Preview" />
-                    <button className="absolute -top-2 -right-2 w-6 h-6 bg-rose-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all shadow-lg">
+                  <div key={i} className="aspect-square bg-[var(--admin-light)] rounded-xl border border-[var(--admin-border)] flex items-center justify-center relative group overflow-hidden">
+                    <img src={img} className="w-full h-full object-cover" alt="Preview" />
+                    <button 
+                      onClick={() => removeImage(i)}
+                      className="absolute -top-2 -right-2 w-6 h-6 bg-rose-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all shadow-lg z-10"
+                    >
                       <X size={12} />
                     </button>
                   </div>
                 ))}
-                <button className="aspect-square bg-[var(--admin-light)]/50 rounded-xl border-2 border-dashed border-[var(--admin-border)] flex flex-col items-center justify-center gap-2 text-[var(--admin-text-muted)] hover:bg-[var(--admin-light)] hover:text-[var(--admin-primary)] transition-all">
-                  <Plus size={20} />
-                  <span className="text-[9px] font-bold uppercase tracking-widest">Add Media</span>
-                </button>
+                {formData.images.length === 0 && (
+                  <div className="col-span-4 py-10 flex flex-col items-center justify-center border-2 border-dashed border-[var(--admin-border)] rounded-2xl text-[var(--admin-text-muted)]">
+                    <ImageIcon size={32} className="mb-2 opacity-20" />
+                    <p className="text-[10px] font-bold uppercase tracking-widest">No Media Added</p>
+                  </div>
+                )}
              </div>
           </div>
         </div>
 
         <div className="p-8 bg-[var(--admin-light)]/30 border-t border-[var(--admin-border)] flex gap-4">
-          <button onClick={onClose} className="flex-1 py-4 border border-[var(--admin-border)] text-[var(--admin-text-muted)] rounded-2xl font-bold text-xs uppercase tracking-widest hover:bg-white transition-all">
+          <button onClick={onClose} disabled={saving} className="flex-1 py-4 border border-[var(--admin-border)] text-[var(--admin-text-muted)] rounded-2xl font-bold text-xs uppercase tracking-widest hover:bg-white transition-all disabled:opacity-50">
             Cancel
           </button>
           <button 
-            onClick={() => onSave(formData)}
-            className="flex-1 py-4 bg-[var(--admin-primary)] text-white rounded-2xl font-bold text-xs uppercase tracking-widest hover:scale-[1.01] active:scale-[0.99] transition-all shadow-xl shadow-[var(--admin-primary)]/20 flex items-center justify-center gap-3"
+            onClick={handleLocalSave}
+            disabled={saving}
+            className="flex-1 py-4 bg-[var(--admin-primary)] text-white rounded-2xl font-bold text-xs uppercase tracking-widest hover:scale-[1.01] active:scale-[0.99] transition-all shadow-xl shadow-[var(--admin-primary)]/20 flex items-center justify-center gap-3 disabled:opacity-50"
           >
-            <Save size={18} /> {product ? "Update Product" : "Launch Product"}
+            {saving ? <RefreshCcw size={18} className="animate-spin" /> : <Save size={18} />}
+            {saving ? "Processing..." : product ? "Update Product" : "Launch Product"}
           </button>
         </div>
       </motion.div>
