@@ -1,57 +1,41 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin as supabase, isSupabaseAdminConfigured, isSupabaseConfigured } from "@/lib/supabase";
-import { writeFile } from "fs/promises";
-import path from "path";
 
 export const runtime = "nodejs";
 
 export async function POST(request: NextRequest) {
   try {
+    if (!isSupabaseConfigured() || !isSupabaseAdminConfigured()) {
+      return NextResponse.json({ error: "Supabase configuration required." }, { status: 503 });
+    }
+
     const formData = await request.formData();
-    const file = formData.get("file") as File;
+    const file = formData.get('file') as File;
 
     if (!file) {
-      return NextResponse.json({ error: "No file uploaded" }, { status: 400 });
+      return NextResponse.json({ error: "No file provided." }, { status: 400 });
     }
 
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-    const filename = `${Date.now()}-${file.name.replace(/\s+/g, "-")}`;
+    const fileName = `${Date.now()}-${file.name.replace(/\s/g, '-')}`;
+    const arrayBuffer = await file.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
 
-    // 1. If Supabase is configured, upload to Supabase Storage
-    if (isSupabaseConfigured()) {
-      if (!isSupabaseAdminConfigured()) {
-        return NextResponse.json({ error: "SUPABASE_SERVICE_ROLE_KEY is required for uploads." }, { status: 500 });
-      }
+    const { data, error } = await supabase.storage
+      .from('totealy-assets')
+      .upload(fileName, buffer, {
+        contentType: file.type,
+        upsert: true
+      });
 
-      const { data, error } = await supabase.storage
-        .from('totealy-assets')
-        .upload(`uploads/${filename}`, buffer, {
-          contentType: file.type,
-          upsert: true
-        });
+    if (error) throw error;
 
-      if (error) throw error;
+    const { data: { publicUrl } } = supabase.storage
+      .from('totealy-assets')
+      .getPublicUrl(fileName);
 
-      // Get Public URL
-      const { data: urlData } = supabase.storage
-        .from('totealy-assets')
-        .getPublicUrl(`uploads/${filename}`);
-
-      return NextResponse.json({ url: urlData.publicUrl });
-    }
-
-    if (process.env.NODE_ENV === "development") {
-      const uploadPath = path.join(process.cwd(), "public", "uploads", filename);
-      await writeFile(uploadPath, buffer);
-      const imageUrl = `/uploads/${filename}`;
-      return NextResponse.json({ url: imageUrl });
-    }
-
-    return NextResponse.json({ error: "Storage is not configured for production." }, { status: 503 });
+    return NextResponse.json({ url: publicUrl });
   } catch (error: any) {
-    console.error("Upload error:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error("Upload Error:", error);
+    return NextResponse.json({ error: error.message || "Upload failed." }, { status: 500 });
   }
 }
-

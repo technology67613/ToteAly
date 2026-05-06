@@ -195,10 +195,48 @@ BEGIN
     CREATE POLICY "Public can subscribe to newsletter" ON public.newsletter_subscribers FOR INSERT
       WITH CHECK (true);
 
-    -- Contact messages are written by server routes with service role. Admin
-    -- reads should also go through server routes, not direct browser queries.
+    -- Contact messages
     DROP POLICY IF EXISTS "Service role can manage contact messages" ON public.contact_messages;
     CREATE POLICY "Service role can manage contact messages" ON public.contact_messages FOR ALL
       USING (auth.role() = 'service_role')
       WITH CHECK (auth.role() = 'service_role');
 END $$;
+
+-- 8. ADMINISTRATIVE AUDIT LOGS
+CREATE TABLE IF NOT EXISTS public.admin_logs (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  action TEXT NOT NULL,
+  user_email TEXT NOT NULL,
+  target TEXT,
+  details TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 9. PRODUCT REVIEWS (SOCIAL PROOF)
+CREATE TABLE IF NOT EXISTS public.reviews (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  product_id UUID REFERENCES public.products(id) ON DELETE CASCADE,
+  user_id UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
+  user_name TEXT,
+  rating INTEGER CHECK (rating >= 1 AND rating <= 5),
+  comment TEXT,
+  status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ENABLE RLS
+ALTER TABLE public.admin_logs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.reviews ENABLE ROW LEVEL SECURITY;
+
+-- POLICIES
+DROP POLICY IF EXISTS "Admins can manage logs" ON public.admin_logs;
+CREATE POLICY "Admins can manage logs" ON public.admin_logs FOR ALL 
+  USING ( (SELECT role FROM public.profiles WHERE id = auth.uid()) = 'admin' );
+
+DROP POLICY IF EXISTS "Public can view approved reviews" ON public.reviews;
+CREATE POLICY "Public can view approved reviews" ON public.reviews FOR SELECT 
+  USING (status = 'approved');
+
+DROP POLICY IF EXISTS "Admins can manage all reviews" ON public.reviews;
+CREATE POLICY "Admins can manage all reviews" ON public.reviews FOR ALL 
+  USING ( (SELECT role FROM public.profiles WHERE id = auth.uid()) = 'admin' );

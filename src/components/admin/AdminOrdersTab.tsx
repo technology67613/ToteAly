@@ -27,6 +27,26 @@ export const AdminOrdersTab = ({ orders, loading, onRefresh, onUpdateStatus }: A
     router.push(`/admin/orders/${id}`);
   };
 
+  const handleExport = () => {
+    if (orders.length === 0) return;
+    const headers = ['Order ID', 'Customer', 'Email', 'Amount', 'Status', 'Date'];
+    const rows = orders.map(o => [
+      o.id,
+      o.user?.name || o.shippingDetails?.name || 'Guest',
+      o.user?.email || o.shippingDetails?.email,
+      o.totalAmount || o.total_amount,
+      o.status,
+      new Date(o.created_at).toLocaleDateString()
+    ]);
+    const csvContent = "data:text/csv;charset=utf-8," + [headers, ...rows].map(e => e.join(",")).join("\n");
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `totealy_orders_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+  };
+
   if (loading) return <div className="p-20 text-center text-[var(--admin-text-muted)] animate-pulse font-bold uppercase tracking-widest text-xs">Loading Cloud Orders...</div>;
 
   return (
@@ -45,8 +65,11 @@ export const AdminOrdersTab = ({ orders, loading, onRefresh, onUpdateStatus }: A
           <button className="flex items-center gap-2 px-4 py-2.5 border border-[var(--admin-border)] rounded-xl text-[10px] font-bold uppercase tracking-widest text-[var(--admin-text-muted)] hover:bg-[var(--admin-light)] transition-all">
             <Filter size={14} /> Filter
           </button>
-          <button className="flex items-center gap-2 px-4 py-2.5 border border-[var(--admin-border)] rounded-xl text-[10px] font-bold uppercase tracking-widest text-[var(--admin-text-muted)] hover:bg-[var(--admin-light)] transition-all">
-            <Download size={14} /> Export
+          <button 
+            onClick={handleExport}
+            className="flex items-center gap-2 px-4 py-2.5 bg-[var(--admin-primary)] text-white border border-[var(--admin-primary)] rounded-xl text-[10px] font-bold uppercase tracking-widest hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg shadow-[var(--admin-primary)]/20"
+          >
+            <Download size={14} /> Export CSV
           </button>
         </div>
       </div>

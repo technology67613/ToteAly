@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Save, ShieldCheck, Truck, Mail, Store, AlertTriangle, RefreshCcw } from "lucide-react";
+import { Save, ShieldCheck, Truck, Mail, Store, AlertTriangle, RefreshCcw, Power, Upload, ImageIcon } from "lucide-react";
 import { motion } from "framer-motion";
 
 interface AdminSettings {
@@ -9,6 +9,8 @@ interface AdminSettings {
   free_shipping_threshold: number;
   base_shipping_cost: number;
   announcement_bar: string;
+  maintenance_mode: boolean;
+  logo_url: string;
   [key: string]: any;
 }
 
@@ -19,10 +21,13 @@ export const AdminSettingsTab = () => {
     gst_number: "",
     free_shipping_threshold: 999,
     base_shipping_cost: 50,
-    announcement_bar: "Free Shipping on orders above ₹999!"
+    announcement_bar: "Free Shipping on orders above ₹999!",
+    maintenance_mode: false,
+    logo_url: ""
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     const fetchSettings = async () => {
@@ -58,6 +63,30 @@ export const AdminSettingsTab = () => {
     }
   };
 
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const res = await fetch('/api/admin/upload', {
+        method: 'POST',
+        body: formData,
+      });
+      if (res.ok) {
+        const { url } = await res.json();
+        setSettings({ ...settings, logo_url: url });
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setUploading(false);
+    }
+  };
+
   if (loading) return <div className="p-20 text-center text-[var(--admin-text-muted)] animate-pulse font-bold uppercase tracking-widest text-xs">Synchronizing with Cloud Config...</div>;
 
   return (
@@ -81,11 +110,29 @@ export const AdminSettingsTab = () => {
         </button>
       </div>
 
+      {/* Control Center */}
+      <div className="bg-amber-50 rounded-[24px] border border-amber-100 p-8 flex items-center justify-between shadow-sm">
+         <div className="flex items-center gap-4">
+            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${settings.maintenance_mode ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/20' : 'bg-white text-amber-500'}`}>
+               <Power size={24} />
+            </div>
+            <div>
+               <p className="text-sm font-bold text-amber-900">Maintenance Mode</p>
+               <p className="text-[10px] text-amber-700/60 font-bold uppercase tracking-widest">Toggle public storefront access</p>
+            </div>
+         </div>
+         <button 
+          onClick={() => setSettings({...settings, maintenance_mode: !settings.maintenance_mode})}
+          className={`w-14 h-8 rounded-full p-1.5 transition-all ${settings.maintenance_mode ? 'bg-amber-500' : 'bg-slate-200'}`}
+         >
+            <div className={`w-5 h-5 bg-white rounded-full transition-all ${settings.maintenance_mode ? 'translate-x-6' : 'translate-x-0'}`} />
+         </button>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         {/* Branding */}
         <motion.div 
-          whileHover={{ y: -4 }}
-          className="bg-white rounded-[24px] border border-[var(--admin-border)] p-8 flex flex-col gap-8 shadow-sm transition-all"
+          className="bg-white rounded-[24px] border border-[var(--admin-border)] p-8 flex flex-col gap-8 shadow-sm"
         >
           <div className="flex items-center gap-3 text-[var(--admin-primary)]">
             <div className="w-10 h-10 bg-[var(--admin-light)] rounded-xl flex items-center justify-center">
@@ -95,10 +142,24 @@ export const AdminSettingsTab = () => {
           </div>
           
           <div className="space-y-6">
+            <div className="flex items-center gap-6">
+               <div className="w-20 h-20 bg-[var(--admin-light)] rounded-2xl border border-[var(--admin-border)] flex items-center justify-center overflow-hidden group relative">
+                  {settings.logo_url ? <img src={settings.logo_url} className="w-full h-full object-contain" /> : <ImageIcon size={24} className="text-[var(--admin-text-muted)]" />}
+                  {uploading && <div className="absolute inset-0 bg-white/60 flex items-center justify-center"><RefreshCcw className="animate-spin text-[var(--admin-primary)]" /></div>}
+               </div>
+               <div className="flex-1 space-y-2">
+                  <p className="text-[10px] font-bold text-[var(--admin-text-muted)] uppercase tracking-widest">Platform Logo</p>
+                  <label className="inline-flex items-center gap-2 px-4 py-2 bg-[var(--admin-primary)]/10 text-[var(--admin-primary)] rounded-xl text-[10px] font-bold uppercase tracking-widest cursor-pointer hover:bg-[var(--admin-primary)] hover:text-white transition-all">
+                     <Upload size={14} /> Upload New
+                     <input type="file" className="hidden" accept="image/*" onChange={handleLogoUpload} disabled={uploading} />
+                  </label>
+               </div>
+            </div>
+
             <div className="space-y-2">
               <label className="text-[10px] font-bold uppercase tracking-widest text-[var(--admin-text-muted)]">Store Name</label>
               <input 
-                value={settings.site_name || settings.store_name}
+                value={settings.site_name}
                 onChange={e => setSettings({...settings, site_name: e.target.value})}
                 className="w-full px-5 py-3.5 rounded-xl bg-[var(--admin-light)]/30 border border-[var(--admin-border)] font-bold text-sm focus:bg-white focus:ring-2 focus:ring-[var(--admin-primary)]/10 focus:outline-none transition-all" 
               />
