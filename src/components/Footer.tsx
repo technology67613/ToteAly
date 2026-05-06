@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { Camera, Send, Mail, MapPin } from "lucide-react";
+import { Camera, Send, Mail } from "lucide-react";
+import NewsletterSignup from "@/components/NewsletterSignup";
 
 export default function Footer() {
   return (
@@ -12,13 +13,13 @@ export default function Footer() {
             Premium Gen Z tote bag brand based in India. Made to be seen, crafted to last.
           </p>
           <div className="flex gap-4">
-            <a href="https://instagram.com/TOTE_ALLY_ICONIC" target="_blank" className="w-10 h-10 rounded-full bg-[#F5ECD7] flex items-center justify-center text-[#900C3F] hover:bg-[#FF69B4] hover:text-white transition-all">
+            <a href="https://instagram.com/TOTE_ALLY_ICONIC" target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-[#F5ECD7] flex items-center justify-center text-[#900C3F] hover:bg-[#FF69B4] hover:text-white transition-all" aria-label="Instagram">
               <Camera size={18} />
             </a>
-            <a href="#" className="w-10 h-10 rounded-full bg-[#F5ECD7] flex items-center justify-center text-[#900C3F] hover:bg-[#FF69B4] hover:text-white transition-all">
+            <Link href="/contact" className="w-10 h-10 rounded-full bg-[#F5ECD7] flex items-center justify-center text-[#900C3F] hover:bg-[#FF69B4] hover:text-white transition-all" aria-label="Contact">
               <Send size={18} />
-            </a>
-            <a href="mailto:hello@totallyiconic.in" className="w-10 h-10 rounded-full bg-[#F5ECD7] flex items-center justify-center text-[#900C3F] hover:bg-[#FF69B4] hover:text-white transition-all">
+            </Link>
+            <a href="mailto:hello@totallyiconic.in" className="w-10 h-10 rounded-full bg-[#F5ECD7] flex items-center justify-center text-[#900C3F] hover:bg-[#FF69B4] hover:text-white transition-all" aria-label="Email">
               <Mail size={18} />
             </a>
           </div>
@@ -41,8 +42,8 @@ export default function Footer() {
           <nav className="flex flex-col gap-3 text-sm font-semibold">
             <Link href="/contact" className="hover:text-[#FF69B4] transition-colors">Contact Us</Link>
             <Link href="/about" className="hover:text-[#FF69B4] transition-colors">About Story</Link>
-            <Link href="#" className="hover:text-[#FF69B4] transition-colors">Shipping Policy</Link>
-            <Link href="#" className="hover:text-[#FF69B4] transition-colors">Returns & Refunds</Link>
+            <Link href="/shipping-policy" className="hover:text-[#FF69B4] transition-colors">Shipping Policy</Link>
+            <Link href="/returns-refunds" className="hover:text-[#FF69B4] transition-colors">Returns & Refunds</Link>
           </nav>
         </div>
 
@@ -50,14 +51,7 @@ export default function Footer() {
         <div className="flex flex-col gap-6">
           <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-[#900C3F]/40">Newsletter</h3>
           <p className="text-sm text-[#900C3F]/70">Join the iconic club for early access and drops.</p>
-          <div className="flex gap-2">
-            <input 
-              type="email" 
-              placeholder="Your email" 
-              className="flex-1 bg-[#F5ECD7]/30 border border-[#F5ECD7] px-4 py-2 rounded-lg text-sm focus:outline-none focus:border-[#FF69B4]" 
-            />
-            <button className="bg-[#900C3F] text-white px-4 py-2 rounded-lg font-bold text-xs uppercase tracking-widest hover:bg-[#FF69B4] transition-all">Join</button>
-          </div>
+          <NewsletterSignup />
         </div>
       </div>
 

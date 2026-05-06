@@ -75,12 +75,21 @@ CREATE TABLE IF NOT EXISTS public.settings (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- 6. NEWSLETTER SUBSCRIBERS TABLE
+CREATE TABLE IF NOT EXISTS public.newsletter_subscribers (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  email TEXT UNIQUE NOT NULL,
+  source TEXT DEFAULT 'footer',
+  subscribed_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- ENABLE ROW LEVEL SECURITY (RLS)
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.products ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.orders ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.order_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.settings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.newsletter_subscribers ENABLE ROW LEVEL SECURITY;
 
 -- POLICIES (Fixed Recursion)
 DO $$ 
@@ -114,4 +123,9 @@ BEGIN
     DROP POLICY IF EXISTS "Admins can manage all orders" ON public.orders;
     CREATE POLICY "Admins can manage all orders" ON public.orders FOR ALL 
       USING ( (SELECT role FROM public.profiles WHERE id = auth.uid()) = 'admin' );
+
+    -- Newsletter
+    DROP POLICY IF EXISTS "Public can subscribe to newsletter" ON public.newsletter_subscribers;
+    CREATE POLICY "Public can subscribe to newsletter" ON public.newsletter_subscribers FOR INSERT
+      WITH CHECK (true);
 END $$;

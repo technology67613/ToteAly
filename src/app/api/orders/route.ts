@@ -4,6 +4,7 @@ import { getServerSession } from "next-auth";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 import crypto from "crypto";
 import { createShiprocketOrder } from "@/lib/shiprocket";
+import { sendOrderConfirmationEmail } from "@/lib/email";
 
 export async function POST(request: NextRequest) {
   try {
@@ -11,7 +12,28 @@ export async function POST(request: NextRequest) {
     const { items, totalAmount, paymentId, razorpayOrderId, razorpaySignature, shippingDetails } = await request.json();
 
     if (!isSupabaseConfigured()) {
-       return NextResponse.json({ _id: `mock-${Date.now()}`, items }, { status: 201 });
+       const mockOrder = {
+         id: `mock-${Date.now()}`,
+         created_at: new Date().toISOString(),
+         items,
+         order_items: items.map((item: any) => ({
+           name: item.title,
+           price: item.price,
+           quantity: item.quantity,
+           is_customized: item.isCustomized || false,
+           customization_details: item.customizationDetails || {},
+         })),
+         total_amount: totalAmount,
+         payment_id: paymentId,
+         payment_status: paymentId === "MANUAL_UPI" ? "Pending" : "Paid",
+         status: paymentId === "MANUAL_UPI" ? "Pending" : "Confirmed",
+         shipping_details: shippingDetails,
+       };
+       const customerEmail = shippingDetails?.email || session?.user?.email;
+       if (customerEmail) {
+         await sendOrderConfirmationEmail(customerEmail, mockOrder);
+       }
+       return NextResponse.json({ _id: mockOrder.id, items }, { status: 201 });
     }
 
     // Verify Razorpay Signature if not a manual UPI payment
@@ -81,8 +103,25 @@ export async function POST(request: NextRequest) {
 
     if (itemsError) throw itemsError;
 
+    const emailOrder = {
+      ...order,
+      order_items: orderItems,
+      total_amount: totalAmount,
+      payment_id: paymentId,
+      payment_status: initialPaymentStatus,
+      status: initialStatus,
+      shipping_details: shippingDetails,
+    };
+
+    const customerEmail = shippingDetails?.email || session?.user?.email;
+    if (customerEmail) {
+      await sendOrderConfirmationEmail(customerEmail, emailOrder);
+    } else {
+      console.warn("Order email skipped because no customer email was provided.");
+    }
+
     // 4. Trigger Shiprocket Automation if paid
-    if (initialStatus === 'Confirmed') {
+    if (initialStatus === 'Confirmed' && process.env.SHIPROCKET_EMAIL && process.env.SHIPROCKET_PASSWORD) {
       try {
         await createShiprocketOrder({
           _id: order.id,

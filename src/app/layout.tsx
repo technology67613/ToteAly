@@ -1,21 +1,10 @@
 import type { Metadata } from "next";
-import { Inter, Noto_Serif } from "next/font/google";
 import "./globals.css";
 
 import Providers from "@/components/Providers";
 import CartSidebar from "@/components/CartSidebar";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-
-const inter = Inter({
-  variable: "--font-inter",
-  subsets: ["latin"],
-});
-
-const notoSerif = Noto_Serif({
-  variable: "--font-noto-serif",
-  subsets: ["latin"],
-});
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://totealy.netlify.app/"),
@@ -68,7 +57,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${inter.variable} ${notoSerif.variable} h-full antialiased`}
+      className="h-full antialiased"
       data-scroll-behavior="smooth"
     >
       <body className="min-h-full flex flex-col font-sans bg-brand-cream text-brand-dark-rose">

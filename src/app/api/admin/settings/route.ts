@@ -1,10 +1,27 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { isSupabaseConfigured, supabase } from "@/lib/supabase";
+
+const DEFAULT_SETTINGS = {
+  id: "global_settings",
+  site_name: "ToteAly Iconic",
+  maintenance_mode: false,
+  logo_url: null,
+  contact_email: "hello@totallyiconic.in",
+  updated_at: new Date(0).toISOString(),
+};
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const key = searchParams.get("key");
+
+    if (!isSupabaseConfigured()) {
+      return NextResponse.json(
+        key
+          ? { key, value: DEFAULT_SETTINGS[key as keyof typeof DEFAULT_SETTINGS] }
+          : DEFAULT_SETTINGS
+      );
+    }
     
     const { data, error } = await supabase
       .from('settings')
@@ -26,7 +43,13 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(data);
   } catch (error: any) {
     console.error("Settings GET error:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    const { searchParams } = new URL(request.url);
+    const key = searchParams.get("key");
+    return NextResponse.json(
+      key
+        ? { key, value: DEFAULT_SETTINGS[key as keyof typeof DEFAULT_SETTINGS] }
+        : DEFAULT_SETTINGS
+    );
   }
 }
 
@@ -34,6 +57,13 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const { key, value } = body;
+
+    if (!isSupabaseConfigured()) {
+      return NextResponse.json(
+        { error: "Settings storage is not configured." },
+        { status: 503 }
+      );
+    }
     
     // If it's the legacy key/value pair format
     if (key && value !== undefined) {

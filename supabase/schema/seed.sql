@@ -15,6 +15,8 @@ INSERT INTO public.settings (id, site_name, contact_email)
 VALUES ('global_settings', 'ToteAly Iconic', 'hello@totealy.com')
 ON CONFLICT (id) DO NOTHING;
 
+-- 3. Newsletter table is intentionally left empty for real subscribers.
+
 -- Note: To seed Orders or Profiles, you need real UUIDs from auth.users. 
 -- Below is a template for a sample profile (manually link to a user id if needed)
 -- INSERT INTO public.profiles (id, email, name, role) VALUES ('<UUID_FROM_AUTH>', 'admin@example.com', 'Admin User', 'admin');

@@ -161,7 +161,7 @@ export default function Shop() {
                   </p>
                   {product.isCustomizable && (
                     <Link 
-                      href={`/customize?product=${product._id}`} 
+                      href={`/customize?product=${product.id || product._id}`} 
                       className="text-xs text-[#FF69B4] font-bold underline decoration-[#FF69B4]/30 underline-offset-4 hover:decoration-[#FF69B4] transition-all"
                     >
                       Personalize your bag →
