@@ -1,10 +1,17 @@
 import { NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { supabaseAdmin as supabase, isSupabaseAdminConfigured, isSupabaseConfigured } from "@/lib/supabase";
 
 export const runtime = "nodejs";
 
 export async function GET() {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session || (session.user as any)?.role !== "admin") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     if (!isSupabaseConfigured()) {
       if (process.env.NODE_ENV !== "development") {
         return NextResponse.json({ error: "Supabase is required for admin stats." }, { status: 503 });

@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { supabaseAdmin as supabase, isSupabaseAdminConfigured, isSupabaseConfigured } from "@/lib/supabase";
 
 export const runtime = "nodejs";
@@ -26,6 +28,11 @@ const MOCK_ORDERS = [
 
 export async function GET() {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session || (session.user as any)?.role !== "admin") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     if (!isSupabaseConfigured()) {
       return process.env.NODE_ENV === "development"
         ? NextResponse.json(MOCK_ORDERS)
@@ -71,6 +78,11 @@ export async function GET() {
 
 export async function PATCH(request: NextRequest) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session || (session.user as any)?.role !== "admin") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const { id, status, payment_status } = await request.json();
     
     if (!isSupabaseConfigured()) {
