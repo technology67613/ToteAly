@@ -109,7 +109,8 @@ export default function CheckoutPage() {
         });
         const orderData = await orderRes.json();
         if (!orderRes.ok) {
-          throw new Error(orderData.error || "Order could not be saved.");
+          console.error("Validation Details:", orderData.details);
+          throw new Error(orderData.error ? `${orderData.error}: ${JSON.stringify(orderData.details || {})}` : "Order could not be saved.");
         }
         const finalOrderId = orderData.id || orderData._id || "MANUAL_" + Date.now();
         setOrderId(finalOrderId);
@@ -170,7 +171,8 @@ export default function CheckoutPage() {
             });
             const orderResData = await orderRes.json();
             if (!orderRes.ok) {
-              throw new Error(orderResData.error || "Order could not be saved.");
+              console.error("Validation Details:", orderResData.details);
+              throw new Error(orderResData.error ? `${orderResData.error}: ${JSON.stringify(orderResData.details || {})}` : "Order could not be saved.");
             }
             const finalOrderId = orderResData.id || response.razorpay_order_id || order.id;
             setOrderId(finalOrderId);

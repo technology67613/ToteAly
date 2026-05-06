@@ -15,13 +15,13 @@ export const NewsletterSchema = z.object({
 });
 
 export const ShippingDetailsSchema = z.object({
-  name: z.string().min(2),
+  name: z.string().min(1),
   email: z.string().email(),
-  phone: z.string().min(10),
-  address: z.string().min(5),
-  city: z.string().min(2),
-  state: z.string().min(2),
-  pincode: z.string().min(6),
+  phone: z.string().optional(),
+  address: z.string().optional(),
+  city: z.string().optional(),
+  state: z.string().optional(),
+  pincode: z.string().optional(),
 });
 
 export const OrderItemSchema = z.object({
