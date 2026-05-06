@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseAdmin as supabase, isSupabaseConfigured } from "@/lib/supabase";
+import { supabaseAdmin as supabase, isSupabaseAdminConfigured, isSupabaseConfigured } from "@/lib/supabase";
 import { writeFile } from "fs/promises";
 import path from "path";
+
+export const runtime = "nodejs";
 
 export async function POST(request: NextRequest) {
   try {
@@ -18,6 +20,10 @@ export async function POST(request: NextRequest) {
 
     // 1. If Supabase is configured, upload to Supabase Storage
     if (isSupabaseConfigured()) {
+      if (!isSupabaseAdminConfigured()) {
+        return NextResponse.json({ error: "SUPABASE_SERVICE_ROLE_KEY is required for uploads." }, { status: 500 });
+      }
+
       const { data, error } = await supabase.storage
         .from('totealy-assets')
         .upload(`uploads/${filename}`, buffer, {

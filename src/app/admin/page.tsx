@@ -31,6 +31,8 @@ interface OrderItem {
   quantity: number;
   customizationDetails?: any;
   customization_details?: any;
+  is_customized?: boolean;
+  isCustomized?: boolean;
 }
 
 interface Order {
@@ -107,6 +109,11 @@ export default function AdminPage() {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [editUploading, setEditUploading] = useState(false);
+
+  const getDesignPreview = (item: OrderItem) => {
+    const details = item.customization_details || item.customizationDetails || {};
+    return details.preview_image || details.preview || details.canvasData || "";
+  };
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -515,7 +522,7 @@ export default function AdminPage() {
                           <div className="flex -space-x-3 hover:-space-x-1 transition-all">
                              {(o.products || o.order_items || []).map((p: any, idx: number) => (
                                 <div key={idx} className="w-10 h-10 rounded-xl border-2 border-white bg-[#F5ECD7] shadow-sm overflow-hidden flex items-center justify-center">
-                                   {p.customization_details?.canvasData || p.customizationDetails?.canvasData ? <img src={p.customization_details?.canvasData || p.customizationDetails?.canvasData} className="w-full h-full object-cover" /> : <Package size={14} className="text-[#900C3F]/20" />}
+                                   {getDesignPreview(p) ? <img src={getDesignPreview(p)} className="w-full h-full object-cover" alt="Custom design preview" /> : <Package size={14} className="text-[#900C3F]/20" />}
                                 </div>
                              ))}
                           </div>
@@ -814,6 +821,13 @@ export default function AdminPage() {
                             <td className="p-3 border-r-2 border-black text-sm">
                               <p className="font-bold">{item.name || "Tote Bag"}</p>
                               {item.is_customized && <p className="text-[10px] text-pink-600 font-bold italic">Custom Design Applied</p>}
+                              {getDesignPreview(item) && (
+                                <img
+                                  src={getDesignPreview(item)}
+                                  alt="Custom design preview"
+                                  className="mt-2 h-24 w-24 rounded-lg border border-gray-300 object-cover print:h-20 print:w-20"
+                                />
+                              )}
                             </td>
                             <td className="p-3 border-r-2 border-black text-center text-sm">{item.quantity}</td>
                             <td className="p-3 border-r-2 border-black text-right text-sm">₹{(item.price || 0).toLocaleString('en-IN')}.00</td>
@@ -832,6 +846,22 @@ export default function AdminPage() {
                         ))}
                       </tbody>
                     </table>
+
+                    {(selectedOrder.products || selectedOrder.order_items || []).some((item: any) => getDesignPreview(item)) && (
+                      <div className="border-b-2 border-black p-4 print:break-inside-avoid">
+                        <h3 className="font-bold text-sm uppercase mb-3 bg-gray-100 p-1 px-2 border-b border-black">Custom Design Preview</h3>
+                        <div className="grid grid-cols-2 gap-4">
+                          {(selectedOrder.products || selectedOrder.order_items || [])
+                            .filter((item: any) => getDesignPreview(item))
+                            .map((item: any, i: number) => (
+                              <div key={i} className="border border-gray-300 rounded-lg p-3">
+                                <img src={getDesignPreview(item)} alt="Custom design preview" className="w-full max-h-64 object-contain bg-gray-50 rounded" />
+                                <p className="mt-2 text-xs font-bold text-black">{item.name || "Custom Tote"}</p>
+                              </div>
+                            ))}
+                        </div>
+                      </div>
+                    )}
 
                     {/* Summary Footer */}
                     <div className="grid grid-cols-2">

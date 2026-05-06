@@ -20,6 +20,10 @@ export async function POST(request: NextRequest) {
     }
 
     if (!isSupabaseConfigured() || !isSupabaseAdminConfigured()) {
+      if (process.env.NODE_ENV !== "development") {
+        return NextResponse.json({ error: "Newsletter storage is not configured." }, { status: 503 });
+      }
+
       console.warn("Newsletter signup received in mock mode:", normalizedEmail);
       await sendNewsletterNotificationEmail(normalizedEmail);
       return NextResponse.json({ message: "You are on the list." }, { status: 202 });
@@ -46,9 +50,6 @@ export async function POST(request: NextRequest) {
     } catch (notifyError) {
       console.error("Newsletter fallback notification error:", notifyError);
     }
-    return NextResponse.json(
-      { message: "You are on the list.", mode: "fallback" },
-      { status: 202 }
-    );
+    return NextResponse.json({ error: "Newsletter signup could not be saved." }, { status: 500 });
   }
 }

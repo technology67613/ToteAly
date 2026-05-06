@@ -1,7 +1,7 @@
 import NextAuth from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
-import { supabase, isSupabaseConfigured } from "@/lib/supabase";
+import { supabaseAdmin as supabase, isSupabaseAdminConfigured } from "@/lib/supabase";
 
 export const authOptions = {
   providers: [
@@ -36,21 +36,26 @@ export const authOptions = {
       if (!user.email) return false;
 
       try {
-        // Sync user with Supabase profiles table
-        // We use service role behavior or just ensure the user can at least upsert their own profile
-        const { error } = await supabase
-          .from('profiles')
-          .upsert({
-            id: user.id, // This will be the Google sub ID
-            email: user.email,
-            name: user.name,
-            avatar_url: user.image,
-            updated_at: new Date().toISOString(),
-          }, { onConflict: 'email' });
+        if (isSupabaseAdminConfigured()) {
+          const { data: existingProfile } = await supabase
+            .from('profiles')
+            .select('id')
+            .eq('email', user.email)
+            .maybeSingle();
 
-        if (error) {
-          console.error("Supabase Sync Error during Sign In:", error);
-          // We still return true to allow login even if sync fails (optional behavior)
+          const { error } = await supabase
+            .from('profiles')
+            .upsert({
+              id: existingProfile?.id || crypto.randomUUID(),
+              email: user.email,
+              name: user.name,
+              avatar_url: user.image,
+              updated_at: new Date().toISOString(),
+            }, { onConflict: 'email' });
+
+          if (error) {
+            console.error("Supabase Sync Error during Sign In:", error);
+          }
         }
         return true;
       } catch (err) {
@@ -65,7 +70,7 @@ export const authOptions = {
         (session.user as any).role = token.role || "user";
 
         // If Supabase is available, we try to get the latest role/id from DB
-        if (token.email && isSupabaseConfigured()) {
+        if (token.email && isSupabaseAdminConfigured()) {
           const { data: profile } = await supabase
             .from('profiles')
             .select('id, role')

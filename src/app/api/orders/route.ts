@@ -8,6 +8,14 @@ import { sendOrderConfirmationEmail } from "@/lib/email";
 
 export const runtime = "nodejs";
 
+function getCustomizationPreview(item: any) {
+  return item.customizationDetails?.preview ||
+    item.customizationDetails?.preview_image ||
+    item.customizationDetails?.canvasData ||
+    item.image ||
+    null;
+}
+
 export async function POST(request: NextRequest) {
   try {
     const { items, totalAmount, paymentId, razorpayOrderId, razorpaySignature, shippingDetails } = await request.json();
@@ -21,6 +29,10 @@ export async function POST(request: NextRequest) {
     }
 
     if (!isSupabaseConfigured()) {
+      if (process.env.NODE_ENV !== "development") {
+        return NextResponse.json({ error: "Supabase is required to save orders." }, { status: 503 });
+      }
+
        const mockOrder = {
          id: `mock-${Date.now()}`,
          created_at: new Date().toISOString(),
@@ -30,7 +42,10 @@ export async function POST(request: NextRequest) {
            price: item.price,
            quantity: item.quantity,
            is_customized: item.isCustomized || false,
-           customization_details: item.customizationDetails || {},
+         customization_details: {
+           ...(item.customizationDetails || {}),
+           preview_image: getCustomizationPreview(item),
+         },
          })),
          total_amount: totalAmount,
          payment_id: paymentId,
@@ -104,7 +119,10 @@ export async function POST(request: NextRequest) {
       price: item.price,
       quantity: item.quantity,
       is_customized: item.isCustomized || false,
-      customization_details: item.customizationDetails || {}
+      customization_details: {
+        ...(item.customizationDetails || {}),
+        preview_image: getCustomizationPreview(item),
+      }
     }));
 
     const { error: itemsError } = await supabase
@@ -174,7 +192,13 @@ export async function GET(request: NextRequest) {
     }
 
     if (!isSupabaseConfigured()) {
-       return NextResponse.json([]);
+      return process.env.NODE_ENV === "development"
+        ? NextResponse.json([])
+        : NextResponse.json({ error: "Supabase is required for orders." }, { status: 503 });
+    }
+
+    if (!isSupabaseAdminConfigured()) {
+      return NextResponse.json({ error: "SUPABASE_SERVICE_ROLE_KEY is required to read orders." }, { status: 500 });
     }
 
     const { data, error } = await supabase
@@ -186,7 +210,18 @@ export async function GET(request: NextRequest) {
       .order('created_at', { ascending: false });
 
     if (error) throw error;
-    return NextResponse.json(data);
+    const userOrders = (data || [])
+      .filter((order: any) => order.shipping_details?.email === session.user.email)
+      .map((order: any) => ({
+        ...order,
+        _id: order.id,
+        createdAt: order.created_at,
+        products: order.order_items || [],
+        totalAmount: order.total_amount,
+        shippingDetails: order.shipping_details,
+      }));
+
+    return NextResponse.json(userOrders);
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

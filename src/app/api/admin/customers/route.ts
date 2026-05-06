@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
-import { supabase, isSupabaseConfigured } from "@/lib/supabase";
+import { supabaseAdmin as supabase, isSupabaseAdminConfigured, isSupabaseConfigured } from "@/lib/supabase";
+
+export const runtime = "nodejs";
 
 // Mock data for fallback
 const MOCK_CUSTOMERS = [
@@ -15,7 +17,13 @@ const MOCK_CUSTOMERS = [
 export async function GET() {
   try {
     if (!isSupabaseConfigured()) {
-      return NextResponse.json(MOCK_CUSTOMERS);
+      return process.env.NODE_ENV === "development"
+        ? NextResponse.json(MOCK_CUSTOMERS)
+        : NextResponse.json({ error: "Supabase is required for customers." }, { status: 503 });
+    }
+
+    if (!isSupabaseAdminConfigured()) {
+      return NextResponse.json({ error: "SUPABASE_SERVICE_ROLE_KEY is required to read customers." }, { status: 500 });
     }
 
     const { data, error } = await supabase
@@ -32,9 +40,9 @@ export async function GET() {
       createdAt: c.created_at
     }));
 
-    return NextResponse.json(normalizedData.length > 0 ? normalizedData : MOCK_CUSTOMERS);
+    return NextResponse.json(normalizedData);
   } catch (error: any) {
     console.error("Customers Fetch Error:", error);
-    return NextResponse.json(MOCK_CUSTOMERS);
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

@@ -149,6 +149,16 @@ function getTotalItems(items: InvoiceItem[]) {
   return items.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
 }
 
+function getCustomizationPreview(item: InvoiceItem) {
+  const details = item.customization_details || item.customizationDetails || {};
+  const preview = details.preview_image || details.preview || details.canvasData;
+  return typeof preview === "string" && preview.startsWith("data:image/")
+    ? preview
+    : typeof preview === "string" && preview.startsWith("http")
+      ? preview
+      : "";
+}
+
 function buildAddress(details: ShippingDetails) {
   return [
     details.address,
@@ -250,12 +260,14 @@ function buildOrderItemsRows(items: InvoiceItem[]) {
       const quantity = Number(item.quantity || 0);
       const price = Number(item.price || 0);
       const customized = item.is_customized || item.isCustomized;
+      const preview = getCustomizationPreview(item);
 
       return `
         <tr>
           <td style="padding: 12px 0; border-bottom: 1px solid ${BRAND.beige}; font-family: Arial, Helvetica, sans-serif; color: ${BRAND.ink};">
             <strong>${escapeHtml(name)}</strong>
             ${customized ? `<div style="font-size: 11px; color: ${BRAND.pink}; font-weight: 800; margin-top: 3px;">Custom design applied</div>` : ""}
+            ${preview ? `<img src="${preview}" alt="Custom design preview" style="display: block; width: 140px; max-width: 100%; border: 1px solid ${BRAND.beige}; border-radius: 10px; margin-top: 10px;" />` : ""}
           </td>
           <td align="center" style="padding: 12px 8px; border-bottom: 1px solid ${BRAND.beige}; font-family: Arial, Helvetica, sans-serif; color: ${BRAND.muted};">${quantity}</td>
           <td align="right" style="padding: 12px 0; border-bottom: 1px solid ${BRAND.beige}; font-family: Arial, Helvetica, sans-serif; color: ${BRAND.rose}; font-weight: 800;">${formatCurrency(price * quantity)}</td>
@@ -272,6 +284,7 @@ function buildInvoiceItemsRows(items: InvoiceItem[]) {
       const price = Number(item.price || 0);
       const name = item.name || item.title || "Tote Bag";
       const customized = item.is_customized || item.isCustomized;
+      const preview = getCustomizationPreview(item);
 
       return `
         <tr>
@@ -279,6 +292,7 @@ function buildInvoiceItemsRows(items: InvoiceItem[]) {
           <td style="padding: 10px; border-right: 2px solid #111;">
             <strong>${escapeHtml(name)}</strong>
             ${customized ? '<div style="font-size: 11px; color: #db2777; font-weight: 700;">Custom Design Applied</div>' : ""}
+            ${preview ? `<img src="${preview}" alt="Custom design preview" style="display: block; width: 120px; max-width: 100%; border: 1px solid #ddd; margin-top: 8px;" />` : ""}
           </td>
           <td style="padding: 10px; border-right: 2px solid #111; text-align: center;">${quantity}</td>
           <td style="padding: 10px; border-right: 2px solid #111; text-align: right;">${formatCurrency(price)}</td>
@@ -487,13 +501,31 @@ export async function sendOrderConfirmationEmail(to: string, orderDetails: Order
       content: invoiceHtml,
       contentType: "text/html",
     };
+    const customDesignAttachments = getItems(orderDetails).reduce<Array<{
+      filename: string;
+      content: Buffer;
+      contentType: string;
+    }>>((attachments, item, index) => {
+      const preview = getCustomizationPreview(item);
+      const match = preview.match(/^data:(image\/(?:png|jpeg|jpg|webp));base64,(.+)$/);
+      if (match) {
+        const extension = match[1].replace("image/", "").replace("jpeg", "jpg");
+        attachments.push({
+          filename: `custom-design-${index + 1}.${extension}`,
+          content: Buffer.from(match[2], "base64"),
+          contentType: match[1],
+        });
+      }
+      return attachments;
+    }, []);
+    const attachments = [invoiceAttachment, ...customDesignAttachments];
 
     const customerInfo = await transporter.sendMail({
       from: `"Tote-ally Iconic" <${senderEmail}>`,
       to,
       subject: `Thank you for your order - Invoice #${invoiceNo}`,
       html: buildOrderConfirmationEmailHtml(orderDetails),
-      attachments: [invoiceAttachment],
+      attachments,
     });
 
     if (adminEmail) {
@@ -502,7 +534,7 @@ export async function sendOrderConfirmationEmail(to: string, orderDetails: Order
         to: adminEmail,
         subject: `New order received - #${invoiceNo}`,
         html: buildAdminOrderEmailHtml(to, orderDetails),
-        attachments: [invoiceAttachment],
+        attachments,
       });
     }
 

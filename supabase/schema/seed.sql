@@ -2,13 +2,13 @@
 -- Run this AFTER setup.sql
 
 -- 1. Insert Sample Products
-INSERT INTO public.products (id, title, description, price, category, images, stock, is_customizable)
+INSERT INTO public.products (id, title, description, price, category, images, stock, is_customizable, is_featured)
 VALUES 
-('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 'Plain Tote Bag', 'Standard eco-friendly beige canvas bag.', 129.00, 'Plain Totes', '{"/mockups/plain.png"}', 100, true),
-('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12', 'Black Tote Bag', 'Sleek minimalist black canvas bag.', 199.00, 'Black Totes', '{"/mockups/black.png"}', 80, true),
-('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a13', 'Regular Tote Bag', 'Sturdy everyday canvas bag.', 199.00, 'Regular Totes', '{"/mockups/regular.png"}', 50, true),
-('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a14', 'Premium Tote Bag', 'High-quality textured luxury canvas.', 249.00, 'Premium Totes', '{"/mockups/premium.png"}', 30, true)
-ON CONFLICT (id) DO NOTHING;
+('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 'Plain Tote Bag', 'Standard eco-friendly beige canvas bag.', 129.00, 'Plain Totes', '{"/mockups/plain.png"}', 100, true, true),
+('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12', 'Black Tote Bag', 'Sleek minimalist black canvas bag.', 199.00, 'Black Totes', '{"/mockups/black.png"}', 80, true, true),
+('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a13', 'Regular Tote Bag', 'Sturdy everyday canvas bag.', 199.00, 'Regular Totes', '{"/mockups/regular.png"}', 50, true, true),
+('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a14', 'Premium Tote Bag', 'High-quality textured luxury canvas.', 249.00, 'Premium Totes', '{"/mockups/premium.png"}', 30, true, true)
+ON CONFLICT (id) DO UPDATE SET is_featured = EXCLUDED.is_featured;
 
 -- 2. Insert Sample Settings
 INSERT INTO public.settings (id, site_name, contact_email) 

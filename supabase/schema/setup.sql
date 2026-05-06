@@ -17,13 +17,47 @@ END $$;
 
 -- 1. USERS TABLE (PROFILES)
 CREATE TABLE IF NOT EXISTS public.profiles (
-  id UUID REFERENCES auth.users ON DELETE CASCADE PRIMARY KEY,
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   email TEXT UNIQUE NOT NULL,
   name TEXT,
   role TEXT DEFAULT 'user' CHECK (role IN ('user', 'admin')),
   avatar_url TEXT,
+  phone TEXT,
+  address JSONB DEFAULT '{}',
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Keep existing projects compatible with NextAuth users. NextAuth user IDs are
+-- not Supabase Auth user IDs, so profiles must not require auth.users rows.
+DO $$
+DECLARE
+  constraint_name TEXT;
+BEGIN
+  FOR constraint_name IN
+    SELECT tc.constraint_name
+    FROM information_schema.table_constraints tc
+    JOIN information_schema.key_column_usage kcu
+      ON tc.constraint_name = kcu.constraint_name
+      AND tc.table_schema = kcu.table_schema
+    JOIN information_schema.constraint_column_usage ccu
+      ON ccu.constraint_name = tc.constraint_name
+      AND ccu.table_schema = tc.table_schema
+    WHERE tc.constraint_type = 'FOREIGN KEY'
+      AND tc.table_schema = 'public'
+      AND tc.table_name = 'profiles'
+      AND kcu.column_name = 'id'
+      AND ccu.table_schema = 'auth'
+      AND ccu.table_name = 'users'
+  LOOP
+    EXECUTE format('ALTER TABLE public.profiles DROP CONSTRAINT IF EXISTS %I', constraint_name);
+  END LOOP;
+END $$;
+
+ALTER TABLE public.profiles ALTER COLUMN id SET DEFAULT gen_random_uuid();
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS phone TEXT;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS address JSONB DEFAULT '{}';
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();
 
 -- 2. PRODUCTS TABLE
 CREATE TABLE IF NOT EXISTS public.products (
@@ -83,6 +117,20 @@ CREATE TABLE IF NOT EXISTS public.newsletter_subscribers (
   subscribed_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- 7. CONTACT / BULK INQUIRIES TABLE
+CREATE TABLE IF NOT EXISTS public.contact_messages (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  name TEXT NOT NULL,
+  email TEXT NOT NULL,
+  subject TEXT NOT NULL,
+  message TEXT NOT NULL,
+  quantity INTEGER,
+  bag_type TEXT,
+  logo_url TEXT,
+  status TEXT DEFAULT 'new' CHECK (status IN ('new', 'read', 'replied', 'archived')),
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- ENABLE ROW LEVEL SECURITY (RLS)
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.products ENABLE ROW LEVEL SECURITY;
@@ -90,6 +138,7 @@ ALTER TABLE public.orders ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.order_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.newsletter_subscribers ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.contact_messages ENABLE ROW LEVEL SECURITY;
 
 -- POLICIES (Fixed Recursion)
 DO $$ 
@@ -128,4 +177,11 @@ BEGIN
     DROP POLICY IF EXISTS "Public can subscribe to newsletter" ON public.newsletter_subscribers;
     CREATE POLICY "Public can subscribe to newsletter" ON public.newsletter_subscribers FOR INSERT
       WITH CHECK (true);
+
+    -- Contact messages are written by server routes with service role. Admin
+    -- reads should also go through server routes, not direct browser queries.
+    DROP POLICY IF EXISTS "Service role can manage contact messages" ON public.contact_messages;
+    CREATE POLICY "Service role can manage contact messages" ON public.contact_messages FOR ALL
+      USING (auth.role() = 'service_role')
+      WITH CHECK (auth.role() = 'service_role');
 END $$;

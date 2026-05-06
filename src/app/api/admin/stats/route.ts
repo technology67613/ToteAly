@@ -1,9 +1,15 @@
 import { NextResponse } from "next/server";
-import { supabaseAdmin as supabase, isSupabaseConfigured } from "@/lib/supabase";
+import { supabaseAdmin as supabase, isSupabaseAdminConfigured, isSupabaseConfigured } from "@/lib/supabase";
+
+export const runtime = "nodejs";
 
 export async function GET() {
   try {
     if (!isSupabaseConfigured()) {
+      if (process.env.NODE_ENV !== "development") {
+        return NextResponse.json({ error: "Supabase is required for admin stats." }, { status: 503 });
+      }
+
       return NextResponse.json({
         revenue: `₹${15420}`,
         orders: 42,
@@ -16,6 +22,10 @@ export async function GET() {
           customers: "+2 new"
         }
       });
+    }
+
+    if (!isSupabaseAdminConfigured()) {
+      return NextResponse.json({ error: "SUPABASE_SERVICE_ROLE_KEY is required for admin stats." }, { status: 500 });
     }
 
     // 1. Fetch Counts

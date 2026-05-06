@@ -34,7 +34,9 @@ export async function GET(request: NextRequest) {
     const isFeatured = searchParams.get("featured") === "true";
 
     if (!isSupabaseConfigured()) {
-      return NextResponse.json(MOCK_PRODUCTS);
+      return process.env.NODE_ENV === "development"
+        ? NextResponse.json(MOCK_PRODUCTS)
+        : NextResponse.json({ error: "Supabase is required for products." }, { status: 503 });
     }
 
     let query = supabase
@@ -56,9 +58,9 @@ export async function GET(request: NextRequest) {
       isCustomizable: p.is_customizable
     }));
 
-    return NextResponse.json(normalizedData.length > 0 ? normalizedData : MOCK_PRODUCTS);
+    return NextResponse.json(normalizedData);
   } catch (error: any) {
     console.error("Supabase Fetch Error:", error);
-    return NextResponse.json(MOCK_PRODUCTS); // Fallback to mock on error
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

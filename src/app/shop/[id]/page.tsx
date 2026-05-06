@@ -87,6 +87,14 @@ export default function ProductDetail() {
             setLoading(false);
             return;
           }
+
+          if (error) {
+            console.error("Supabase product detail error:", error);
+          }
+
+          setProduct(null);
+          setLoading(false);
+          return;
         }
 
         // Fallback to mock

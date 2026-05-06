@@ -27,7 +27,9 @@ const MOCK_ORDERS = [
 export async function GET() {
   try {
     if (!isSupabaseConfigured()) {
-      return NextResponse.json(MOCK_ORDERS);
+      return process.env.NODE_ENV === "development"
+        ? NextResponse.json(MOCK_ORDERS)
+        : NextResponse.json({ error: "Supabase is required for admin orders." }, { status: 503 });
     }
 
     if (!isSupabaseAdminConfigured()) {

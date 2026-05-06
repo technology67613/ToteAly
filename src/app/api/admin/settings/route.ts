@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { isSupabaseConfigured, supabase } from "@/lib/supabase";
+import { isSupabaseAdminConfigured, isSupabaseConfigured, supabaseAdmin as supabase } from "@/lib/supabase";
+
+export const runtime = "nodejs";
 
 const DEFAULT_SETTINGS = {
   id: "global_settings",
@@ -21,6 +23,10 @@ export async function GET(request: NextRequest) {
           ? { key, value: DEFAULT_SETTINGS[key as keyof typeof DEFAULT_SETTINGS] }
           : DEFAULT_SETTINGS
       );
+    }
+
+    if (!isSupabaseAdminConfigured()) {
+      return NextResponse.json({ error: "SUPABASE_SERVICE_ROLE_KEY is required for settings." }, { status: 500 });
     }
     
     const { data, error } = await supabase
@@ -63,6 +69,10 @@ export async function POST(request: NextRequest) {
         { error: "Settings storage is not configured." },
         { status: 503 }
       );
+    }
+
+    if (!isSupabaseAdminConfigured()) {
+      return NextResponse.json({ error: "SUPABASE_SERVICE_ROLE_KEY is required to update settings." }, { status: 500 });
     }
     
     // If it's the legacy key/value pair format

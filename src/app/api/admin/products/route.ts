@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseAdmin as supabase, isSupabaseConfigured } from "@/lib/supabase";
+import { supabaseAdmin as supabase, isSupabaseAdminConfigured, isSupabaseConfigured } from "@/lib/supabase";
+
+export const runtime = "nodejs";
 
 // Mock data for fallback if Supabase is not configured
 const MOCK_PRODUCTS = [
@@ -31,7 +33,13 @@ const MOCK_PRODUCTS = [
 export async function GET() {
   try {
     if (!isSupabaseConfigured()) {
-      return NextResponse.json(MOCK_PRODUCTS);
+      return process.env.NODE_ENV === "development"
+        ? NextResponse.json(MOCK_PRODUCTS)
+        : NextResponse.json({ error: "Supabase is required for products." }, { status: 503 });
+    }
+
+    if (!isSupabaseAdminConfigured()) {
+      return NextResponse.json({ error: "SUPABASE_SERVICE_ROLE_KEY is required to manage products." }, { status: 500 });
     }
 
     const { data, error } = await supabase
@@ -48,10 +56,10 @@ export async function GET() {
       isCustomizable: p.is_customizable
     }));
 
-    return NextResponse.json(normalizedData.length > 0 ? normalizedData : MOCK_PRODUCTS);
+    return NextResponse.json(normalizedData);
   } catch (error: any) {
     console.error("Supabase Fetch Error:", error);
-    return NextResponse.json(MOCK_PRODUCTS); // Fallback to mock on error
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
 
@@ -61,7 +69,13 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     
     if (!isSupabaseConfigured()) {
-      return NextResponse.json({ ...body, _id: `mock-${Date.now()}` }, { status: 201 });
+      return process.env.NODE_ENV === "development"
+        ? NextResponse.json({ ...body, _id: `mock-${Date.now()}` }, { status: 201 })
+        : NextResponse.json({ error: "Supabase is required to create products." }, { status: 503 });
+    }
+
+    if (!isSupabaseAdminConfigured()) {
+      return NextResponse.json({ error: "SUPABASE_SERVICE_ROLE_KEY is required to create products." }, { status: 500 });
     }
 
     const { data, error } = await supabase
@@ -93,7 +107,13 @@ export async function DELETE(request: NextRequest) {
     if (!id) return NextResponse.json({ error: "ID required" }, { status: 400 });
 
     if (!isSupabaseConfigured()) {
-      return NextResponse.json({ message: `Mock: Product ${id} deleted` });
+      return process.env.NODE_ENV === "development"
+        ? NextResponse.json({ message: `Mock: Product ${id} deleted` })
+        : NextResponse.json({ error: "Supabase is required to delete products." }, { status: 503 });
+    }
+
+    if (!isSupabaseAdminConfigured()) {
+      return NextResponse.json({ error: "SUPABASE_SERVICE_ROLE_KEY is required to delete products." }, { status: 500 });
     }
 
     const { error } = await supabase
@@ -116,7 +136,13 @@ export async function PATCH(request: NextRequest) {
     if (!id) return NextResponse.json({ error: "ID required" }, { status: 400 });
 
     if (!isSupabaseConfigured()) {
-      return NextResponse.json({ ...updates, id });
+      return process.env.NODE_ENV === "development"
+        ? NextResponse.json({ ...updates, id })
+        : NextResponse.json({ error: "Supabase is required to update products." }, { status: 503 });
+    }
+
+    if (!isSupabaseAdminConfigured()) {
+      return NextResponse.json({ error: "SUPABASE_SERVICE_ROLE_KEY is required to update products." }, { status: 500 });
     }
 
     const { data, error } = await supabase
