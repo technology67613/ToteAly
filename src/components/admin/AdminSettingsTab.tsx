@@ -2,8 +2,18 @@ import React, { useState, useEffect } from 'react';
 import { Save, ShieldCheck, Truck, Mail, Store, AlertTriangle, RefreshCcw } from "lucide-react";
 import { motion } from "framer-motion";
 
+interface AdminSettings {
+  site_name: string;
+  contact_email: string;
+  gst_number: string;
+  free_shipping_threshold: number;
+  base_shipping_cost: number;
+  announcement_bar: string;
+  [key: string]: any;
+}
+
 export const AdminSettingsTab = () => {
-  const [settings, setSettings] = useState<any>({
+  const [settings, setSettings] = useState<AdminSettings>({
     site_name: "Tote-ally Iconic",
     contact_email: "support@totealy.com",
     gst_number: "",
