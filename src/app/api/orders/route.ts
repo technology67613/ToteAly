@@ -55,7 +55,9 @@ export async function POST(request: NextRequest) {
        };
        const customerEmail = shippingDetails?.email;
        if (customerEmail) {
-         await sendOrderConfirmationEmail(customerEmail, mockOrder);
+         sendOrderConfirmationEmail(customerEmail, mockOrder).catch(err =>
+           console.error("Delayed Mock Order Email Error:", err)
+         );
        }
        return NextResponse.json({ _id: mockOrder.id, items }, { status: 201 });
     }
@@ -145,30 +147,29 @@ export async function POST(request: NextRequest) {
 
     const customerEmail = shippingDetails?.email;
     if (customerEmail) {
-      await sendOrderConfirmationEmail(customerEmail, emailOrder);
+      sendOrderConfirmationEmail(customerEmail, emailOrder).catch(err =>
+        console.error("Delayed Order Email Error:", err)
+      );
     } else {
       console.warn("Order email skipped because no customer email was provided.");
     }
 
     // 4. Trigger Shiprocket Automation if paid
     if (initialStatus === 'Confirmed' && process.env.SHIPROCKET_EMAIL && process.env.SHIPROCKET_PASSWORD) {
-      try {
-        await createShiprocketOrder({
-          _id: order.id,
-          createdAt: order.created_at,
-          totalAmount: totalAmount,
-          shippingDetails: shippingDetails,
-          products: items.map((i: any) => ({
-             name: i.title,
-             quantity: i.quantity,
-             price: i.price,
-             isCustomized: i.isCustomized
-          }))
-        });
-      } catch (shipError) {
+      createShiprocketOrder({
+        _id: order.id,
+        createdAt: order.created_at,
+        totalAmount: totalAmount,
+        shippingDetails: shippingDetails,
+        products: items.map((i: any) => ({
+           name: i.title,
+           quantity: i.quantity,
+           price: i.price,
+           isCustomized: i.isCustomized
+        }))
+      }).catch(shipError => {
         console.error("Shiprocket Automation Delayed/Failed:", shipError);
-        // We don't fail the whole order if shipping automation fails
-      }
+      });
     }
 
     return NextResponse.json({
