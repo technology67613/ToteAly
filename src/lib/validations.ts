@@ -27,7 +27,7 @@ export const ShippingDetailsSchema = z.object({
 export const OrderItemSchema = z.object({
   productId: z.string().optional().nullable(),
   title: z.string(),
-  price: z.number().positive(),
+  price: z.number().nonnegative(),
   quantity: z.number().int().positive(),
   isCustomized: z.boolean().default(false),
   customizationDetails: z.record(z.any()).optional(),
@@ -35,7 +35,7 @@ export const OrderItemSchema = z.object({
 
 export const OrderCreateSchema = z.object({
   items: z.array(OrderItemSchema).min(1, "Cart cannot be empty"),
-  totalAmount: z.number().positive(),
+  totalAmount: z.number().nonnegative(),
   paymentId: z.string(),
   razorpayOrderId: z.string().optional().nullable(),
   razorpaySignature: z.string().optional().nullable(),
