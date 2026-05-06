@@ -3,39 +3,21 @@ import { supabaseAdmin as supabase, isSupabaseAdminConfigured, isSupabaseConfigu
 
 export const runtime = "nodejs";
 
-// Mock data for fallback
-const MOCK_ORDERS = [
-  {
-    id: "order-1001",
-    total_amount: 1249,
-    status: "Delivered",
-    payment_status: "Paid",
-    created_at: new Date(Date.now() - 86400000 * 2).toISOString(),
-    profiles: { name: "Ananya Sharma", email: "ananya@example.com" },
-    order_items: [
-      { name: "Premium Tote", price: 249, quantity: 1, is_customized: true }
-    ],
-    shipping_details: {
-      address: "123 Green Park",
-      city: "New Delhi",
-      pincode: "110016",
-      state: "Delhi"
-    }
-  }
-];
-
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    const { searchParams } = new URL(request.url);
+    const page = parseInt(searchParams.get("page") || "1");
+    const limit = parseInt(searchParams.get("limit") || "50");
+    const offset = (page - 1) * limit;
+
     if (!isSupabaseConfigured()) {
-      return process.env.NODE_ENV === "development"
-        ? NextResponse.json(MOCK_ORDERS)
-        : NextResponse.json({ error: "Supabase is required for admin orders." }, { status: 503 });
+      return NextResponse.json({ error: "Supabase configuration is required." }, { status: 503 });
     }
 
     if (!isSupabaseAdminConfigured()) {
       return NextResponse.json(
-        { error: "SUPABASE_SERVICE_ROLE_KEY is required to read admin orders." },
-        { status: 500 }
+        { error: "Unauthorized: SUPABASE_SERVICE_ROLE_KEY required for admin order management." },
+        { status: 401 }
       );
     }
 
@@ -45,12 +27,13 @@ export async function GET() {
         *,
         order_items (*)
       `)
+      .range(offset, offset + limit - 1)
       .order('created_at', { ascending: false });
 
     if (error) throw error;
     
     // Normalize for frontend
-    const normalizedData = data.map((o: any) => ({
+    const normalizedData = (data || []).map((o: any) => ({
       ...o,
       _id: o.id,
       user: o.profiles || {
@@ -65,7 +48,7 @@ export async function GET() {
     return NextResponse.json(normalizedData);
   } catch (error: any) {
     console.error("Orders Fetch Error:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: "Failed to fetch orders from cloud." }, { status: 500 });
   }
 }
 
@@ -73,8 +56,8 @@ export async function PATCH(request: NextRequest) {
   try {
     const { id, status, payment_status } = await request.json();
     
-    if (!isSupabaseConfigured()) {
-       return NextResponse.json({ id, status, payment_status });
+    if (!isSupabaseConfigured() || !isSupabaseAdminConfigured()) {
+       return NextResponse.json({ error: "Supabase configuration required for cloud updates." }, { status: 503 });
     }
 
     const updatePayload: any = {};
@@ -88,8 +71,9 @@ export async function PATCH(request: NextRequest) {
       .select();
 
     if (error) throw error;
-    return NextResponse.json(data[0]);
+    return NextResponse.json(data ? data[0] : null);
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error("Order Patch Error:", error);
+    return NextResponse.json({ error: "Failed to update order in cloud." }, { status: 500 });
   }
 }

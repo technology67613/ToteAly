@@ -198,7 +198,7 @@ export default function ProfilePage() {
                     <div className="bg-white border border-[#F5ECD7] rounded-2xl p-16 text-center text-[#900C3F]/50">
                       <Package size={48} className="mx-auto mb-4 opacity-30" />
                       <p className="text-lg">No orders yet. Time to get iconic!</p>
-                      <a href="/shop" className="inline-block mt-4 text-[#FF69B4] font-bold hover:underline">Browse Shop →</a>
+                      <Link href="/shop" className="inline-block mt-4 text-[#FF69B4] font-bold hover:underline">Browse Shop →</Link>
                     </div>
                   )}
                 </div>
@@ -323,7 +323,7 @@ export default function ProfilePage() {
               <div className="bg-white border border-[#F5ECD7] rounded-2xl p-16 text-center text-[#900C3F]/50">
                 <Heart size={48} className="mx-auto mb-4 opacity-30" />
                 <p className="text-lg">Your wishlist is empty. Save items while browsing!</p>
-                <a href="/shop" className="inline-block mt-4 text-[#FF69B4] font-bold hover:underline">Explore Collection →</a>
+                <Link href="/shop" className="inline-block mt-4 text-[#FF69B4] font-bold hover:underline">Explore Collection →</Link>
               </div>
             </section>
           )}

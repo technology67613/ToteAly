@@ -65,20 +65,31 @@ export function hasSmtpConfig() {
   );
 }
 
+let transporterInstance: nodemailer.Transporter | null = null;
+
 function getTransporter() {
   if (!hasSmtpConfig()) {
     console.error("Missing SMTP Config. Cannot initialize nodemailer transport.");
     throw new Error("Missing SMTP Config");
   }
-  return nodemailer.createTransport({
-    host: process.env.EMAIL_HOST,
-    port: Number(process.env.EMAIL_PORT),
-    secure: process.env.EMAIL_PORT === "465",
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS,
-    },
-  });
+  
+  if (!transporterInstance) {
+    transporterInstance = nodemailer.createTransport({
+      host: process.env.EMAIL_HOST,
+      port: Number(process.env.EMAIL_PORT),
+      secure: process.env.EMAIL_PORT === "465",
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
+      },
+      // Optimization for concurrent sending
+      pool: true,
+      maxConnections: 5,
+      maxMessages: 100,
+    });
+  }
+  
+  return transporterInstance;
 }
 
 function escapeHtml(value: unknown) {
@@ -379,7 +390,7 @@ export function buildOrderConfirmationEmailHtml(order: OrderEmailDetails) {
     eyebrow: "Order confirmation",
     title: "Thank you for your order",
     intro,
-    ctaHref: "https://totealy.netlify.app/shop",
+    ctaHref: `${process.env.NEXTAUTH_URL || "https://totealy.com"}/shop`,
     ctaLabel: "Shop more icons",
     children: `
       <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse: collapse; margin-bottom: 18px;"><tr>${buildPill("Invoice", `#${getInvoiceNo(order)}`)}${buildPill("Payment", paymentStatus)}</tr><tr>${buildPill("Order Status", getOrderStatus(order))}${buildPill("Total", formatCurrency(getTotal(order)))}</tr></table>
@@ -425,7 +436,7 @@ export function buildContactAutoReplyEmailHtml(data: ContactEmailData) {
     eyebrow: "Message received",
     title: "We heard you",
     intro: "Thanks for reaching out. The Tote-ally Iconic team will get back to you within 24 hours.",
-    ctaHref: "https://totealy.netlify.app/shop",
+    ctaHref: `${process.env.NEXTAUTH_URL || "https://totealy.com"}/shop`,
     ctaLabel: "Browse the collection",
     children: `
       <div style="border: 1px solid ${BRAND.beige}; border-radius: 12px; padding: 18px; background: ${BRAND.cream};"><p style="font-family: Arial, Helvetica, sans-serif; color: ${BRAND.ink}; font-size: 15px; line-height: 1.65; margin: 0 0 12px;">Hi <strong>${escapeHtml(data.name)}</strong>, we received your note and saved the details below.</p><p style="font-family: Arial, Helvetica, sans-serif; color: ${BRAND.ink}; font-size: 14px; line-height: 1.7; margin: 0;"><strong>Subject:</strong> ${escapeHtml(data.subject)}<br /><strong>Message:</strong><br />${escapeHtml(data.message)}</p></div>

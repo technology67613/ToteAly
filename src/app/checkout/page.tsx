@@ -41,7 +41,6 @@ export default function CheckoutPage() {
 
   useEffect(() => {
     setMounted(true);
-    // Auto-prefill if user is logged in (NextAuth session could be used here)
   }, []);
 
   if (!mounted) return null;
@@ -112,9 +111,10 @@ export default function CheckoutPage() {
         if (!orderRes.ok) {
           throw new Error(orderData.error || "Order could not be saved.");
         }
-        setOrderId(orderData.id || orderData._id || "MANUAL_" + Date.now());
+        const finalOrderId = orderData.id || orderData._id || "MANUAL_" + Date.now();
+        setOrderId(finalOrderId);
         clearCart();
-        setStep("success");
+        router.push(`/checkout/success?orderId=${finalOrderId}`);
         setLoading(false);
         return;
       }
@@ -154,7 +154,6 @@ export default function CheckoutPage() {
           color: "#900C3F",
         },
         handler: async function (response: any) {
-          // Success Path
           setLoading(true);
           try {
             const orderRes = await fetch("/api/orders", {
@@ -169,13 +168,14 @@ export default function CheckoutPage() {
                 shippingDetails: { ...form, country: "India" },
               }),
             });
-            const orderData = await orderRes.json();
+            const orderResData = await orderRes.json();
             if (!orderRes.ok) {
-              throw new Error(orderData.error || "Order could not be saved.");
+              throw new Error(orderResData.error || "Order could not be saved.");
             }
-            setOrderId(orderData.id || response.razorpay_order_id || order.id);
+            const finalOrderId = orderResData.id || response.razorpay_order_id || order.id;
+            setOrderId(finalOrderId);
             clearCart();
-            setStep("success");
+            router.push(`/checkout/success?orderId=${finalOrderId}`);
           } catch (e) {
             console.error("Order completion failed:", e);
             alert(e instanceof Error ? e.message : "Order completion failed. Please contact support.");
@@ -200,7 +200,7 @@ export default function CheckoutPage() {
 
   if (items.length === 0 && step !== "success") {
     return (
-      <main className="min-h-screen bg-[#FFF8F0] flex flex-col items-center justify-center p-6">
+      <main className="min-h-screen bg-[#FFF8F0] flex flex-col items-center justify-center p-6 text-center">
         <div className="w-24 h-24 bg-[#900C3F]/5 rounded-full flex items-center justify-center mb-6">
           <ShoppingBag size={40} className="text-[#900C3F]/20" />
         </div>
@@ -213,35 +213,8 @@ export default function CheckoutPage() {
     );
   }
 
-  if (step === "success") {
-    return (
-      <main className="min-h-screen bg-[#FFF8F0] flex flex-col items-center justify-center p-6 text-center">
-        <div className="w-24 h-24 bg-green-500 rounded-full flex items-center justify-center mb-8 shadow-2xl shadow-green-500/20">
-          <CheckCircle size={48} className="text-white" />
-        </div>
-        <h1 className="font-serif text-5xl font-bold mb-4">Order Confirmed!</h1>
-        <p className="text-xl text-[#900C3F]/60 max-w-md mb-10 leading-relaxed">
-          Your iconic tote is now in the making. We'll notify you once it's ready for dispatch.
-        </p>
-        <div className="bg-white border border-[#F5ECD7] rounded-3xl p-6 mb-12 shadow-sm">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-[#900C3F]/30 mb-2">Transaction ID</p>
-          <p className="font-mono text-sm font-bold text-[#900C3F]">{orderId}</p>
-        </div>
-        <div className="flex flex-col sm:flex-row gap-4">
-          <Link href="/shop" className="px-10 py-4 border-2 border-[#900C3F] text-[#900C3F] rounded-full font-bold hover:bg-[#900C3F] hover:text-white transition-all">
-            Continue Shopping
-          </Link>
-          <Link href="/" className="px-10 py-4 bg-[#900C3F] text-white rounded-full font-bold hover:bg-[#FF69B4] transition-all">
-            Go Home
-          </Link>
-        </div>
-      </main>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-[#F8F9FA] text-[#900C3F]">
-      {/* Header */}
       <nav className="h-20 bg-white border-b border-[#F5ECD7] flex items-center px-6 lg:px-20 justify-between sticky top-0 z-50">
         <Link href="/" className="font-serif text-2xl font-bold tracking-tighter">ToteAly</Link>
         <div className="hidden md:flex items-center gap-4 text-[10px] font-bold uppercase tracking-[0.2em] text-[#900C3F]/40">
@@ -257,8 +230,6 @@ export default function CheckoutPage() {
       </nav>
 
       <div className="max-w-7xl mx-auto p-6 lg:p-20 grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-20">
-        
-        {/* Left Side: Checkout Flow */}
         <div className="lg:col-span-7 flex flex-col gap-10">
           <div className="flex flex-col gap-2">
             <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#FF69B4]">Secure Checkout</span>
@@ -417,7 +388,6 @@ export default function CheckoutPage() {
           )}
         </div>
 
-        {/* Right Side: Order Summary */}
         <div className="lg:col-span-5 flex flex-col gap-8">
            <div className="bg-[#1A1A1A] rounded-[40px] p-8 lg:p-12 text-white shadow-2xl shadow-[#900C3F]/20 sticky top-28">
               <div className="flex items-center gap-3 mb-10">
@@ -470,18 +440,7 @@ export default function CheckoutPage() {
                 </div>
               </div>
            </div>
-
-           <div className="bg-white rounded-3xl p-6 border border-[#F5ECD7] flex items-center gap-4 shadow-sm">
-              <div className="w-12 h-12 bg-pink-50 rounded-2xl flex items-center justify-center text-[#FF69B4]">
-                <ShieldCheck size={24} />
-              </div>
-              <div className="flex flex-col">
-                <p className="text-xs font-bold uppercase tracking-widest">Buyer Protection</p>
-                <p className="text-[10px] text-[#900C3F]/40 font-bold">100% Secure Transaction & Easy Returns</p>
-              </div>
-           </div>
         </div>
-
       </div>
     </div>
   );

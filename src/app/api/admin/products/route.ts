@@ -3,43 +3,15 @@ import { supabaseAdmin as supabase, isSupabaseAdminConfigured, isSupabaseConfigu
 
 export const runtime = "nodejs";
 
-// Mock data for fallback if Supabase is not configured
-const MOCK_PRODUCTS = [
-  {
-    id: "mock-1",
-    title: "Classic Canvas Tote",
-    description: "The original durable canvas bag for everyday use.",
-    price: 499,
-    category: "Plain Totes",
-    images: ["/mockups/plain.png"],
-    is_customizable: true,
-    stock: 50,
-    created_at: new Date().toISOString()
-  },
-  {
-    id: "mock-2",
-    title: "Premium Textured Tote",
-    description: "Luxury reinforced canvas with premium finish.",
-    price: 249,
-    category: "Premium",
-    images: ["/mockups/premium.png"],
-    is_customizable: true,
-    stock: 30,
-    created_at: new Date().toISOString()
-  }
-];
-
 // GET all products
 export async function GET() {
   try {
     if (!isSupabaseConfigured()) {
-      return process.env.NODE_ENV === "development"
-        ? NextResponse.json(MOCK_PRODUCTS)
-        : NextResponse.json({ error: "Supabase is required for products." }, { status: 503 });
+      return NextResponse.json({ error: "Supabase configuration is required." }, { status: 503 });
     }
 
     if (!isSupabaseAdminConfigured()) {
-      return NextResponse.json({ error: "SUPABASE_SERVICE_ROLE_KEY is required to manage products." }, { status: 500 });
+      return NextResponse.json({ error: "Unauthorized: SUPABASE_SERVICE_ROLE_KEY missing." }, { status: 401 });
     }
 
     const { data, error } = await supabase
@@ -49,17 +21,16 @@ export async function GET() {
 
     if (error) throw error;
     
-    // Normalize data (handle snake_case vs camelCase if needed)
-    const normalizedData = data.map((p: any) => ({
+    const normalizedData = (data || []).map((p: any) => ({
       ...p,
-      _id: p.id, // For frontend compatibility
+      _id: p.id,
       isCustomizable: p.is_customizable
     }));
 
     return NextResponse.json(normalizedData);
   } catch (error: any) {
     console.error("Supabase Fetch Error:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: "Failed to fetch inventory from cloud." }, { status: 500 });
   }
 }
 
@@ -68,14 +39,8 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     
-    if (!isSupabaseConfigured()) {
-      return process.env.NODE_ENV === "development"
-        ? NextResponse.json({ ...body, _id: `mock-${Date.now()}` }, { status: 201 })
-        : NextResponse.json({ error: "Supabase is required to create products." }, { status: 503 });
-    }
-
-    if (!isSupabaseAdminConfigured()) {
-      return NextResponse.json({ error: "SUPABASE_SERVICE_ROLE_KEY is required to create products." }, { status: 500 });
+    if (!isSupabaseConfigured() || !isSupabaseAdminConfigured()) {
+      return NextResponse.json({ error: "Supabase configuration required for cloud storage." }, { status: 503 });
     }
 
     const { data, error } = await supabase
@@ -95,7 +60,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(data[0], { status: 201 });
   } catch (error: any) {
     console.error("Supabase POST Error:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: "Failed to save product to cloud." }, { status: 500 });
   }
 }
 
@@ -106,14 +71,8 @@ export async function DELETE(request: NextRequest) {
     const id = searchParams.get("id");
     if (!id) return NextResponse.json({ error: "ID required" }, { status: 400 });
 
-    if (!isSupabaseConfigured()) {
-      return process.env.NODE_ENV === "development"
-        ? NextResponse.json({ message: `Mock: Product ${id} deleted` })
-        : NextResponse.json({ error: "Supabase is required to delete products." }, { status: 503 });
-    }
-
-    if (!isSupabaseAdminConfigured()) {
-      return NextResponse.json({ error: "SUPABASE_SERVICE_ROLE_KEY is required to delete products." }, { status: 500 });
+    if (!isSupabaseConfigured() || !isSupabaseAdminConfigured()) {
+      return NextResponse.json({ error: "Supabase configuration required." }, { status: 503 });
     }
 
     const { error } = await supabase
@@ -122,9 +81,9 @@ export async function DELETE(request: NextRequest) {
       .eq('id', id);
 
     if (error) throw error;
-    return NextResponse.json({ message: `Product ${id} deleted` });
+    return NextResponse.json({ message: `Product deleted successfully from cloud.` });
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: "Failed to delete product from cloud." }, { status: 500 });
   }
 }
 
@@ -135,14 +94,8 @@ export async function PATCH(request: NextRequest) {
     const { id, ...updates } = body;
     if (!id) return NextResponse.json({ error: "ID required" }, { status: 400 });
 
-    if (!isSupabaseConfigured()) {
-      return process.env.NODE_ENV === "development"
-        ? NextResponse.json({ ...updates, id })
-        : NextResponse.json({ error: "Supabase is required to update products." }, { status: 503 });
-    }
-
-    if (!isSupabaseAdminConfigured()) {
-      return NextResponse.json({ error: "SUPABASE_SERVICE_ROLE_KEY is required to update products." }, { status: 500 });
+    if (!isSupabaseConfigured() || !isSupabaseAdminConfigured()) {
+      return NextResponse.json({ error: "Supabase configuration required." }, { status: 503 });
     }
 
     const { data, error } = await supabase
@@ -164,6 +117,6 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json(data[0]);
   } catch (error: any) {
     console.error("Supabase PATCH Error:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: "Failed to update product in cloud." }, { status: 500 });
   }
 }

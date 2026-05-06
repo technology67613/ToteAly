@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
-import { getServerSession } from "next-auth";
-import { supabaseAdmin as supabase, isSupabaseAdminConfigured, isSupabaseConfigured } from "@/lib/supabase";
 import crypto from "crypto";
-import { createShiprocketOrder } from "@/lib/shiprocket";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { supabase, isSupabaseConfigured, isSupabaseAdminConfigured } from "@/lib/supabase";
 import { sendOrderConfirmationEmail } from "@/lib/email";
+import { createShiprocketOrder } from "@/lib/shiprocket";
+import { OrderCreateSchema } from "@/lib/validations";
 
 export const runtime = "nodejs";
 
@@ -18,15 +19,18 @@ function getCustomizationPreview(item: any) {
 
 export async function POST(request: NextRequest) {
   try {
-    const { items, totalAmount, paymentId, razorpayOrderId, razorpaySignature, shippingDetails } = await request.json();
-
-    if (!Array.isArray(items) || items.length === 0) {
-      return NextResponse.json({ error: "Cart items are required" }, { status: 400 });
+    const session = await getServerSession(authOptions);
+    const body = await request.json();
+    const validation = OrderCreateSchema.safeParse(body);
+    
+    if (!validation.success) {
+      return NextResponse.json({ 
+        error: "Invalid request data", 
+        details: validation.error.format() 
+      }, { status: 400 });
     }
 
-    if (!shippingDetails?.email || !shippingDetails?.name || !shippingDetails?.phone || !shippingDetails?.address) {
-      return NextResponse.json({ error: "Customer and shipping details are required" }, { status: 400 });
-    }
+    const { items, totalAmount, paymentId, razorpayOrderId, razorpaySignature, shippingDetails } = validation.data;
 
     if (!isSupabaseConfigured()) {
       if (process.env.NODE_ENV !== "development") {
@@ -89,7 +93,7 @@ export async function POST(request: NextRequest) {
 
     // Guest checkout stores customer data in shipping_details. Logged-in profile
     // linking can be added later without blocking order creation.
-    const profileId = null;
+    const profileId = session?.user?.id || null;
 
     // Determine status based on payment method
     const isManualUPI = paymentId === 'MANUAL_UPI';
@@ -116,7 +120,7 @@ export async function POST(request: NextRequest) {
     const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
     const orderItems = items.map((item: any) => ({
       order_id: order.id,
-      product_id: uuidPattern.test(item.productId || "") ? item.productId : null,
+      product_id: (item.productId && uuidPattern.test(item.productId)) ? item.productId : null,
       name: item.title,
       price: item.price,
       quantity: item.quantity,
@@ -147,29 +151,28 @@ export async function POST(request: NextRequest) {
 
     const customerEmail = shippingDetails?.email;
     if (customerEmail) {
-      sendOrderConfirmationEmail(customerEmail, emailOrder).catch(err =>
-        console.error("Delayed Order Email Error:", err)
-      );
-    } else {
-      console.warn("Order email skipped because no customer email was provided.");
-    }
-
-    // 4. Trigger Shiprocket Automation if paid
-    if (initialStatus === 'Confirmed' && process.env.SHIPROCKET_EMAIL && process.env.SHIPROCKET_PASSWORD) {
-      createShiprocketOrder({
-        _id: order.id,
-        createdAt: order.created_at,
-        totalAmount: totalAmount,
-        shippingDetails: shippingDetails,
-        products: items.map((i: any) => ({
-           name: i.title,
-           quantity: i.quantity,
-           price: i.price,
-           isCustomized: i.isCustomized
-        }))
-      }).catch(shipError => {
-        console.error("Shiprocket Automation Delayed/Failed:", shipError);
-      });
+      // Run these in parallel but don't await to speed up response
+      Promise.all([
+        sendOrderConfirmationEmail(customerEmail, emailOrder).catch(err =>
+          console.error("Delayed Order Email Error:", err)
+        ),
+        (initialStatus === 'Confirmed' && process.env.SHIPROCKET_EMAIL && process.env.SHIPROCKET_PASSWORD)
+          ? createShiprocketOrder({
+              _id: order.id,
+              createdAt: order.created_at,
+              totalAmount: totalAmount,
+              shippingDetails: shippingDetails,
+              products: items.map((i: any) => ({
+                 name: i.title,
+                 quantity: i.quantity,
+                 price: i.price,
+                 isCustomized: i.isCustomized
+              }))
+            }).catch(shipError => {
+              console.error("Shiprocket Automation Delayed/Failed:", shipError);
+            })
+          : Promise.resolve(null)
+      ]);
     }
 
     return NextResponse.json({
@@ -187,40 +190,72 @@ export async function POST(request: NextRequest) {
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get("id");
+    
+    if (!isSupabaseConfigured()) {
+       return NextResponse.json({ error: "Supabase not configured" }, { status: 503 });
+    }
+
+    if (id) {
+       // Single Order Lookup (Public Tracking)
+       const { data: order, error } = await supabase
+         .from('orders')
+         .select(`
+           *,
+           order_items (*)
+         `)
+         .eq('id', id)
+         .single();
+
+       if (error) {
+         console.error("Order Lookup Error:", error);
+         return NextResponse.json({ error: "Order not found" }, { status: 404 });
+       }
+
+       return NextResponse.json({
+         ...order,
+         _id: order.id,
+         createdAt: order.created_at,
+         products: order.order_items || [],
+         totalAmount: order.total_amount,
+         shippingDetails: order.shipping_details,
+       });
+    }
+
+    const page = parseInt(searchParams.get("page") || "1");
+    const limit = parseInt(searchParams.get("limit") || "10");
+    const offset = (page - 1) * limit;
     
     if (!session?.user?.email) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    if (!isSupabaseConfigured()) {
-      return process.env.NODE_ENV === "development"
-        ? NextResponse.json([])
-        : NextResponse.json({ error: "Supabase is required for orders." }, { status: 503 });
     }
 
     if (!isSupabaseAdminConfigured()) {
       return NextResponse.json({ error: "SUPABASE_SERVICE_ROLE_KEY is required to read orders." }, { status: 500 });
     }
 
+    // Efficient filtering at the SQL level
     const { data, error } = await supabase
       .from('orders')
       .select(`
         *,
         order_items (*)
       `)
+      .filter('shipping_details->>email', 'eq', session.user.email)
+      .range(offset, offset + limit - 1)
       .order('created_at', { ascending: false });
 
     if (error) throw error;
-    const userOrders = (data || [])
-      .filter((order: any) => order.shipping_details?.email === session.user.email)
-      .map((order: any) => ({
-        ...order,
-        _id: order.id,
-        createdAt: order.created_at,
-        products: order.order_items || [],
-        totalAmount: order.total_amount,
-        shippingDetails: order.shipping_details,
-      }));
+    
+    const userOrders = (data || []).map((order: any) => ({
+      ...order,
+      _id: order.id,
+      createdAt: order.created_at,
+      products: order.order_items || [],
+      totalAmount: order.total_amount,
+      shippingDetails: order.shipping_details,
+    }));
 
     return NextResponse.json(userOrders);
   } catch (error: any) {

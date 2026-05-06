@@ -20,49 +20,6 @@ interface Product {
   stock: number;
 }
 
-const MOCK_PRODUCTS: Product[] = [
-  {
-    id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
-    title: "Plain Tote Bag",
-    description: "Our signature eco-friendly canvas bag. Crafted from heavy-duty natural cotton, this bag is designed to be your most reliable daily companion. Minimalist, sustainable, and iconic.",
-    price: 129,
-    category: "Plain Totes",
-    images: ["/mockups/plain.png"],
-    is_customizable: true,
-    stock: 100
-  },
-  {
-    id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12",
-    title: "Black Tote Bag",
-    description: "Sleek, urban, and unapologetically bold. The Black Tote is made for the city dweller who values style and durability. Features a deep charcoal finish that resists stains and looks premium.",
-    price: 199,
-    category: "Black Totes",
-    images: ["/mockups/black.png"],
-    is_customizable: true,
-    stock: 80
-  },
-  {
-    id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a13",
-    title: "Regular Tote Bag",
-    description: "The sturdy everyday classic. Reinforced stitching and high-capacity design make this the perfect bag for grocery runs, library visits, or beach days.",
-    price: 199,
-    category: "Regular Totes",
-    images: ["/mockups/regular.png"],
-    is_customizable: true,
-    stock: 50
-  },
-  {
-    id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a14",
-    title: "Premium Tote Bag",
-    description: "Luxury meets utility. Our Premium Tote features high-density textured canvas and reinforced handles. It's the ultimate statement piece for the discerning minimalist.",
-    price: 249,
-    category: "Premium Totes",
-    images: ["/mockups/premium.png"],
-    is_customizable: true,
-    stock: 30
-  }
-];
-
 export default function ProductDetail() {
   const params = useParams();
   const router = useRouter();
@@ -75,33 +32,27 @@ export default function ProductDetail() {
       try {
         const id = params.id as string;
         
-        if (isSupabaseConfigured()) {
-          const { data, error } = await supabase
-            .from('products')
-            .select('*')
-            .eq('id', id)
-            .single();
-            
-          if (data) {
-            setProduct(data);
-            setLoading(false);
-            return;
-          }
-
-          if (error) {
-            console.error("Supabase product detail error:", error);
-          }
-
+        if (!isSupabaseConfigured()) {
+          console.warn("Supabase not configured. Using placeholder for UI development only.");
           setProduct(null);
           setLoading(false);
           return;
         }
 
-        // Fallback to mock
-        const mock = MOCK_PRODUCTS.find(p => p.id === id);
-        setProduct(mock || null);
+        const { data, error } = await supabase
+          .from('products')
+          .select('*')
+          .eq('id', id)
+          .single();
+          
+        if (data) {
+          setProduct(data);
+        } else if (error) {
+          console.error("Supabase product fetch error:", error);
+          setProduct(null);
+        }
       } catch (err) {
-        console.error("Failed to load product:", err);
+        console.error("Failed to load product from cloud:", err);
       } finally {
         setLoading(false);
       }
@@ -135,6 +86,7 @@ export default function ProductDetail() {
     return (
       <div className="min-h-screen bg-[#FFF8F0] flex flex-col items-center justify-center gap-6">
         <h1 className="font-serif text-3xl font-bold">Bag not found</h1>
+        <p className="text-[#900C3F]/50">The item you are looking for might have been moved or is currently out of sync with our cloud inventory.</p>
         <Link href="/shop" className="text-[#FF69B4] font-bold uppercase tracking-widest text-sm flex items-center gap-2">
           <ArrowLeft size={16} /> Back to Collection
         </Link>
@@ -146,7 +98,6 @@ export default function ProductDetail() {
     <main className="min-h-screen bg-[#FFF8F0] text-[#900C3F] p-6 lg:p-20">
       <div className="max-w-7xl mx-auto flex flex-col lg:flex-row gap-12 lg:gap-24">
         
-        {/* Product Image Section */}
         <div className="flex-1">
           <Link href="/shop" className="mb-8 inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-[#900C3F]/40 hover:text-[#900C3F] transition-colors">
             <ArrowLeft size={14} /> Back to Collection
@@ -154,7 +105,7 @@ export default function ProductDetail() {
           
           <div className="relative aspect-[4/5] bg-white rounded-[40px] overflow-hidden border border-[#F5ECD7] shadow-2xl">
             <Image
-              src={product.images[0]} 
+              src={product.images[0] || "/mockups/plain.png"} 
               alt={product.title} 
               fill
               className="object-cover"
@@ -168,11 +119,10 @@ export default function ProductDetail() {
           </div>
         </div>
 
-        {/* Product Info Section */}
         <div className="flex-1 flex flex-col gap-8 pt-10">
           <div className="flex flex-col gap-4">
             <div className="flex items-center gap-2 text-[#FF69B4] font-bold text-xs uppercase tracking-[0.3em]">
-              <Sparkles size={14} /> Limited Edition
+              <Sparkles size={14} /> Cloud Sync Active
             </div>
             <h1 className="font-serif text-5xl lg:text-7xl font-bold leading-tight">
               {product.title}
@@ -204,7 +154,6 @@ export default function ProductDetail() {
             </div>
           </div>
 
-          {/* Value Props */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12 pt-12 border-t border-[#F5ECD7]">
             <div className="flex flex-col gap-2">
               <ShieldCheck size={24} className="text-[#FF69B4]" />
