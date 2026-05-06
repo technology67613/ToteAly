@@ -37,7 +37,7 @@ export async function GET() {
       .select('category');
     
     const categoryCounts: Record<string, number> = {};
-    (categoryData || []).forEach(p => {
+    (categoryData || []).forEach((p: any) => {
       categoryCounts[p.category] = (categoryCounts[p.category] || 0) + 1;
     });
 

@@ -31,21 +31,21 @@ export async function GET(request: NextRequest) {
       .limit(5);
 
     const activities = [
-      ...(orders?.map(o => ({
+      ...(orders?.map((o: any) => ({
         id: o.id,
         type: 'order',
         title: `New Order from ${o.profiles?.name || 'Guest'}`,
         description: `Total: ₹${o.total_amount}`,
         time: o.created_at
       })) || []),
-      ...(inquiries?.map(i => ({
+      ...(inquiries?.map((i: any) => ({
         id: i.id,
         type: 'inquiry',
         title: `New Inquiry: ${i.subject}`,
         description: `From ${i.name}`,
         time: i.created_at
       })) || []),
-      ...(subscribers?.map(s => ({
+      ...(subscribers?.map((s: any) => ({
         id: s.id,
         type: 'subscriber',
         title: `New Community Member`,
