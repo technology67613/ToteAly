@@ -11,7 +11,7 @@ import {
 import { useSession } from "next-auth/react";
 
 export default function AdminOrderDetailsPage() {
-  const params = useParams();
+  const { id } = useParams() as { id: string };
   const router = useRouter();
   const { data: session, status: authStatus } = useSession();
   const [order, setOrder] = useState<any>(null);
@@ -19,14 +19,14 @@ export default function AdminOrderDetailsPage() {
   const [updating, setUpdating] = useState(false);
 
   useEffect(() => {
-    if (authStatus === "authenticated" && (session?.user as any)?.role === "admin") {
+    if (id && authStatus === "authenticated" && (session?.user as any)?.role === "admin") {
       fetchOrder();
     }
-  }, [params.id, authStatus, session]);
+  }, [id, authStatus, session]);
 
   const fetchOrder = async () => {
     try {
-      const res = await fetch(`/api/admin/orders?id=${params.id}`);
+      const res = await fetch(`/api/admin/orders?id=${id}`);
       if (res.ok) {
         const data = await res.json();
         setOrder(data);
@@ -44,7 +44,7 @@ export default function AdminOrderDetailsPage() {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
-          id: params.id, 
+          id, 
           status: newStatus,
           payment_status: paymentStatus 
         }),

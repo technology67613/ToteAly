@@ -11,18 +11,18 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 
 export default function OrderDetailsPage() {
-  const params = useParams();
+  const { id } = useParams() as { id: string };
   const router = useRouter();
   const [order, setOrder] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchOrder();
-  }, [params.id]);
+    if (id) fetchOrder();
+  }, [id]);
 
   const fetchOrder = async () => {
     try {
-      const res = await fetch(`/api/orders?id=${params.id}`);
+      const res = await fetch(`/api/orders?id=${id}`);
       if (res.ok) {
         const data = await res.json();
         setOrder(data);
@@ -73,7 +73,7 @@ export default function OrderDetailsPage() {
             >
               <ChevronLeft size={18} /> Back to Orders
             </button>
-            <h1 className="text-4xl font-serif font-bold tracking-tight">Order #{params.id.toString().slice(-8).toUpperCase()}</h1>
+            <h1 className="text-4xl font-serif font-bold tracking-tight">Order #{id?.toString().slice(-8).toUpperCase()}</h1>
           </div>
           <div className="flex items-center gap-3">
              <button onClick={() => window.print()} className="px-6 py-2 bg-white border border-[#F5ECD7] rounded-xl font-bold text-xs flex items-center gap-2 hover:bg-[#F8F9FA] transition-colors uppercase tracking-widest">

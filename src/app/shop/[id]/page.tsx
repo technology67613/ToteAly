@@ -29,6 +29,7 @@ export default function ProductDetail() {
 
   useEffect(() => {
     async function getProduct() {
+      if (!params?.id) return;
       try {
         const id = params.id as string;
         
