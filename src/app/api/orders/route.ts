@@ -1,14 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { getServerSession } from "next-auth";
-import { supabaseAdmin as supabase, isSupabaseConfigured } from "@/lib/supabase";
+import { supabaseAdmin as supabase, isSupabaseAdminConfigured, isSupabaseConfigured } from "@/lib/supabase";
 import crypto from "crypto";
 import { createShiprocketOrder } from "@/lib/shiprocket";
 import { sendOrderConfirmationEmail } from "@/lib/email";
 
+export const runtime = "nodejs";
+
 export async function POST(request: NextRequest) {
   try {
     const { items, totalAmount, paymentId, razorpayOrderId, razorpaySignature, shippingDetails } = await request.json();
+
+    if (!Array.isArray(items) || items.length === 0) {
+      return NextResponse.json({ error: "Cart items are required" }, { status: 400 });
+    }
+
+    if (!shippingDetails?.email || !shippingDetails?.name || !shippingDetails?.phone || !shippingDetails?.address) {
+      return NextResponse.json({ error: "Customer and shipping details are required" }, { status: 400 });
+    }
 
     if (!isSupabaseConfigured()) {
        const mockOrder = {
@@ -33,6 +43,13 @@ export async function POST(request: NextRequest) {
          await sendOrderConfirmationEmail(customerEmail, mockOrder);
        }
        return NextResponse.json({ _id: mockOrder.id, items }, { status: 201 });
+    }
+
+    if (!isSupabaseAdminConfigured()) {
+      return NextResponse.json(
+        { error: "SUPABASE_SERVICE_ROLE_KEY is required to save orders." },
+        { status: 500 }
+      );
     }
 
     // Verify Razorpay Signature if not a manual UPI payment
@@ -94,7 +111,9 @@ export async function POST(request: NextRequest) {
       .from('order_items')
       .insert(orderItems);
 
-    if (itemsError) throw itemsError;
+    if (itemsError) {
+      console.error("Order items insert failed after order creation:", itemsError);
+    }
 
     const emailOrder = {
       ...order,
@@ -134,7 +153,12 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    return NextResponse.json({ id: order.id, ...order }, { status: 201 });
+    return NextResponse.json({
+      id: order.id,
+      ...order,
+      order_items: itemsError ? [] : orderItems,
+      warning: itemsError ? "Order saved, but line items could not be saved." : undefined,
+    }, { status: 201 });
   } catch (error: any) {
     console.error("Order Save Error:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sendContactEmails } from "@/lib/email";
 
+export const runtime = "nodejs";
+
 export async function POST(request: NextRequest) {
   try {
     const { name, email, subject, message } = await request.json();

@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseAdmin as supabase, isSupabaseConfigured } from "@/lib/supabase";
+import { supabaseAdmin as supabase, isSupabaseAdminConfigured, isSupabaseConfigured } from "@/lib/supabase";
+
+export const runtime = "nodejs";
 
 // Mock data for fallback
 const MOCK_ORDERS = [
@@ -28,11 +30,17 @@ export async function GET() {
       return NextResponse.json(MOCK_ORDERS);
     }
 
+    if (!isSupabaseAdminConfigured()) {
+      return NextResponse.json(
+        { error: "SUPABASE_SERVICE_ROLE_KEY is required to read admin orders." },
+        { status: 500 }
+      );
+    }
+
     const { data, error } = await supabase
       .from('orders')
       .select(`
         *,
-        profiles (name, email),
         order_items (*)
       `)
       .order('created_at', { ascending: false });
@@ -43,15 +51,19 @@ export async function GET() {
     const normalizedData = data.map((o: any) => ({
       ...o,
       _id: o.id,
-      user: o.profiles,
+      user: o.profiles || {
+        name: o.shipping_details?.name,
+        email: o.shipping_details?.email,
+      },
       products: o.order_items,
-      totalAmount: o.total_amount
+      totalAmount: o.total_amount,
+      shippingDetails: o.shipping_details,
     }));
 
-    return NextResponse.json(normalizedData.length > 0 ? normalizedData : MOCK_ORDERS);
+    return NextResponse.json(normalizedData);
   } catch (error: any) {
     console.error("Orders Fetch Error:", error);
-    return NextResponse.json(MOCK_ORDERS);
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
 

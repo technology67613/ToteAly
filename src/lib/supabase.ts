@@ -15,11 +15,17 @@ const isConfigured = Boolean(
   supabaseAnonKey
 );
 
+const isAdminConfigured = Boolean(isConfigured && supabaseServiceKey);
+
 /**
  * Helper to check if Supabase is properly configured
  */
 export function isSupabaseConfigured() {
   return isConfigured;
+}
+
+export function isSupabaseAdminConfigured() {
+  return isAdminConfigured;
 }
 
 export const supabase = isConfigured
