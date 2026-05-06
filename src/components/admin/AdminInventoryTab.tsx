@@ -22,6 +22,7 @@ interface AdminInventoryTabProps {
 
 export const AdminInventoryTab = ({ products, onEdit, onDelete, onNew }: AdminInventoryTabProps) => {
   const [selectedIds, setSelectedIds] = React.useState<string[]>([]);
+  const [activeTab, setActiveTab] = React.useState('All Products');
 
   const toggleSelect = (id: string) => {
     setSelectedIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
@@ -38,8 +39,20 @@ export const AdminInventoryTab = ({ products, onEdit, onDelete, onNew }: AdminIn
     activeTab === 'All Products' ? true : p.category === activeTab
   );
 
+  const getStockColor = (stock: number) => {
+    if (stock > 50) return "bg-emerald-500";
+    if (stock > 10) return "bg-amber-500";
+    return "bg-rose-500";
+  };
+
+  const getStockBadgeColor = (stock: number) => {
+    if (stock > 50) return "bg-emerald-50 text-emerald-600";
+    if (stock > 10) return "bg-amber-50 text-amber-600";
+    return "bg-rose-50 text-rose-600";
+  };
+
   return (
-    <div className="space-y-8 relative pb-24">
+    <div className="space-y-8 relative pb-32">
       <div className="flex justify-between items-center bg-white p-6 rounded-[24px] border border-[var(--admin-border)] shadow-sm">
         <div className="flex gap-3">
           {['All Products', 'Plain Totes', 'Premium', 'Hampers'].map((tab) => (
@@ -70,21 +83,6 @@ export const AdminInventoryTab = ({ products, onEdit, onDelete, onNew }: AdminIn
         </div>
       </div>
 
-  const getStockColor = (stock: number) => {
-    if (stock > 50) return "bg-emerald-500";
-    if (stock > 10) return "bg-amber-500";
-    return "bg-rose-500";
-  };
-
-  const getStockBadgeColor = (stock: number) => {
-    if (stock > 50) return "bg-emerald-50 text-emerald-600";
-    if (stock > 10) return "bg-amber-50 text-amber-600";
-    return "bg-rose-50 text-rose-600";
-  };
-
-  return (
-    <div className="space-y-8 relative pb-32">
-      {/* ... previous header logic ... */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {filteredProducts.map((p, idx) => {
           const prodId = p.id || p._id || "prod";
@@ -97,9 +95,11 @@ export const AdminInventoryTab = ({ products, onEdit, onDelete, onNew }: AdminIn
             onClick={(e) => {
                 if (e.shiftKey) toggleSelect(prodId);
             }}
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: idx * 0.05 }}
             className={`bg-white rounded-[24px] border overflow-hidden group hover:shadow-[0_20px_50px_rgba(139,26,74,0.1)] transition-all duration-500 relative ${isSelected ? 'border-[var(--admin-primary)] ring-2 ring-[var(--admin-primary)]/10' : 'border-[var(--admin-border)]'}`}
           >
-             {/* Selection Indicator */}
              <div 
               onClick={(e) => { e.stopPropagation(); toggleSelect(prodId); }}
               className={`absolute top-4 right-4 z-20 w-6 h-6 rounded-lg border-2 transition-all cursor-pointer flex items-center justify-center ${isSelected ? 'bg-[var(--admin-primary)] border-[var(--admin-primary)]' : 'bg-white/40 backdrop-blur-md border-white/60 hover:border-white'}`}
@@ -118,11 +118,6 @@ export const AdminInventoryTab = ({ products, onEdit, onDelete, onNew }: AdminIn
                     <span className="px-3 py-1.5 bg-white/95 backdrop-blur-sm rounded-lg text-[9px] font-bold uppercase tracking-[0.1em] text-[var(--admin-text-primary)] border border-black/5 shadow-sm">
                       {p.category}
                     </span>
-                    {p.is_customizable && (
-                       <span className="px-3 py-1.5 bg-[var(--admin-primary)] text-white rounded-lg text-[9px] font-bold uppercase tracking-[0.1em] flex items-center gap-1 shadow-lg shadow-[var(--admin-primary)]/20">
-                          <Sparkles size={10} /> Custom
-                       </span>
-                    )}
                  </div>
 
                 <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center justify-center gap-3 backdrop-blur-[2px]">
@@ -175,7 +170,6 @@ export const AdminInventoryTab = ({ products, onEdit, onDelete, onNew }: AdminIn
         )})}
       </div>
 
-      {/* Floating Bulk Actions Bar */}
       <AnimatePresence>
         {selectedIds.length > 0 && (
           <motion.div 
