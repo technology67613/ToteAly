@@ -98,7 +98,7 @@ export default function CheckoutPage() {
            setLoading(false);
            return;
         }
-        await fetch("/api/orders", {
+        const orderRes = await fetch("/api/orders", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -108,7 +108,11 @@ export default function CheckoutPage() {
             shippingDetails: { ...form, country: "India", payment_method: "Manual_UPI", payment_screenshot_url: screenshotUrl },
           }),
         });
-        setOrderId("MANUAL_" + Date.now());
+        const orderData = await orderRes.json();
+        if (!orderRes.ok) {
+          throw new Error(orderData.error || "Order could not be saved.");
+        }
+        setOrderId(orderData.id || orderData._id || "MANUAL_" + Date.now());
         clearCart();
         setStep("success");
         setLoading(false);
@@ -153,7 +157,7 @@ export default function CheckoutPage() {
           // Success Path
           setLoading(true);
           try {
-            await fetch("/api/orders", {
+            const orderRes = await fetch("/api/orders", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
@@ -165,11 +169,16 @@ export default function CheckoutPage() {
                 shippingDetails: { ...form, country: "India" },
               }),
             });
-            setOrderId(response.razorpay_order_id || order.id);
+            const orderData = await orderRes.json();
+            if (!orderRes.ok) {
+              throw new Error(orderData.error || "Order could not be saved.");
+            }
+            setOrderId(orderData.id || response.razorpay_order_id || order.id);
             clearCart();
             setStep("success");
           } catch (e) {
             console.error("Order completion failed:", e);
+            alert(e instanceof Error ? e.message : "Order completion failed. Please contact support.");
           } finally {
             setLoading(false);
           }

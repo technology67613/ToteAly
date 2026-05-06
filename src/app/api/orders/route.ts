@@ -1,14 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { getServerSession } from "next-auth";
-import { supabase, isSupabaseConfigured } from "@/lib/supabase";
+import { supabaseAdmin as supabase, isSupabaseConfigured } from "@/lib/supabase";
 import crypto from "crypto";
 import { createShiprocketOrder } from "@/lib/shiprocket";
 import { sendOrderConfirmationEmail } from "@/lib/email";
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
     const { items, totalAmount, paymentId, razorpayOrderId, razorpaySignature, shippingDetails } = await request.json();
 
     if (!isSupabaseConfigured()) {
@@ -29,7 +28,7 @@ export async function POST(request: NextRequest) {
          status: paymentId === "MANUAL_UPI" ? "Pending" : "Confirmed",
          shipping_details: shippingDetails,
        };
-       const customerEmail = shippingDetails?.email || session?.user?.email;
+       const customerEmail = shippingDetails?.email;
        if (customerEmail) {
          await sendOrderConfirmationEmail(customerEmail, mockOrder);
        }
@@ -54,16 +53,9 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 1. Get User Profile ID if logged in
-    let profileId = null;
-    if (session?.user?.email) {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('email', session.user.email)
-        .single();
-      profileId = profile?.id;
-    }
+    // Guest checkout stores customer data in shipping_details. Logged-in profile
+    // linking can be added later without blocking order creation.
+    const profileId = null;
 
     // Determine status based on payment method
     const isManualUPI = paymentId === 'MANUAL_UPI';
@@ -87,9 +79,10 @@ export async function POST(request: NextRequest) {
     if (orderError) throw orderError;
 
     // 3. Create Order Items
+    const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
     const orderItems = items.map((item: any) => ({
       order_id: order.id,
-      product_id: item.productId?.startsWith('mock') ? null : item.productId,
+      product_id: uuidPattern.test(item.productId || "") ? item.productId : null,
       name: item.title,
       price: item.price,
       quantity: item.quantity,
@@ -113,7 +106,7 @@ export async function POST(request: NextRequest) {
       shipping_details: shippingDetails,
     };
 
-    const customerEmail = shippingDetails?.email || session?.user?.email;
+    const customerEmail = shippingDetails?.email;
     if (customerEmail) {
       await sendOrderConfirmationEmail(customerEmail, emailOrder);
     } else {
