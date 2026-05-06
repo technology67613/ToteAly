@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useSession, signOut } from "next-auth/react";
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { Package, User, MapPin, Heart, Settings, LogOut, Loader2 } from "lucide-react";
 
 const STATUS_COLORS: Record<string, string> = {
