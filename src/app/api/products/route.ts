@@ -3,6 +3,15 @@ import { supabaseAdmin as supabase, isSupabaseConfigured } from "@/lib/supabase"
 
 export const runtime = "nodejs";
 
+function normalizeProduct(p: any) {
+  return {
+    ...p,
+    _id: p.id,
+    isCustomizable: p.is_customizable,
+    isFeatured: p.is_featured,
+  };
+}
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -29,11 +38,7 @@ export async function GET(request: NextRequest) {
 
     if (error) throw error;
     
-    const normalizedData = (data || []).map((p: any) => ({
-      ...p,
-      _id: p.id,
-      isCustomizable: p.is_customizable
-    }));
+    const normalizedData = (data || []).map(normalizeProduct);
 
     return NextResponse.json(normalizedData);
   } catch (error: any) {

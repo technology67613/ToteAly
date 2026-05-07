@@ -23,8 +23,16 @@ export default function Home() {
       try {
         const res = await fetch("/api/products?featured=true");
         const data = await res.json();
-        if (Array.isArray(data) && data.length > 0) {
-           setFeaturedProducts(data.map(p => ({
+        let products = Array.isArray(data) ? data : [];
+
+        if (products.length === 0) {
+          const fallbackRes = await fetch("/api/products?limit=4");
+          const fallbackData = await fallbackRes.json();
+          products = Array.isArray(fallbackData) ? fallbackData.slice(0, 4) : [];
+        }
+
+        if (products.length > 0) {
+           setFeaturedProducts(products.map(p => ({
              id: p.id,
              title: p.title,
              price: p.price,

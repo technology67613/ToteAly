@@ -11,6 +11,7 @@ interface Product {
   stock: number;
   images: string[];
   is_customizable?: boolean;
+  is_featured?: boolean;
 }
 
 interface AdminInventoryTabProps {

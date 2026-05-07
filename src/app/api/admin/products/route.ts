@@ -3,6 +3,28 @@ import { supabaseAdmin as supabase, isSupabaseAdminConfigured, isSupabaseConfigu
 
 export const runtime = "nodejs";
 
+function productPayload(body: any) {
+  return {
+    title: body.title,
+    description: body.description,
+    price: body.price,
+    category: body.category,
+    images: body.images,
+    stock: body.stock,
+    is_customizable: body.isCustomizable ?? body.is_customizable ?? false,
+    is_featured: body.isFeatured ?? body.is_featured ?? false,
+  };
+}
+
+function normalizeProduct(p: any) {
+  return {
+    ...p,
+    _id: p.id,
+    isCustomizable: p.is_customizable,
+    isFeatured: p.is_featured,
+  };
+}
+
 // GET all products
 export async function GET() {
   try {
@@ -21,11 +43,7 @@ export async function GET() {
 
     if (error) throw error;
     
-    const normalizedData = (data || []).map((p: any) => ({
-      ...p,
-      _id: p.id,
-      isCustomizable: p.is_customizable
-    }));
+    const normalizedData = (data || []).map(normalizeProduct);
 
     return NextResponse.json(normalizedData);
   } catch (error: any) {
@@ -45,19 +63,11 @@ export async function POST(request: NextRequest) {
 
     const { data, error } = await supabase
       .from('products')
-      .insert([{
-        title: body.title,
-        description: body.description,
-        price: body.price,
-        category: body.category,
-        images: body.images,
-        stock: body.stock,
-        is_customizable: body.isCustomizable
-      }])
+      .insert([productPayload(body)])
       .select();
 
     if (error) throw error;
-    return NextResponse.json(data[0], { status: 201 });
+    return NextResponse.json(normalizeProduct(data[0]), { status: 201 });
   } catch (error: any) {
     console.error("Supabase POST Error:", error);
     return NextResponse.json({ error: "Failed to save product to cloud." }, { status: 500 });
@@ -101,20 +111,14 @@ export async function PATCH(request: NextRequest) {
     const { data, error } = await supabase
       .from('products')
       .update({
-        title: updates.title,
-        description: updates.description,
-        price: updates.price,
-        category: updates.category,
-        images: updates.images,
-        stock: updates.stock,
-        is_customizable: updates.isCustomizable,
+        ...productPayload(updates),
         updated_at: new Date().toISOString()
       })
       .eq('id', id)
       .select();
 
     if (error) throw error;
-    return NextResponse.json(data[0]);
+    return NextResponse.json(normalizeProduct(data[0]));
   } catch (error: any) {
     console.error("Supabase PATCH Error:", error);
     return NextResponse.json({ error: "Failed to update product in cloud." }, { status: 500 });

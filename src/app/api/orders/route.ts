@@ -17,6 +17,11 @@ function getCustomizationPreview(item: any) {
     null;
 }
 
+function isUuid(value: unknown): value is string {
+  return typeof value === "string" &&
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+}
+
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
@@ -63,7 +68,7 @@ export async function POST(request: NextRequest) {
 
     // Guest checkout stores customer data in shipping_details. Logged-in profile
     // linking can be added later without blocking order creation.
-    const profileId = session?.user?.id || null;
+    const profileId = isUuid((session?.user as any)?.id) ? (session?.user as any).id : null;
 
     // Determine status based on payment method
     const isManualUPI = paymentId === 'MANUAL_UPI';
