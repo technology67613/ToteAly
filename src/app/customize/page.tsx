@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { useCartStore, CartItem } from "@/store/cartStore";
 import { removeBackground } from "@imgly/background-removal";
+import { FALLBACK_PRODUCTS } from "@/lib/catalog";
 
 const FONTS = [
   { name: "Retro Serif", value: "Noto Serif" },
@@ -64,14 +65,21 @@ export default function Customize() {
         const customizable = Array.isArray(data)
           ? data.filter((product) => product.is_customizable || product.isCustomizable)
           : [];
+        const source = customizable.length
+          ? customizable
+          : FALLBACK_PRODUCTS.filter((product) => product.isCustomizable);
+        const requestedProduct = new URLSearchParams(window.location.search).get("product");
 
-        setProducts(customizable);
-        setSelectedBag(customizable[0] || null);
-        setProductsError(customizable.length ? "" : "No customizable products are configured in Supabase.");
+        setProducts(source);
+        setSelectedBag(source.find((product) => product.id === requestedProduct || product._id === requestedProduct) || source[0] || null);
+        setProductsError("");
       } catch (error: any) {
-        setProducts([]);
-        setSelectedBag(null);
-        setProductsError(error.message || "Products could not be loaded from Supabase.");
+        const fallbackProducts = FALLBACK_PRODUCTS.filter((product) => product.isCustomizable);
+        const requestedProduct = new URLSearchParams(window.location.search).get("product");
+
+        setProducts(fallbackProducts);
+        setSelectedBag(fallbackProducts.find((product) => product.id === requestedProduct || product._id === requestedProduct) || fallbackProducts[0] || null);
+        setProductsError(error.message ? "Using launch catalogue until Supabase is available." : "");
       } finally {
         setProductsLoading(false);
       }
@@ -157,7 +165,7 @@ export default function Customize() {
 
   const addText = () => {
     if (!canvas || !selectedBag) return;
-    const text = new fabric.IText(textInput || "Your Design", {
+    const text = new fabric.IText((textInput || "Your Design").slice(0, 40), {
       left: 125,
       top: 200,
       fontFamily: selectedFont,
@@ -258,6 +266,11 @@ export default function Customize() {
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!canvas || !e.target.files || !e.target.files[0]) return;
+    if (e.target.files[0].size > 5 * 1024 * 1024) {
+      alert("Please upload an image under 5 MB.");
+      e.target.value = "";
+      return;
+    }
     const reader = new FileReader();
     reader.onload = async (f) => {
       const data = f.target?.result;
@@ -446,6 +459,7 @@ export default function Customize() {
                   type="text" 
                   value={textInput}
                   onChange={(e) => setTextInput(e.target.value)}
+                  maxLength={40}
                   placeholder="Type something..." 
                   className="w-full px-4 py-3 lg:px-5 lg:py-4 rounded-xl lg:rounded-2xl bg-[#FFF8F0] border border-[#F5ECD7] text-sm focus:outline-none focus:border-[#FF69B4] transition-all" 
                 />
@@ -570,7 +584,7 @@ export default function Customize() {
               <label className="w-full py-8 lg:py-10 border-2 border-[#F5ECD7] border-dashed rounded-2xl lg:rounded-3xl flex flex-col items-center justify-center gap-3 cursor-pointer hover:border-[#FF69B4] hover:bg-[#FF69B4]/5 transition-all group">
                 <Download size={18} className="text-[#FF69B4]" />
                 <span className="text-[8px] font-bold uppercase tracking-widest text-[#900C3F]/60 text-center">Upload Art</span>
-                <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
+                <input type="file" accept="image/png,image/jpeg" onChange={handleImageUpload} className="hidden" />
               </label>
            </div>
 

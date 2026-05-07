@@ -17,6 +17,7 @@ export default function CartSidebar() {
   if (!mounted) return null;
 
   const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const amountUntilFreeShipping = Math.max(999 - total, 0);
 
   return (
     <>
@@ -101,6 +102,9 @@ export default function CartSidebar() {
               <span className="font-serif text-xl text-[#900C3F]">Total</span>
               <span className="font-serif text-2xl font-bold text-[#900C3F]">₹{total}</span>
             </div>
+            <p className="mb-4 text-center text-[10px] font-bold uppercase tracking-widest text-[#900C3F]/50">
+              {amountUntilFreeShipping > 0 ? `Add ₹${amountUntilFreeShipping} more for free shipping` : "Free shipping unlocked"}
+            </p>
             <Link 
               href="/checkout" 
               onClick={closeCart}

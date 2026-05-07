@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Ticket, Plus, Trash2, Calendar, Percent, Banknote, X, Rocket, Activity, Zap } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -27,12 +27,7 @@ export const AdminMarketingTab = () => {
   });
   const [subscribers, setSubscribers] = useState<any[]>([]);
 
-  useEffect(() => {
-    fetchCoupons();
-    fetchSubscribers();
-  }, []);
-
-  const fetchCoupons = async () => {
+  const fetchCoupons = useCallback(async () => {
     try {
       const res = await fetch('/api/admin/coupons');
       if (res.ok) setCoupons(await res.json());
@@ -41,16 +36,22 @@ export const AdminMarketingTab = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const fetchSubscribers = async () => {
+  const fetchSubscribers = useCallback(async () => {
     try {
       const res = await fetch('/api/admin/newsletter');
       if (res.ok) setSubscribers(await res.json());
     } catch (e) {
       console.error(e);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    fetchCoupons();
+    fetchSubscribers();
+  }, [fetchCoupons, fetchSubscribers]);
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -26,8 +26,10 @@ export const ProductModal = ({ isOpen, onClose, product, onSave }: ProductModalP
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (product) {
-      setFormData({
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setFormData(
+      product
+        ? {
         title: product.title || "",
         price: product.price || 0,
         category: product.category || "Plain Totes",
@@ -36,9 +38,8 @@ export const ProductModal = ({ isOpen, onClose, product, onSave }: ProductModalP
         images: product.images || [],
         is_customizable: product.is_customizable ?? true,
         is_featured: product.is_featured ?? false
-      });
-    } else {
-      setFormData({
+      }
+        : {
         title: "",
         price: 0,
         category: "Plain Totes",
@@ -47,8 +48,8 @@ export const ProductModal = ({ isOpen, onClose, product, onSave }: ProductModalP
         images: [],
         is_customizable: true,
         is_featured: false
-      });
-    }
+      }
+    );
   }, [product, isOpen]);
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {

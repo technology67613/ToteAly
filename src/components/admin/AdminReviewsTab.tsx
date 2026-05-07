@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Star, CheckCircle2, XCircle, Trash2, User, Package, MessageSquare } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -16,11 +16,7 @@ export const AdminReviewsTab = () => {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchReviews();
-  }, []);
-
-  const fetchReviews = async () => {
+  const fetchReviews = useCallback(async () => {
     try {
       const res = await fetch('/api/admin/reviews');
       if (res.ok) setReviews(await res.json());
@@ -29,7 +25,12 @@ export const AdminReviewsTab = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    fetchReviews();
+  }, [fetchReviews]);
 
   const toggleApproval = async (id: string, currentStatus: string) => {
     const nextStatus = currentStatus === 'approved' ? 'pending' : 'approved';

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin as supabase, isSupabaseConfigured } from "@/lib/supabase";
+import { FALLBACK_PRODUCTS } from "@/lib/catalog";
 
 export const runtime = "nodejs";
 
@@ -21,7 +22,11 @@ export async function GET(request: NextRequest) {
     const offset = (page - 1) * limit;
 
     if (!isSupabaseConfigured()) {
-      return NextResponse.json({ error: "Supabase configuration is required." }, { status: 503 });
+      const products = isFeatured
+        ? FALLBACK_PRODUCTS.filter((product) => product.is_featured)
+        : FALLBACK_PRODUCTS;
+
+      return NextResponse.json(products.slice(offset, offset + limit));
     }
 
     let query = supabase
@@ -43,6 +48,10 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(normalizedData);
   } catch (error: any) {
     console.error("Supabase Fetch Error:", error);
-    return NextResponse.json({ error: "Failed to fetch products from cloud." }, { status: 500 });
+    const products = (new URL(request.url).searchParams.get("featured") === "true")
+      ? FALLBACK_PRODUCTS.filter((product) => product.is_featured)
+      : FALLBACK_PRODUCTS;
+
+    return NextResponse.json(products);
   }
 }

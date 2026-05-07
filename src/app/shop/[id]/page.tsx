@@ -7,6 +7,7 @@ import { ShoppingBag, ArrowLeft, Sparkles, ShieldCheck, Truck, RefreshCw, Loader
 import { useCartStore, CartItem } from "@/store/cartStore";
 import Image from "next/image";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
+import { getFallbackProduct } from "@/lib/catalog";
 
 interface Product {
   id: string;
@@ -35,7 +36,7 @@ export default function ProductDetail() {
         
         if (!isSupabaseConfigured()) {
           console.warn("Supabase not configured. Using placeholder for UI development only.");
-          setProduct(null);
+          setProduct(getFallbackProduct(id));
           setLoading(false);
           return;
         }
@@ -50,10 +51,11 @@ export default function ProductDetail() {
           setProduct(data);
         } else if (error) {
           console.error("Supabase product fetch error:", error);
-          setProduct(null);
+          setProduct(getFallbackProduct(id));
         }
       } catch (err) {
         console.error("Failed to load product from cloud:", err);
+        setProduct(getFallbackProduct(params.id as string));
       } finally {
         setLoading(false);
       }
@@ -69,6 +71,7 @@ export default function ProductDetail() {
       title: product.title,
       price: product.price,
       quantity: 1,
+      image: product.images?.[0],
       isCustomized: false,
     };
     addItem(item);

@@ -7,7 +7,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://totealy.netlify.app/"),
+  metadataBase: new URL("https://mystore-weld.vercel.app/"),
   title: {
     default: "Tote-ally Iconic | Premium Customizable Tote Bags",
     template: "%s | Tote-ally Iconic"
@@ -28,7 +28,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "en_IN",
-    url: "https://totealy.netlify.app/",
+    url: "https://mystore-weld.vercel.app/",
     siteName: "Tote-ally Iconic",
     title: "Tote-ally Iconic | Made to Be Seen",
     description: "Premium customizable tote bags with a retro-luxury aesthetic.",

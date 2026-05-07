@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Mail, MessageSquare, Trash2, CheckCircle, Clock, Archive, ExternalLink, User, Tag, Layers } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -20,11 +20,7 @@ export const AdminInquiriesTab = () => {
   const [loading, setLoading] = useState(true);
   const [selectedInquiry, setSelectedInquiry] = useState<Inquiry | null>(null);
 
-  useEffect(() => {
-    fetchInquiries();
-  }, []);
-
-  const fetchInquiries = async () => {
+  const fetchInquiries = useCallback(async () => {
     try {
       const res = await fetch('/api/admin/inquiries');
       if (res.ok) setInquiries(await res.json());
@@ -33,7 +29,12 @@ export const AdminInquiriesTab = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    fetchInquiries();
+  }, [fetchInquiries]);
 
   const updateStatus = async (id: string, status: string) => {
     try {

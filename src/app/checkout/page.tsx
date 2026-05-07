@@ -45,8 +45,9 @@ export default function CheckoutPage() {
 
   if (!mounted) return null;
 
-  const SHIPPING_FEE = 50;
   const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const SHIPPING_FEE = subtotal >= 999 ? 0 : 50;
+  const amountUntilFreeShipping = Math.max(999 - subtotal, 0);
   const total = subtotal + SHIPPING_FEE;
 
   const handleFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -426,8 +427,13 @@ export default function CheckoutPage() {
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-white/40 font-bold uppercase tracking-widest">Shipping</span>
-                  <span className="font-bold">₹{SHIPPING_FEE}</span>
+                  <span className="font-bold">{SHIPPING_FEE === 0 ? "Free" : `₹${SHIPPING_FEE}`}</span>
                 </div>
+                {amountUntilFreeShipping > 0 && (
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-[#FF69B4]">
+                    Add ₹{amountUntilFreeShipping} more for free shipping
+                  </p>
+                )}
                 <div className="flex justify-between items-end mt-4">
                   <div className="flex flex-col">
                     <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#FF69B4]">Grand Total</span>

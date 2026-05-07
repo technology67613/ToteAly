@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import { ShoppingBag, Sparkles, ArrowRight, Star, Truck, ShieldCheck, Heart } from "lucide-react";
 import { useCartStore, CartItem } from "@/store/cartStore";
 import Image from "next/image";
+import { FALLBACK_PRODUCTS } from "@/lib/catalog";
 
 const PERKS = [
   { icon: Truck, title: "Fast Shipping", desc: "Across India in 3-5 days" },
@@ -31,20 +32,25 @@ export default function Home() {
           products = Array.isArray(fallbackData) ? fallbackData.slice(0, 4) : [];
         }
 
-        if (products.length > 0) {
-           setFeaturedProducts(products.map(p => ({
-             id: p.id,
-             title: p.title,
-             price: p.price,
-             tag: p.category,
-             image: p.images?.[0]
-           })));
-        } else {
-           setFeaturedProducts([]);
-        }
+        const source = products.length > 0 ? products : FALLBACK_PRODUCTS.slice(0, 4);
+        setFeaturedProducts(source.map(p => ({
+          id: p.id,
+          title: p.title,
+          price: p.price,
+          tag: p.category,
+          image: p.images?.[0],
+          isCustomizable: p.isCustomizable || p.is_customizable,
+        })));
       } catch (e) {
         console.error("Featured product sync failed:", e);
-        setFeaturedProducts([]);
+        setFeaturedProducts(FALLBACK_PRODUCTS.slice(0, 4).map(p => ({
+          id: p.id,
+          title: p.title,
+          price: p.price,
+          tag: p.category,
+          image: p.images?.[0],
+          isCustomizable: p.isCustomizable,
+        })));
       }
     }
     fetchFeatured();
@@ -74,6 +80,7 @@ export default function Home() {
       title: product.title,
       price: product.price,
       quantity: 1,
+      image: product.image,
       isCustomized: false,
     };
     addItem(item);
@@ -168,6 +175,11 @@ export default function Home() {
                 <span className="absolute top-3 left-3 text-[10px] bg-white/90 backdrop-blur-sm text-[#900C3F] px-3 py-1.5 rounded-full font-bold uppercase tracking-widest border border-[#F5ECD7] shadow-sm z-20">
                   {product.tag}
                 </span>
+                {product.isCustomizable && (
+                  <Link href={`/customize?product=${product.id}`} className="absolute top-3 right-3 text-[10px] bg-[#FF69B4] text-white px-3 py-1.5 rounded-full font-bold uppercase tracking-widest shadow-sm z-20">
+                    Design
+                  </Link>
+                )}
                 <button
                   onClick={() => handleAddToCart(product)}
                   className="absolute bottom-0 left-0 right-0 py-3 bg-[#900C3F] text-[#FFF8F0] text-xs font-bold uppercase tracking-widest translate-y-full group-hover:translate-y-0 transition-transform duration-300 flex items-center justify-center gap-2 z-30"

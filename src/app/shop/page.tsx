@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import { ShoppingBag, Loader2, Sparkles } from "lucide-react";
 import { useCartStore, CartItem } from "@/store/cartStore";
 import Image from "next/image";
+import { FALLBACK_PRODUCTS } from "@/lib/catalog";
 
 const CATEGORIES = ["All Products", "Plain Totes", "Premium", "Hampers"];
 
@@ -30,13 +31,14 @@ export default function Shop() {
         const res = await fetch("/api/products");
         const data = await res.json();
         if (Array.isArray(data)) {
-          setProducts(data);
+          setProducts(data.length > 0 ? data : FALLBACK_PRODUCTS);
         } else {
           console.error("Failed to load products, expected an array but got:", data);
-          setProducts([]);
+          setProducts(FALLBACK_PRODUCTS);
         }
       } catch (err) {
         console.error("Failed to load products:", err);
+        setProducts(FALLBACK_PRODUCTS);
       } finally {
         setLoading(false);
       }
@@ -58,6 +60,7 @@ export default function Shop() {
       title: product.title,
       price: product.price,
       quantity: 1,
+      image: product.images?.[0],
       isCustomized: false,
     };
     addItem(item);
@@ -170,6 +173,16 @@ export default function Shop() {
                 </div>
               </div>
             ))}
+          </div>
+        )}
+
+        {!loading && filtered.length === 0 && (
+          <div className="py-24 text-center bg-white border border-[#F5ECD7] rounded-[32px]">
+            <p className="font-serif text-3xl font-bold mb-3">No bags in this category yet.</p>
+            <p className="text-[#900C3F]/60 mb-8">Try another collection or start a custom design.</p>
+            <Link href="/customize" className="inline-flex px-8 py-4 bg-[#900C3F] text-white rounded-md font-bold hover:bg-[#FF69B4] transition-colors">
+              Open Design Studio
+            </Link>
           </div>
         )}
 
