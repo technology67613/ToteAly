@@ -118,7 +118,7 @@ function getStoreName() {
 }
 
 function getOrderId(order: OrderEmailDetails) {
-  return order.id || order._id || `mock-${Date.now()}`;
+  return order.id || order._id || `order-${Date.now()}`;
 }
 
 function getInvoiceNo(order: OrderEmailDetails) {

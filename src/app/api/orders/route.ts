@@ -33,37 +33,7 @@ export async function POST(request: NextRequest) {
     const { items, totalAmount, paymentId, razorpayOrderId, razorpaySignature, shippingDetails } = validation.data;
 
     if (!isSupabaseConfigured()) {
-      if (process.env.NODE_ENV !== "development") {
-        return NextResponse.json({ error: "Supabase is required to save orders." }, { status: 503 });
-      }
-
-       const mockOrder = {
-         id: `mock-${Date.now()}`,
-         created_at: new Date().toISOString(),
-         items,
-         order_items: items.map((item: any) => ({
-           name: item.title,
-           price: item.price,
-           quantity: item.quantity,
-           is_customized: item.isCustomized || false,
-         customization_details: {
-           ...(item.customizationDetails || {}),
-           preview_image: getCustomizationPreview(item),
-         },
-         })),
-         total_amount: totalAmount,
-         payment_id: paymentId,
-         payment_status: paymentId === "MANUAL_UPI" ? "Pending" : "Paid",
-         status: paymentId === "MANUAL_UPI" ? "Pending" : "Confirmed",
-         shipping_details: shippingDetails,
-       };
-       const customerEmail = shippingDetails?.email;
-       if (customerEmail) {
-         sendOrderConfirmationEmail(customerEmail, mockOrder).catch(err =>
-           console.error("Delayed Mock Order Email Error:", err)
-         );
-       }
-       return NextResponse.json({ _id: mockOrder.id, items }, { status: 201 });
+      return NextResponse.json({ error: "Supabase is required to save orders." }, { status: 503 });
     }
 
     if (!isSupabaseAdminConfigured()) {

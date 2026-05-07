@@ -6,32 +6,17 @@ import { ShoppingBag, Sparkles, ArrowRight, Star, Truck, ShieldCheck, Heart } fr
 import { useCartStore, CartItem } from "@/store/cartStore";
 import Image from "next/image";
 
-const FEATURED_FALLBACK = [
-  { id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11", title: "Plain Tote Bag", price: 129, tag: "Bestseller", image: "/mockups/plain.png" },
-  { id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12", title: "Black Tote Bag", price: 199, tag: "New", image: "/mockups/black.png" },
-  { id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a13", title: "Regular Tote Bag", price: 199, tag: "Iconic", image: "/mockups/regular.png" },
-  { id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a14", title: "Premium Tote Bag", price: 249, tag: "Luxury", image: "/mockups/premium.png" },
-];
-
 const PERKS = [
   { icon: Truck, title: "Fast Shipping", desc: "Across India in 3-5 days" },
   { icon: ShieldCheck, title: "Secure Payment", desc: "Powered by Razorpay" },
   { icon: Heart, title: "Eco Friendly", desc: "100% Sustainable Canvas" },
 ];
 
-const FALLBACK_POSTS = [
-  { img: "https://images.unsplash.com/photo-1591348113527-71b7b7caccf9?auto=format&fit=crop&q=80&w=800", link: "https://www.instagram.com/tote_ally_iconic/" },
-  { img: "https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&q=80&w=800", link: "https://www.instagram.com/tote_ally_iconic/" },
-  { img: "https://images.unsplash.com/photo-1622560480605-d83c853bc5c3?auto=format&fit=crop&q=80&w=800", link: "https://www.instagram.com/tote_ally_iconic/" },
-  { img: "https://images.unsplash.com/photo-1590739225287-bd31519780ca?auto=format&fit=crop&q=80&w=800", link: "https://www.instagram.com/tote_ally_iconic/" },
-  { img: "https://images.unsplash.com/photo-1614179662397-885f9ad6663c?auto=format&fit=crop&q=80&w=800", link: "https://www.instagram.com/tote_ally_iconic/" },
-  { img: "https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&q=80&w=800", link: "https://www.instagram.com/tote_ally_iconic/" },
-];
-
 export default function Home() {
   const { addItem, openCart } = useCartStore();
   const [igPosts, setIgPosts] = useState<any[]>([]);
   const [featuredProducts, setFeaturedProducts] = useState<any[]>([]);
+  const heroProduct = featuredProducts[0];
 
   useEffect(() => {
     async function fetchFeatured() {
@@ -44,13 +29,14 @@ export default function Home() {
              title: p.title,
              price: p.price,
              tag: p.category,
-             image: p.images?.[0] || "/mockups/plain.png"
+             image: p.images?.[0]
            })));
         } else {
-           setFeaturedProducts(FEATURED_FALLBACK);
+           setFeaturedProducts([]);
         }
       } catch (e) {
-        setFeaturedProducts(FEATURED_FALLBACK);
+        console.error("Featured product sync failed:", e);
+        setFeaturedProducts([]);
       }
     }
     fetchFeatured();
@@ -63,18 +49,15 @@ export default function Home() {
         if (Array.isArray(posts) && posts.length > 0) {
           setIgPosts(posts.slice(0, 6));
         } else {
-            // Fallback if proxy fails
-            setIgPosts(FALLBACK_POSTS);
+            setIgPosts([]);
         }
       } catch (e) {
-        console.error("IG Sync failed, using fallback:", e);
-        setIgPosts(FALLBACK_POSTS);
+        console.error("IG sync failed:", e);
+        setIgPosts([]);
       }
     }
     fetchIG();
   }, []);
-
-  const displayPosts = igPosts.length > 0 ? igPosts : FALLBACK_POSTS;
 
   const handleAddToCart = (product: any) => {
     const item: CartItem = {
@@ -121,13 +104,19 @@ export default function Home() {
         {/* Hero Visual */}
         <div className="flex-1 flex items-center justify-center">
           <div className="w-full h-full bg-[#F5ECD7]/60 rounded-3xl relative overflow-hidden flex items-center justify-center border border-[#F5ECD7] min-h-[400px]">
-            <Image src="/mockups/plain.png" alt="Featured Tote" fill className="object-cover" priority />
+            {heroProduct?.image ? (
+              <Image src={heroProduct.image} alt={heroProduct.title} fill className="object-cover" priority />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center text-[#900C3F]/30">
+                <ShoppingBag size={72} />
+              </div>
+            )}
             <span className="absolute top-8 left-1/2 -translate-x-1/2 font-serif italic text-6xl text-white/40 pointer-events-none whitespace-nowrap z-10">
               Tote-ally<br />Iconic
             </span>
             <div className="absolute bottom-6 left-6 right-6 bg-white/80 backdrop-blur-sm rounded-xl p-4 border border-white/50 shadow-sm">
-              <p className="font-bold text-sm">Plain Tote Bag</p>
-              <p className="text-[#FF69B4] font-bold">₹129</p>
+              <p className="font-bold text-sm">{heroProduct?.title || "Connect products in Supabase"}</p>
+              <p className="text-[#FF69B4] font-bold">{heroProduct ? `₹${heroProduct.price}` : "No featured products"}</p>
             </div>
           </div>
         </div>
@@ -166,7 +155,7 @@ export default function Home() {
             <div key={product.id} className="group flex flex-col">
               <div className="w-full aspect-[4/5] bg-white rounded-3xl mb-4 relative overflow-hidden flex items-center justify-center border border-[#F5ECD7] shadow-sm">
                 <Link href={`/shop/${product.id}`} className="absolute inset-0 z-10">
-                  <Image src={product.image} alt={product.title} fill className="object-cover group-hover:scale-105 transition-transform duration-500" />
+                  {product.image && <Image src={product.image} alt={product.title} fill className="object-cover group-hover:scale-105 transition-transform duration-500" />}
                 </Link>
                 <span className="absolute top-3 left-3 text-[10px] bg-white/90 backdrop-blur-sm text-[#900C3F] px-3 py-1.5 rounded-full font-bold uppercase tracking-widest border border-[#F5ECD7] shadow-sm z-20">
                   {product.tag}

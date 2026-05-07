@@ -21,13 +21,7 @@ export async function POST(request: NextRequest) {
     const normalizedEmail = email.trim().toLowerCase();
 
     if (!isSupabaseConfigured() || !isSupabaseAdminConfigured()) {
-      if (process.env.NODE_ENV !== "development") {
-        return NextResponse.json({ error: "Newsletter storage is not configured." }, { status: 503 });
-      }
-
-      console.warn("Newsletter signup received in mock mode:", normalizedEmail);
-      await sendNewsletterNotificationEmail(normalizedEmail);
-      return NextResponse.json({ message: "You are on the list." }, { status: 202 });
+      return NextResponse.json({ error: "Newsletter storage is not configured." }, { status: 503 });
     }
 
     const { error } = await supabase

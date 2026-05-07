@@ -26,12 +26,14 @@ const COLORS = [
   "#2D5A27", "#1A3A5F", "#E63946", "#F4A261"
 ];
 
-const BAG_TYPES = [
-  { id: "plain", name: "Plain Tote", price: 129, image: "/mockups/plain.png" },
-  { id: "black", name: "Black Tote", price: 199, image: "/mockups/black.png" },
-  { id: "regular", name: "Regular Tote", price: 199, image: "/mockups/regular.png" },
-  { id: "premium", name: "Premium Tote", price: 249, image: "/mockups/premium.png" },
-];
+type CustomizableProduct = {
+  id: string;
+  title: string;
+  price: number;
+  images?: string[];
+  is_customizable?: boolean;
+  isCustomizable?: boolean;
+};
 
 export default function Customize() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -41,7 +43,10 @@ export default function Customize() {
   const [selectedColor, setSelectedColor] = useState(COLORS[0]);
   const [isAddingToCart, setIsAddingToCart] = useState(false);
   const [selectedObject, setSelectedObject] = useState<fabric.Object | null>(null);
-  const [selectedBag, setSelectedBag] = useState(BAG_TYPES[0]);
+  const [products, setProducts] = useState<CustomizableProduct[]>([]);
+  const [selectedBag, setSelectedBag] = useState<CustomizableProduct | null>(null);
+  const [productsLoading, setProductsLoading] = useState(true);
+  const [productsError, setProductsError] = useState("");
   const [activeTab, setActiveTab] = useState<"text" | "style" | "assets">("text");
   const [isMobile, setIsMobile] = useState(false);
   const [toolbarPos, setToolbarPos] = useState({ top: 0, left: 0, visible: false });
@@ -49,6 +54,31 @@ export default function Customize() {
   const [isRemovingBg, setIsRemovingBg] = useState(false);
   
   const { addItem, openCart } = useCartStore();
+
+  useEffect(() => {
+    async function loadProducts() {
+      try {
+        const res = await fetch("/api/products");
+        if (!res.ok) throw new Error("Products could not be loaded from Supabase.");
+        const data = await res.json();
+        const customizable = Array.isArray(data)
+          ? data.filter((product) => product.is_customizable || product.isCustomizable)
+          : [];
+
+        setProducts(customizable);
+        setSelectedBag(customizable[0] || null);
+        setProductsError(customizable.length ? "" : "No customizable products are configured in Supabase.");
+      } catch (error: any) {
+        setProducts([]);
+        setSelectedBag(null);
+        setProductsError(error.message || "Products could not be loaded from Supabase.");
+      } finally {
+        setProductsLoading(false);
+      }
+    }
+
+    loadProducts();
+  }, []);
 
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 1024);
@@ -69,8 +99,9 @@ export default function Customize() {
         backgroundColor: "#fcf9f2",
       });
       
-      // Load selected bag mockup
-      loadBagMockup(initCanvas, selectedBag.image, size);
+      if (selectedBag?.images?.[0]) {
+        loadBagMockup(initCanvas, selectedBag.images[0], size);
+      }
 
       // Selection Events
       const updateToolbar = () => {
@@ -103,7 +134,7 @@ export default function Customize() {
       return () => {
         initCanvas.dispose();
       };
-  }, []);
+  }, [selectedBag]);
 
   const loadBagMockup = (targetCanvas: fabric.Canvas, url: string, size?: number) => {
     const canvasSize = size || targetCanvas.width || 500;
@@ -117,15 +148,15 @@ export default function Customize() {
     });
   };
 
-  const changeBag = (bag: typeof BAG_TYPES[0]) => {
+  const changeBag = (bag: CustomizableProduct) => {
     setSelectedBag(bag);
-    if (canvas) {
-      loadBagMockup(canvas, bag.image);
+    if (canvas && bag.images?.[0]) {
+      loadBagMockup(canvas, bag.images[0]);
     }
   };
 
   const addText = () => {
-    if (!canvas) return;
+    if (!canvas || !selectedBag) return;
     const text = new fabric.IText(textInput || "Your Design", {
       left: 125,
       top: 200,
@@ -309,8 +340,9 @@ export default function Customize() {
   };
 
   const handleAddToCart = () => {
-    if (!canvas) return;
+    if (!canvas || !selectedBag) return;
     setIsAddingToCart(true);
+    const bag = selectedBag;
     
     // Create a high-quality capture of the design
     const dataUrl = canvas.toDataURL({
@@ -321,13 +353,13 @@ export default function Customize() {
 
     const item: CartItem = {
       id: `custom-${Date.now()}`,
-      productId: selectedBag.id,
-      title: selectedBag.name,
-      price: selectedBag.price,
+      productId: bag.id,
+      title: bag.title,
+      price: bag.price,
       quantity: 1,
       isCustomized: true,
       customizationDetails: {
-        bagType: selectedBag.name,
+        bagType: bag.title,
         canvasData: dataUrl,
         preview: dataUrl
       }
@@ -348,7 +380,7 @@ export default function Customize() {
       multiplier: 1
     });
     const link = document.createElement('a');
-    link.download = `tote-aly-design-${selectedBag.id}.png`;
+    link.download = `tote-aly-design-${selectedBag?.id || "design"}.png`;
     link.href = dataUrl;
     link.click();
   };
@@ -376,11 +408,11 @@ export default function Customize() {
           </button>
           <button 
             onClick={handleAddToCart}
-            disabled={isAddingToCart}
+            disabled={isAddingToCart || !selectedBag}
             className="flex items-center gap-2 lg:gap-3 px-4 lg:px-8 py-2 lg:py-3 bg-[#900C3F] text-white rounded-xl lg:rounded-2xl font-bold text-[10px] lg:text-sm shadow-lg shadow-[#900C3F]/20 hover:bg-[#FF69B4] transition-all active:scale-95 disabled:opacity-50"
           >
             {isAddingToCart ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />}
-            {isAddingToCart ? "..." : `Add • ₹${selectedBag.price}`}
+            {isAddingToCart ? "..." : selectedBag ? `Add • ₹${selectedBag.price}` : "No Product"}
           </button>
         </div>
       </div>
@@ -548,17 +580,27 @@ export default function Customize() {
                 <Palette size={16} className="text-[#FF69B4]" /> Bag Type
               </div>
               <div className="grid grid-cols-2 gap-2">
-                {BAG_TYPES.map(bag => (
+                {productsLoading && (
+                  <div className="col-span-2 rounded-xl border border-[#F5ECD7] p-4 text-xs font-bold uppercase tracking-widest text-[#900C3F]/50">
+                    Loading Supabase products...
+                  </div>
+                )}
+                {!productsLoading && productsError && (
+                  <div className="col-span-2 rounded-xl border border-red-100 bg-red-50 p-4 text-xs font-bold text-red-600">
+                    {productsError}
+                  </div>
+                )}
+                {products.map(bag => (
                   <button
                     key={bag.id}
                     onClick={() => changeBag(bag)}
                     className={`flex flex-col p-3 rounded-xl border transition-all text-left ${
-                      selectedBag.id === bag.id 
+                      selectedBag?.id === bag.id 
                         ? "bg-[#900C3F] border-[#900C3F] text-white shadow-md" 
                         : "bg-white border-[#F5ECD7] text-[#900C3F] hover:border-[#FF69B4]"
                     }`}
                   >
-                    <span className="text-[10px] font-bold uppercase tracking-widest mb-1 opacity-80">{bag.name}</span>
+                    <span className="text-[10px] font-bold uppercase tracking-widest mb-1 opacity-80">{bag.title}</span>
                     <span className="text-sm font-bold font-serif">₹{bag.price}</span>
                   </button>
                 ))}
@@ -568,9 +610,9 @@ export default function Customize() {
             <div className="mt-auto bg-[#F5ECD7]/30 p-5 lg:p-6 rounded-2xl lg:rounded-3xl flex flex-col gap-3 lg:gap-4">
               <div className="flex justify-between items-end">
                 <span className="text-[10px] font-bold text-[#900C3F]/40 uppercase tracking-widest">Total</span>
-                <span className="font-serif text-2xl lg:text-3xl font-bold">₹{selectedBag.price}</span>
+                <span className="font-serif text-2xl lg:text-3xl font-bold">{selectedBag ? `₹${selectedBag.price}` : "₹0"}</span>
               </div>
-              <p className="text-[8px] text-[#900C3F]/40 leading-tight">Includes {selectedBag.name} + Custom AI Removal & Print.</p>
+              <p className="text-[8px] text-[#900C3F]/40 leading-tight">{selectedBag ? `Includes ${selectedBag.title} + Custom AI Removal & Print.` : "Connect customizable products in Supabase."}</p>
            </div>
         </div>
       </div>

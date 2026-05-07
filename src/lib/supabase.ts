@@ -5,7 +5,7 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
 if (!supabaseUrl || !supabaseAnonKey) {
-  console.warn('Supabase credentials missing. App will fall back to mock data if not configured.');
+  console.warn('Supabase credentials missing. Backend routes that require Supabase will fail until configured.');
 }
 
 const isConfigured = Boolean(
@@ -33,6 +33,6 @@ export const supabase = isConfigured
   : null as any;
 
 // Admin client for server-side operations that bypass RLS
-export const supabaseAdmin = isConfigured
-  ? createClient(supabaseUrl, supabaseServiceKey || supabaseAnonKey)
+export const supabaseAdmin = isAdminConfigured
+  ? createClient(supabaseUrl, supabaseServiceKey)
   : null as any;

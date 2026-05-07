@@ -83,12 +83,8 @@ export default function About() {
         <h2 className="font-serif text-4xl font-bold mb-16">Meet the Founders</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-16 w-full max-w-3xl">
           <div className="flex flex-col items-center gap-4">
-            <div className="w-48 h-48 rounded-full overflow-hidden border-4 border-[#F5ECD7] shadow-xl">
-              <img
-                src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=400"
-                alt="Khadija Memon, Co-Founder"
-                className="w-full h-full object-cover"
-              />
+            <div className="w-48 h-48 rounded-full border-4 border-[#F5ECD7] shadow-xl bg-white flex items-center justify-center">
+              <span className="font-serif text-6xl font-bold text-[#900C3F]">K</span>
             </div>
             <h3 className="font-serif text-2xl font-bold">Khadija Memon</h3>
             <p className="text-[#900C3F]/60 font-semibold text-sm uppercase tracking-widest">Co-Founder &amp; Creative Director</p>
@@ -97,12 +93,8 @@ export default function About() {
             </p>
           </div>
           <div className="flex flex-col items-center gap-4">
-            <div className="w-48 h-48 rounded-full overflow-hidden border-4 border-[#F5ECD7] shadow-xl">
-              <img
-                src="https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&q=80&w=400"
-                alt="Abhirami Aluvila, Co-Founder"
-                className="w-full h-full object-cover"
-              />
+            <div className="w-48 h-48 rounded-full border-4 border-[#F5ECD7] shadow-xl bg-white flex items-center justify-center">
+              <span className="font-serif text-6xl font-bold text-[#900C3F]">A</span>
             </div>
             <h3 className="font-serif text-2xl font-bold">Abhirami Aluvila</h3>
             <p className="text-[#900C3F]/60 font-semibold text-sm uppercase tracking-widest">Co-Founder &amp; Operations Lead</p>

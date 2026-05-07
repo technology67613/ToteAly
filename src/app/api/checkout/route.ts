@@ -4,7 +4,7 @@ import Razorpay from "razorpay";
 // Initialize Razorpay with error handling for missing keys
 const getRazorpay = () => {
   if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
-    console.warn("Razorpay keys are missing. Using mock mode.");
+    console.warn("Razorpay keys are missing.");
     return null;
   }
   return new Razorpay({
@@ -29,19 +29,7 @@ export async function POST(request: NextRequest) {
     };
 
     if (!razorpay) {
-      if (process.env.NODE_ENV === "production") {
-        return NextResponse.json({ error: "Payment gateway not configured" }, { status: 500 });
-      }
-      // Mock Order for development
-      return NextResponse.json({
-        order: {
-          id: `order_mock_${Date.now()}`,
-          amount: options.amount,
-          currency: options.currency,
-          status: "created",
-          mock: true
-        }
-      });
+      return NextResponse.json({ error: "Payment gateway not configured" }, { status: 500 });
     }
 
     const order = await razorpay.orders.create(options);

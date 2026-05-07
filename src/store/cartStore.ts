@@ -1,5 +1,4 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
 
 export interface CartItem {
   id: string; // unique string (e.g. timestamp or product id)
@@ -24,40 +23,31 @@ interface CartState {
   closeCart: () => void;
 }
 
-export const useCartStore = create<CartState>()(
-  persist(
-    (set) => ({
-      items: [],
-      isOpen: false,
-      addItem: (item) =>
-        set((state) => {
-          // If it's a non-customized product and already in cart, just increase quantity
-          if (!item.isCustomized) {
-            const existingItem = state.items.find((i) => i.productId === item.productId && !i.isCustomized);
-            if (existingItem) {
-              return {
-                items: state.items.map((i) =>
-                  i.id === existingItem.id ? { ...i, quantity: i.quantity + item.quantity } : i
-                ),
-              };
-            }
-          }
-          // Otherwise add as new line item
-          return { items: [...state.items, item] };
-        }),
-      removeItem: (id) =>
-        set((state) => ({ items: state.items.filter((i) => i.id !== id) })),
-      updateQuantity: (id, quantity) =>
-        set((state) => ({
-          items: state.items.map((i) => (i.id === id ? { ...i, quantity } : i)),
-        })),
-      clearCart: () => set({ items: [] }),
-      toggleCart: () => set((state) => ({ isOpen: !state.isOpen })),
-      openCart: () => set({ isOpen: true }),
-      closeCart: () => set({ isOpen: false }),
+export const useCartStore = create<CartState>()((set) => ({
+  items: [],
+  isOpen: false,
+  addItem: (item) =>
+    set((state) => {
+      if (!item.isCustomized) {
+        const existingItem = state.items.find((i) => i.productId === item.productId && !i.isCustomized);
+        if (existingItem) {
+          return {
+            items: state.items.map((i) =>
+              i.id === existingItem.id ? { ...i, quantity: i.quantity + item.quantity } : i
+            ),
+          };
+        }
+      }
+      return { items: [...state.items, item] };
     }),
-    {
-      name: 'tote-ally-cart',
-    }
-  )
-);
+  removeItem: (id) =>
+    set((state) => ({ items: state.items.filter((i) => i.id !== id) })),
+  updateQuantity: (id, quantity) =>
+    set((state) => ({
+      items: state.items.map((i) => (i.id === id ? { ...i, quantity } : i)),
+    })),
+  clearCart: () => set({ items: [] }),
+  toggleCart: () => set((state) => ({ isOpen: !state.isOpen })),
+  openCart: () => set({ isOpen: true }),
+  closeCart: () => set({ isOpen: false }),
+}));
