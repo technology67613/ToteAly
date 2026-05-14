@@ -4,10 +4,10 @@ import { buildInvoiceHtml } from "@/lib/email";
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
+    const { id } = await params;
 
     // Initialize Supabase (Service Role to bypass RLS for admin/invoice access)
     const supabase = createClient(
