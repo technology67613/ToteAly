@@ -252,6 +252,69 @@ export function buildOrderConfirmationEmailHtml(order: OrderEmailDetails) {
   `);
 }
 
+export function buildInvoiceHtml(order: OrderEmailDetails) {
+  const o = normalizeOrder(order);
+  return `
+    <div style="width:100%;max-width:800px;margin:0 auto;background:#fff;padding:40px;font-family:Arial,sans-serif;color:#333;line-height:1.4;">
+      <div style="display:flex;justify-content:space-between;border-bottom:2px solid #900C3F;padding-bottom:20px;margin-bottom:30px;">
+        <div>
+          <h1 style="color:#900C3F;margin:0;font-size:28px;">${STORE_NAME}</h1>
+          <p style="margin:5px 0 0;font-size:12px;color:#666;">Tax Invoice / Bill of Supply</p>
+        </div>
+        <div style="text-align:right;">
+          <p style="margin:0;font-weight:bold;color:#900C3F;">${o.invoiceNo}</p>
+          <p style="margin:5px 0 0;font-size:12px;">Date: ${o.createdAt}</p>
+        </div>
+      </div>
+
+      <div style="display:flex;justify-content:space-between;margin-bottom:40px;">
+        <div style="width:48%;">
+          <h3 style="font-size:12px;text-transform:uppercase;color:#900C3F;margin:0 0 10px;">Billing/Shipping Address</h3>
+          <p style="margin:0;font-weight:bold;font-size:14px;">${esc(o.shipping.name)}</p>
+          <p style="margin:5px 0;font-size:13px;white-space:pre-wrap;">${esc(o.shipping.address)}</p>
+          <p style="margin:0;font-size:13px;">${esc(o.shipping.city)}, ${esc(o.shipping.state)} - ${esc(o.shipping.pincode)}</p>
+          <p style="margin:5px 0 0;font-size:13px;">Phone: ${esc(o.shipping.phone)}</p>
+        </div>
+      </div>
+
+      <table style="width:100%;border-collapse:collapse;margin-bottom:40px;">
+        <thead>
+          <tr style="background:#FDF2F4;text-align:left;">
+            <th style="padding:12px 15px;border:1px solid #eee;font-size:13px;color:#900C3F;">Description</th>
+            <th style="padding:12px 15px;border:1px solid #eee;font-size:13px;color:#900C3F;text-align:center;">Qty</th>
+            <th style="padding:12px 15px;border:1px solid #eee;font-size:13px;color:#900C3F;text-align:right;">Unit Price</th>
+            <th style="padding:12px 15px;border:1px solid #eee;font-size:13px;color:#900C3F;text-align:right;">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${o.items.map((item: any) => `
+            <tr>
+              <td style="padding:12px 15px;border:1px solid #eee;font-size:13px;">
+                <div style="font-weight:bold;">${esc(item.name)}</div>
+                ${item.is_customized ? '<div style="font-size:11px;color:#900C3F;margin-top:2px;">✦ Custom Design Item</div>' : ""}
+              </td>
+              <td style="padding:12px 15px;border:1px solid #eee;font-size:13px;text-align:center;">${item.quantity}</td>
+              <td style="padding:12px 15px;border:1px solid #eee;font-size:13px;text-align:right;">\u20B9${item.price}</td>
+              <td style="padding:12px 15px;border:1px solid #eee;font-size:13px;text-align:right;">\u20B9${(item.price * item.quantity).toFixed(2)}</td>
+            </tr>
+          `).join("")}
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="3" style="padding:12px 15px;text-align:right;font-weight:bold;font-size:14px;color:#900C3F;">Grand Total</td>
+            <td style="padding:12px 15px;text-align:right;font-weight:bold;font-size:18px;color:#900C3F;background:#FDF2F4;">\u20B9${o.totalAmount}</td>
+          </tr>
+        </tfoot>
+      </table>
+
+      <div style="border-top:1px solid #eee;padding-top:20px;text-align:center;">
+        <p style="margin:0;font-size:11px;color:#999;">Thank you for shopping with Tote-ally Iconic!</p>
+        <p style="margin:5px 0 0;font-size:10px;color:#bbb;">This is a computer-generated invoice and does not require a signature.</p>
+      </div>
+    </div>
+  `;
+}
+
 // ---------------------------------------------------------------------------
 // Public Send Functions
 // ---------------------------------------------------------------------------

@@ -32,7 +32,7 @@ export default function DownloadInvoice({ order }: Props) {
       
       // PDF Options
       const opt = {
-        margin: [0, 0],
+        margin: 0,
         filename: `Invoice_${order.id.slice(-8).toUpperCase()}.pdf`,
         image: { type: "jpeg", quality: 0.98 },
         html2canvas: { scale: 2, useCORS: true, letterRendering: true },
