@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
       .from('orders')
       .select(`
         *,
-        order_items (*),
+        order_items (*, products(title, images, price, category)),
         profiles:user_id (*)
       `);
 

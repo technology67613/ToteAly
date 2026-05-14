@@ -157,16 +157,26 @@ export default function OrderDetailPage() {
               {(order.order_items || []).map((item: any) => (
                 <div key={item.id} className="p-10 flex gap-8 group hover:bg-[var(--admin-light)]/10 transition-all">
                   <div className="w-24 h-24 bg-[var(--admin-light)] rounded-2xl overflow-hidden shrink-0 border border-[var(--admin-border)]">
-                     {item.image && <img src={item.image} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt={item.title} />}
+                     {(item.products?.images?.[0] || item.image) ? (
+                        <img 
+                          src={item.products?.images?.[0] || item.image} 
+                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" 
+                          alt={item.products?.title || item.title} 
+                        />
+                     ) : (
+                        <div className="w-full h-full flex items-center justify-center text-[var(--admin-text-muted)]">
+                          <Package size={24} />
+                        </div>
+                     )}
                   </div>
                   <div className="flex-1">
                     <div className="flex justify-between items-start mb-4">
                        <div>
-                          <h4 className="font-serif text-lg font-bold text-[var(--admin-text-primary)]">{item.title}</h4>
-                          <p className="text-[10px] font-bold text-[var(--admin-text-muted)] uppercase tracking-widest mt-1">Category: {item.category || 'Tote'}</p>
+                          <h4 className="font-serif text-lg font-bold text-[var(--admin-text-primary)]">{item.products?.title || item.title}</h4>
+                          <p className="text-[10px] font-bold text-[var(--admin-text-muted)] uppercase tracking-widest mt-1">Category: {item.products?.category || item.category || 'Tote'}</p>
                        </div>
                        <div className="text-right">
-                          <p className="font-bold text-sm">₹{item.price}</p>
+                          <p className="font-bold text-sm">₹{item.products?.price || item.price}</p>
                           <p className="text-[10px] text-[var(--admin-text-muted)] font-bold">Qty: {item.quantity || 1}</p>
                        </div>
                     </div>
