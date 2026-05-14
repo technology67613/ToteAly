@@ -44,8 +44,8 @@ export default function Customize() {
   const [selectedColor, setSelectedColor] = useState(COLORS[0]);
   const [isAddingToCart, setIsAddingToCart] = useState(false);
   const [selectedObject, setSelectedObject] = useState<fabric.Object | null>(null);
-  const [products, setProducts] = useState<CustomizableProduct[]>([]);
-  const [selectedBag, setSelectedBag] = useState<CustomizableProduct | null>(null);
+  const [products, setProducts] = useState<CustomizableProduct[]>(FALLBACK_PRODUCTS.filter(p => p.isCustomizable));
+  const [selectedBag, setSelectedBag] = useState<CustomizableProduct | null>(FALLBACK_PRODUCTS.filter(p => p.isCustomizable)[0] || null);
   const [productsError, setProductsError] = useState("");
   const [activeTab, setActiveTab] = useState<"text" | "style" | "assets">("text");
   const [isMobile, setIsMobile] = useState(false);
@@ -586,133 +586,6 @@ export default function Customize() {
               )}
             </div>
           </div>
-        </div>
-
-        {/* Assets Right (Desktop & Mobile Content) */}
-        <div className={`lg:col-span-3 border-l border-[#F5ECD7] bg-white p-6 lg:p-8 flex flex-col gap-6 lg:gap-8 overflow-y-auto ${!isMobile ? 'block' : activeTab === 'assets' ? 'block' : 'hidden'}`}>
-          {(activeTab === 'text' || !isMobile) && (
-            <div className="flex flex-col gap-4">
-              <div className="flex items-center gap-2 text-[#900C3F] font-bold text-xs uppercase tracking-widest">
-                <Type size={14} /> Add Iconic Text
-              </div>
-              <input 
-                type="text"
-                value={textInput}
-                onChange={(e) => setTextInput(e.target.value)}
-                placeholder="Type something iconic..."
-                className="w-full px-4 py-3 lg:px-5 lg:py-4 rounded-xl lg:rounded-2xl bg-[#FFF8F0] border border-[#F5ECD7] text-sm focus:outline-none focus:border-[#FF69B4] transition-all" 
-              />
-                <button 
-                  onClick={addText}
-                  className="w-full py-3 lg:py-4 bg-[#900C3F] text-white font-bold text-xs uppercase tracking-widest rounded-xl lg:rounded-2xl hover:bg-[#FF69B4] transition-all"
-                >
-                  Place Text
-                </button>
-            </div>
-          )}
-
-          {(activeTab === 'style' || !isMobile) && (
-            <div className="flex flex-col gap-6">
-              <div className="flex flex-col gap-3">
-                <label className="text-[10px] font-bold uppercase tracking-widest text-[#900C3F]/40">Font Family</label>
-                <div className="grid grid-cols-1 gap-2">
-                  {FONTS.map(f => (
-                    <button
-                      key={f.value}
-                      onClick={() => updateActiveFont(f.value)}
-                      className={`px-4 py-2.5 text-left rounded-xl border text-sm transition-all ${
-                        selectedFont === f.value 
-                          ? "bg-[#900C3F] text-white border-[#900C3F]" 
-                          : "bg-white text-[#900C3F] border-[#F5ECD7]"
-                      }`}
-                      style={{ fontFamily: f.value }}
-                    >
-                      {f.name}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-3">
-                <label className="text-[10px] font-bold uppercase tracking-widest text-[#900C3F]/40">Ink Color</label>
-                <div className="grid grid-cols-4 lg:grid-cols-4 gap-3">
-                  {COLORS.map(c => (
-                    <button
-                      key={c}
-                      onClick={() => updateActiveColor(c)}
-                      className={`aspect-square rounded-full border-2 transition-all p-0.5 ${selectedColor === c ? 'border-[#FF69B4] scale-110' : 'border-transparent'}`}
-                    >
-                      <div className="w-full h-full rounded-full border border-black/5" style={{ backgroundColor: c }} />
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Canvas Area */}
-        <div className="lg:col-span-6 bg-[#F5ECD7]/30 flex items-center justify-center relative overflow-hidden p-4 md:p-10 min-h-[400px] lg:min-h-0" ref={containerRef}>
-          {/* Bag Background Aura */}
-          <div className="absolute inset-0 bg-gradient-to-br from-[#FF69B4]/5 to-transparent" />
-          
-          {/* Stable Wrapper for Canvas + Toolbar */}
-          <div className="relative" style={{ 
-            width: canvas?.width || 500, 
-            height: canvas?.height || 500 
-          }}>
-            {/* Floating Contextual Toolbar */}
-            {toolbarPos.visible && selectedObject && (
-              <div 
-                className="absolute z-[60] flex items-center gap-0.5 bg-white/95 backdrop-blur-md px-2 py-1.5 rounded-xl shadow-2xl border border-[#F5ECD7] animate-in fade-in zoom-in-95 duration-200"
-                style={{ 
-                  top: toolbarPos.top < 0 ? 10 : toolbarPos.top, 
-                  left: toolbarPos.left,
-                  transform: "translateX(-50%)",
-                  maxWidth: '90vw'
-                }}
-              >
-                {/* Contextual Tools */}
-                {(selectedObject as any).src !== "/mockups/bag.png" && (
-                  <>
-                    {selectedObject instanceof fabric.FabricImage && (
-                      <button 
-                        onClick={removeBackgroundHandler} 
-                        className="p-2 hover:bg-[#FF69B4]/10 rounded-lg text-[#900C3F] transition-all relative"
-                        disabled={isRemovingBg}
-                      >
-                        {isRemovingBg ? <Loader2 size={16} className="animate-spin text-[#FF69B4]" /> : <Scissors size={16} />}
-                        {isRemovingBg && (
-                          <span className="absolute -top-10 left-1/2 -translate-x-1/2 bg-[#900C3F] text-white text-[10px] px-2 py-1 rounded-md shadow-xl whitespace-nowrap z-[100]">
-                            AI Removing Background...
-                          </span>
-                        )}
-                      </button>
-                    )}
-                    <button onClick={flipX} className="p-2 hover:bg-[#F5ECD7] rounded-lg text-[#900C3F] transition-all"><FlipHorizontal size={16} /></button>
-                    <button onClick={duplicateObject} className="p-2 hover:bg-[#F5ECD7] rounded-lg text-[#900C3F] transition-all"><Copy size={16} /></button>
-                    <button onClick={toggleLock} className={`p-2 rounded-lg transition-all ${selectedObject.lockMovementX ? 'bg-[#900C3F] text-white' : 'hover:bg-[#F5ECD7] text-[#900C3F]'}`}>
-                      {selectedObject.lockMovementX ? <Lock size={16} /> : <Unlock size={16} />}
-                    </button>
-                    <button onClick={deleteSelected} className="p-2 hover:bg-red-50 rounded-lg text-red-500 transition-all"><Trash2 size={16} /></button>
-                  </>
-                )}
-              </div>
-            )}
-
-            {/* Main Work Area */}
-            <div className="relative shadow-2xl rounded-[32px] md:rounded-[40px] overflow-hidden bg-white border border-[#F5ECD7] flex items-center justify-center z-50">
-              <canvas ref={canvasRef} />
-              
-              {!toolbarPos.visible && (
-                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-white/80 backdrop-blur-md px-3 py-1.5 rounded-full border border-[#F5ECD7] flex items-center gap-2 shadow-sm pointer-events-none">
-                  <p className="text-[8px] font-bold text-[#900C3F]/40 uppercase tracking-widest">Tap to edit</p>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
         {/* Assets Right (Desktop & Mobile Content) */}
         <div className={`lg:col-span-3 border-l border-[#F5ECD7] bg-white p-6 lg:p-8 flex flex-col gap-6 lg:gap-8 overflow-y-auto ${!isMobile ? 'block' : activeTab === 'assets' ? 'block' : 'hidden'}`}>
            <div className="flex flex-col gap-4">

@@ -22,8 +22,6 @@ export const ShippingDetailsSchema = z.object({
   city: z.string().optional(),
   state: z.string().optional(),
   pincode: z.string().optional(),
-  payment_method: z.string().optional(),
-  payment_screenshot_url: z.string().optional(),
 });
 
 export const OrderItemSchema = z.object({

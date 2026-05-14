@@ -20,31 +20,19 @@ export async function POST(req: Request) {
     const body = await req.json();
     const amount = body.amount; // in rupees, we convert to paise below
 
-    console.log('Creating Razorpay order for amount:', amount);
-
-    if (!amount || isNaN(amount) || amount <= 0) {
-      console.error('Invalid amount received:', amount);
+    if (!amount || isNaN(amount)) {
       return NextResponse.json({ error: 'Invalid amount' }, { status: 400 });
     }
 
-    try {
-      const order = await razorpay.orders.create({
-        amount: Math.round(amount * 100), // convert ₹ to paise
-        currency: 'INR',
-        receipt: `receipt_${Date.now()}`,
-      });
+    const order = await razorpay.orders.create({
+      amount: Math.round(amount * 100), // convert ₹ to paise
+      currency: 'INR',
+      receipt: `receipt_${Date.now()}`,
+    });
 
-      console.log('Razorpay order created successfully:', order.id);
-      return NextResponse.json(order);
-    } catch (razorpayError: any) {
-      console.error('Razorpay API error:', razorpayError);
-      return NextResponse.json(
-        { error: razorpayError?.description || razorpayError?.message || 'Razorpay order creation failed' },
-        { status: 500 }
-      );
-    }
+    return NextResponse.json(order);
   } catch (err: any) {
-    console.error('General checkout API error:', err);
+    console.error('Razorpay order creation failed:', err);
     return NextResponse.json(
       { error: err?.message || 'Failed to create payment order' },
       { status: 500 }
