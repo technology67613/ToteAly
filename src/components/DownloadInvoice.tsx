@@ -37,7 +37,7 @@ export default function DownloadInvoice({ order }: Props) {
         image: { type: "jpeg", quality: 0.98 },
         html2canvas: { scale: 2, useCORS: true, letterRendering: true },
         jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
-      };
+      } as const;
 
       // Generate PDF
       await html2pdf().from(element).set(opt).save();
