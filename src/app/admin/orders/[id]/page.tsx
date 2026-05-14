@@ -5,15 +5,18 @@ import { useParams, useRouter } from "next/navigation";
 import { 
   ArrowLeft, Package, Truck, CheckCircle2, Clock, 
   MapPin, User, Mail, Phone, IndianRupee, Printer, 
-  ChevronRight, CreditCard, ExternalLink, MessageSquare
+  ChevronRight, CreditCard, ExternalLink, MessageSquare,
+  Eye, X, Download
 } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+import { toast } from "sonner";
 
 export default function OrderDetailPage() {
   const { id } = useParams();
   const router = useRouter();
   const [order, setOrder] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [showScreenshot, setShowScreenshot] = useState(false);
 
   useEffect(() => {
     const fetchOrder = async () => {
@@ -64,9 +67,29 @@ export default function OrderDetailPage() {
       if (res.ok) {
         const updated = await res.json();
         setOrder({ ...order, status: updated.status, payment_status: updated.payment_status });
+        toast.success("Order marked as fulfilled!");
       }
     } catch (e) {
       console.error(e);
+      toast.error("Failed to update order status.");
+    }
+  };
+
+  const handleApprovePayment = async () => {
+    try {
+      const res = await fetch('/api/admin/orders', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: order.id, status: 'Confirmed' })
+      });
+      if (res.ok) {
+        const updated = await res.json();
+        setOrder({ ...order, status: updated.status, payment_status: updated.payment_status });
+        toast.success("Payment approved and confirmation email sent!");
+      }
+    } catch (e) {
+      console.error(e);
+      toast.error("Failed to approve payment.");
     }
   };
 
@@ -225,13 +248,66 @@ export default function OrderDetailPage() {
                 <CreditCard size={18} className="text-[var(--admin-text-muted)]" />
                 <h4 className="text-[10px] font-bold uppercase tracking-widest text-[var(--admin-text-muted)]">Payment Logic</h4>
              </div>
-             <div className={`p-4 rounded-2xl border flex flex-col items-center gap-2 mb-6 ${order.payment_status === 'paid' ? 'bg-emerald-50 border-emerald-100 text-emerald-600' : 'bg-rose-50 border-rose-100 text-rose-600'}`}>
-                <span className="text-[10px] font-bold uppercase tracking-widest">{order.payment_status === 'paid' ? 'Transaction Success' : 'Awaiting Payment'}</span>
-                <span className="text-xl font-serif font-bold">₹{order.total_amount}</span>
-             </div>
-             <button className="w-full py-4 bg-[var(--admin-light)] text-[var(--admin-text-primary)] rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-[var(--admin-border)] transition-all">
-                Update Payment Status
-             </button>
+
+             {order.payment_id === 'MANUAL_UPI' ? (
+                <div className="space-y-4">
+                   <div className={`p-6 rounded-2xl border flex flex-col items-center gap-3 ${order.payment_status === 'paid' ? 'bg-emerald-50 border-emerald-100' : 'bg-amber-50 border-amber-100'}`}>
+                      <div className="flex items-center gap-2">
+                        <div className={`w-2 h-2 rounded-full ${order.payment_status === 'paid' ? 'bg-emerald-500' : 'bg-amber-500 animate-pulse'}`} />
+                        <span className={`text-[10px] font-bold uppercase tracking-widest ${order.payment_status === 'paid' ? 'text-emerald-600' : 'text-amber-600'}`}>
+                          {order.payment_status === 'paid' ? 'UPI Verified' : 'Awaiting Approval'}
+                        </span>
+                      </div>
+                      <span className="text-2xl font-serif font-bold text-[var(--admin-text-primary)]">₹{order.total_amount}</span>
+                   </div>
+
+                   {order.payment_status !== 'paid' && (
+                     <div className="space-y-3">
+                        {order.shipping_details?.payment_screenshot_url && (
+                          <button 
+                            onClick={() => setShowScreenshot(true)}
+                            className="w-full py-4 bg-[var(--admin-primary)]/10 text-[var(--admin-primary)] rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-[var(--admin-primary)] hover:text-white transition-all flex items-center justify-center gap-2"
+                          >
+                            <Eye size={14} /> View Screenshot
+                          </button>
+                        )}
+                        <button 
+                          onClick={handleApprovePayment}
+                          className="w-full py-4 bg-emerald-500 text-white rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-emerald-600 shadow-lg shadow-emerald-200 transition-all flex items-center justify-center gap-2"
+                        >
+                          <CheckCircle2 size={14} /> Approve Payment
+                        </button>
+                     </div>
+                   )}
+                   
+                   {order.payment_status === 'paid' && (
+                     <div className="p-4 bg-emerald-50 text-emerald-700 rounded-xl text-[10px] font-bold uppercase tracking-widest text-center border border-emerald-100">
+                        Payment Completed via Manual UPI
+                     </div>
+                   )}
+                </div>
+             ) : (
+                <div className="space-y-4">
+                   <div className={`p-6 rounded-2xl border flex flex-col items-center gap-3 ${order.payment_status === 'paid' ? 'bg-emerald-50 border-emerald-100 text-emerald-600' : 'bg-rose-50 border-rose-100 text-rose-600'}`}>
+                      <span className="text-[10px] font-bold uppercase tracking-widest">
+                        {order.payment_status === 'paid' ? 'Transaction Success' : 'Awaiting Payment'}
+                      </span>
+                      <span className="text-2xl font-serif font-bold">₹{order.total_amount}</span>
+                   </div>
+                   {order.payment_status === 'paid' ? (
+                     <div className="p-4 bg-emerald-50 text-emerald-700 rounded-xl text-[10px] font-bold uppercase tracking-widest text-center">
+                        Payment Completed
+                     </div>
+                   ) : (
+                     <button 
+                       onClick={handleApprovePayment}
+                       className="w-full py-4 bg-[var(--admin-light)] text-[var(--admin-text-primary)] rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-[var(--admin-border)] transition-all"
+                     >
+                       Mark as Paid
+                     </button>
+                   )}
+                </div>
+             )}
           </div>
 
           {/* Quick Actions */}
@@ -257,6 +333,59 @@ export default function OrderDetailPage() {
 
         </div>
       </main>
+
+      {/* Screenshot Lightbox */}
+      <AnimatePresence>
+        {showScreenshot && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center p-6 md:p-10 bg-black/95 backdrop-blur-md"
+            onClick={() => setShowScreenshot(false)}
+          >
+            <button className="absolute top-6 right-6 md:top-10 md:right-10 w-12 h-12 bg-white/10 rounded-full flex items-center justify-center text-white hover:bg-white/20 transition-all z-10">
+              <X size={24} />
+            </button>
+            
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="relative max-w-5xl w-full flex flex-col items-center"
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="w-full bg-white/5 border border-white/10 rounded-[32px] p-2 overflow-hidden shadow-2xl">
+                <img 
+                  src={order.shipping_details?.payment_screenshot_url} 
+                  className="w-full max-h-[75vh] object-contain rounded-[24px]"
+                  alt="Payment Screenshot" 
+                />
+              </div>
+              
+              <div className="mt-8 flex flex-wrap justify-center gap-4">
+                <a 
+                  href={order.shipping_details?.payment_screenshot_url} 
+                  target="_blank" 
+                  download
+                  className="px-8 py-4 bg-white text-black rounded-2xl font-bold uppercase tracking-widest text-[10px] flex items-center gap-2 hover:scale-105 transition-all shadow-xl"
+                >
+                  <Download size={16} /> Download Proof
+                </a>
+                <button 
+                  onClick={() => {
+                    handleApprovePayment();
+                    setShowScreenshot(false);
+                  }}
+                  className="px-8 py-4 bg-emerald-500 text-white rounded-2xl font-bold uppercase tracking-widest text-[10px] flex items-center gap-2 hover:scale-105 transition-all shadow-xl shadow-emerald-500/20"
+                >
+                  <CheckCircle2 size={16} /> Confirm Payment
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

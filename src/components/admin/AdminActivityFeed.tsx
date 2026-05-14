@@ -74,13 +74,13 @@ export const AdminActivityFeed = () => {
             href={getLink(act)}
             className="flex items-center justify-between group"
           >
-            <div className="flex items-center gap-4">
-               <div className="w-10 h-10 rounded-xl bg-[var(--admin-light)] flex items-center justify-center group-hover:bg-[var(--admin-primary)] group-hover:text-white transition-all">
+            <div className="flex items-center gap-4 flex-1 min-w-0">
+               <div className="w-10 h-10 rounded-xl bg-[var(--admin-light)] flex items-center justify-center shrink-0 group-hover:bg-[var(--admin-primary)] group-hover:text-white transition-all">
                   {getIcon(act.type)}
                </div>
-               <div>
-                  <p className="text-xs font-bold text-[var(--admin-text-primary)] group-hover:text-[var(--admin-primary)] transition-colors">{act.title}</p>
-                  <p className="text-[10px] text-[var(--admin-text-muted)] mt-0.5">{act.description}</p>
+               <div className="min-w-0 flex-1">
+                  <p className="text-xs font-bold text-[var(--admin-text-primary)] group-hover:text-[var(--admin-primary)] transition-colors truncate">{act.title}</p>
+                  <p className="text-[10px] text-[var(--admin-text-muted)] mt-0.5 truncate">{act.description}</p>
                </div>
             </div>
             <div className="text-right">
