@@ -63,12 +63,8 @@ export default function LoginPage() {
           </p>
         </div>
 
-        <p className="text-center mt-6 text-xs text-[#900C3F]/50">
-          Looking for the admin panel?{" "}
-          <Link href="/admin/login" className="font-bold text-[#900C3F] hover:text-[#FF69B4] transition-colors">
-            Admin Login →
-          </Link>
-        </p>
+
+
       </div>
     </main>
   );

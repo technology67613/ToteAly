@@ -1,11 +1,13 @@
-import Link from "next/link";
+import Link from "next/link";
 import { Sparkles, Heart, Leaf } from "lucide-react";
 import type { Metadata } from "next";
+import { buildMetadata } from "@/lib/metadata";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = buildMetadata({
   title: "About Us | Tote-ally Iconic",
   description: "Meet the founders behind Tote-ally Iconic — the premium Gen Z tote bag brand born from a love for style, sustainability, and self-expression.",
-};
+  path: "/about",
+});
 
 const VALUES = [
   { icon: Sparkles, title: "Bold by Design", desc: "Every bag is a canvas for self-expression. We craft totes that start conversations." },

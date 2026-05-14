@@ -13,7 +13,6 @@ import {
 } from "lucide-react";
 import { useCartStore, CartItem } from "@/store/cartStore";
 import { toast } from "sonner";
-import { removeBackground } from "@imgly/background-removal";
 import { FALLBACK_PRODUCTS } from "@/lib/catalog";
 
 const FONTS = [

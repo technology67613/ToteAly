@@ -27,28 +27,31 @@ export async function POST(request: NextRequest) {
 
     const { name, email, subject, message, quantity, bagType, logoUrl } = validation.data;
 
-    if (!isSupabaseConfigured() || !isSupabaseAdminConfigured()) {
-      return NextResponse.json({ error: "Contact message storage is not configured." }, { status: 503 });
+    // Try to save to DB, but don't fail if DB isn't configured
+    if (isSupabaseConfigured() && isSupabaseAdminConfigured()) {
+      try {
+        await supabase
+          .from("contact_messages")
+          .insert({
+            name,
+            email,
+            subject,
+            message,
+            quantity: quantity ? Number(quantity) : null,
+            bag_type: bagType || null,
+            logo_url: logoUrl || null,
+            status: "new",
+          });
+      } catch (dbError) {
+        // Log but don't block email sending
+        console.warn("[CONTACT API] DB insert failed, continuing with email:", dbError);
+      }
     }
 
-    const { error: dbError } = await supabase
-      .from("contact_messages")
-      .insert({
-        name,
-        email,
-        subject,
-        message,
-        quantity: quantity ? Number(quantity) : null,
-        bag_type: bagType || null,
-        logo_url: logoUrl || null,
-        status: "new",
-      });
-
-    if (dbError) throw dbError;
-
+    // Always attempt to send email
     await sendContactEmails({ name, email, subject, message });
 
-    return NextResponse.json({ message: "Message saved and sent successfully" });
+    return NextResponse.json({ message: "Message sent successfully" });
   } catch (error: any) {
     console.error("[CONTACT API ERROR]", error);
     return NextResponse.json({ error: "Failed to send message. Please try again." }, { status: 500 });

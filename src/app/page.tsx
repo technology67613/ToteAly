@@ -130,8 +130,8 @@ export default function Home() {
               Tote-ally<br />Iconic
             </span>
             <div className="absolute bottom-6 left-6 right-6 bg-white/80 backdrop-blur-sm rounded-xl p-4 border border-white/50 shadow-sm">
-              <p className="font-bold text-sm">{heroProduct?.title || "Connect products in Supabase"}</p>
-              <p className="text-[#FF69B4] font-bold">{heroProduct ? `₹${heroProduct.price}` : "No featured products"}</p>
+              <p className="font-bold text-sm">{heroProduct?.title || "New Arrivals Coming Soon"}</p>
+              <p className="text-[#FF69B4] font-bold">{heroProduct ? `₹${heroProduct.price}` : "Shop the Collection"}</p>
             </div>
           </div>
         </div>

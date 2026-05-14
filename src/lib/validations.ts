@@ -5,9 +5,9 @@ export const ContactSchema = z.object({
   email: z.string().email("Invalid email address"),
   subject: z.string().min(5, "Subject is too short"),
   message: z.string().min(10, "Message is too short"),
-  quantity: z.number().optional().nullable(),
+  quantity: z.union([z.string(), z.number()]).optional().nullable(),
   bagType: z.string().optional().nullable(),
-  logoUrl: z.string().url().optional().nullable(),
+  logoUrl: z.string().url().optional().nullable().or(z.literal("")),
 });
 
 export const NewsletterSchema = z.object({
