@@ -22,13 +22,12 @@ interface Product {
 
 export default function Shop() {
   const [activeCategory, setActiveCategory] = useState("All Products");
-  const [products, setProducts] = useState<Product[]>(FALLBACK_PRODUCTS);
-  const [loading, setLoading] = useState(false); // Start false since we have fallbacks
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
   const { addItem, openCart } = useCartStore();
 
   useEffect(() => {
     async function loadProducts() {
-      // We already have fallbacks displayed, fetch in background to see if we have real ones
       try {
         const res = await fetch("/api/products");
         const data = await res.json();
