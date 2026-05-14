@@ -6,6 +6,7 @@ import { ShoppingBag, Loader2, Sparkles } from "lucide-react";
 import { useCartStore, CartItem } from "@/store/cartStore";
 import Image from "next/image";
 import { FALLBACK_PRODUCTS } from "@/lib/catalog";
+import { toast } from "sonner";
 
 const CATEGORIES = ["All Products", "Plain Totes", "Premium", "Hampers"];
 
@@ -64,6 +65,7 @@ export default function Shop() {
       isCustomized: false,
     };
     addItem(item);
+    toast.success("Added to cart!");
     openCart();
   };
 

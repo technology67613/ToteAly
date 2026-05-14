@@ -8,6 +8,7 @@ import { useCartStore, CartItem } from "@/store/cartStore";
 import Image from "next/image";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 import { getFallbackProduct } from "@/lib/catalog";
+import { toast } from "sonner";
 
 interface Product {
   id: string;
@@ -75,6 +76,7 @@ export default function ProductDetail() {
       isCustomized: false,
     };
     addItem(item);
+    toast.success("Added to cart!");
     openCart();
   };
 

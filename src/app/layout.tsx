@@ -5,6 +5,7 @@ import Providers from "@/components/Providers";
 import CartSidebar from "@/components/CartSidebar";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import { Toaster } from "sonner";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://mystore-weld.vercel.app/"),
@@ -68,6 +69,7 @@ export default function RootLayout({
           </div>
           <Footer />
           <CartSidebar />
+          <Toaster position="bottom-right" richColors />
         </Providers>
       </body>
     </html>

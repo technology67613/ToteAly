@@ -3,9 +3,11 @@
 import { useCartStore } from "@/store/cartStore";
 import { X, Minus, Plus, Trash2 } from "lucide-react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
 export default function CartSidebar() {
+  const pathname = usePathname();
   const { isOpen, closeCart, items, updateQuantity, removeItem } = useCartStore();
   const [mounted, setMounted] = useState(false);
 
@@ -14,7 +16,7 @@ export default function CartSidebar() {
     setMounted(true);
   }, []);
 
-  if (!mounted) return null;
+  if (!mounted || pathname?.startsWith("/admin")) return null;
 
   const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const amountUntilFreeShipping = Math.max(999 - total, 0);

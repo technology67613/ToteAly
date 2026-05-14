@@ -3,38 +3,37 @@
 import { useState } from "react";
 
 export default function NewsletterSignup() {
-  const [email, setEmail] = useState("");
-  const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
-  const [message, setMessage] = useState("");
+  const [email, setEmail] = useState('');
+  const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [message, setMessage] = useState('');
 
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  const handleSubscribe = async (event: React.FormEvent) => {
     event.preventDefault();
-    setStatus("loading");
-    setMessage("");
-
+    if (!email) return;
+    setStatus('loading');
     try {
-      const response = await fetch("/api/newsletter", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const res = await fetch('/api/newsletter', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),
       });
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Signup failed.");
+      const data = await res.json();
+      if (res.ok) {
+        setStatus('success');
+        setMessage(data.message || 'You\'re in! Welcome to the iconic club. 🎉');
+        setEmail('');
+      } else {
+        setStatus('error');
+        setMessage(data.error || 'Something went wrong. Please try again.');
       }
-
-      setStatus("success");
-      setMessage(data.message || "You are on the list.");
-      setEmail("");
-    } catch (error: unknown) {
-      setStatus("error");
-      setMessage(error instanceof Error ? error.message : "Could not save your signup.");
+    } catch (e) {
+      setStatus('error');
+      setMessage('Something went wrong. Please try again.');
     }
-  }
+  };
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-2">
+    <form onSubmit={handleSubscribe} className="flex flex-col gap-2">
       <div className="flex gap-2">
         <input
           type="email"
@@ -46,17 +45,14 @@ export default function NewsletterSignup() {
         />
         <button
           type="submit"
-          disabled={status === "loading"}
+          disabled={status === 'loading'}
           className="bg-[#900C3F] text-white px-4 py-2 rounded-lg font-bold text-xs uppercase tracking-widest hover:bg-[#FF69B4] transition-all disabled:opacity-60"
         >
-          {status === "loading" ? "..." : "Join"}
+          {status === 'loading' ? '...' : 'JOIN'}
         </button>
       </div>
-      {message && (
-        <p className={`text-xs ${status === "error" ? "text-red-600" : "text-[#900C3F]/60"}`}>
-          {message}
-        </p>
-      )}
+      {status === 'success' && <p className="text-green-600 text-sm mt-2">{message}</p>}
+      {status === 'error' && <p className="text-red-600 text-sm mt-2">{message}</p>}
     </form>
   );
 }

@@ -1,43 +1,28 @@
-import { NextRequest, NextResponse } from "next/server";
-import { sendNewsletterNotificationEmail } from "@/lib/email";
-import { isSupabaseAdminConfigured, isSupabaseConfigured, supabaseAdmin as supabase } from "@/lib/supabase";
-import { NewsletterSchema } from "@/lib/validations";
+import { createClient } from '@supabase/supabase-js';
+import { NextResponse } from 'next/server';
 
-export const runtime = "nodejs";
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
 
-export async function POST(request: NextRequest) {
+export async function POST(req: Request) {
   try {
-    const body = await request.json();
-    const validation = NewsletterSchema.safeParse(body);
-
-    if (!validation.success) {
-      return NextResponse.json({ 
-        error: "Invalid email address", 
-        details: validation.error.format() 
-      }, { status: 400 });
+    const { email } = await req.json();
+    if (!email || !email.includes('@')) {
+      return NextResponse.json({ error: 'Valid email required' }, { status: 400 });
     }
-
-    const { email } = validation.data;
-    const normalizedEmail = email.trim().toLowerCase();
-
-    if (!isSupabaseConfigured() || !isSupabaseAdminConfigured()) {
-      return NextResponse.json({ error: "Newsletter storage is not configured." }, { status: 503 });
-    }
-
     const { error } = await supabase
-      .from("newsletter_subscribers")
-      .upsert(
-        { email: normalizedEmail, source: "footer", subscribed_at: new Date().toISOString() },
-        { onConflict: "email" }
-      );
-
-    if (error) throw error;
-
-    await sendNewsletterNotificationEmail(normalizedEmail);
-
-    return NextResponse.json({ message: "You are on the list." });
-  } catch (error: any) {
-    console.error("Newsletter signup error:", error);
-    return NextResponse.json({ error: "Newsletter signup could not be saved." }, { status: 500 });
+      .from('newsletter_subscribers')
+      .insert({ email: email.toLowerCase().trim() });
+    if (error) {
+      if (error.code === '23505') {
+        return NextResponse.json({ error: 'Already subscribed!' }, { status: 409 });
+      }
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+    return NextResponse.json({ success: true, message: "You're in! Welcome to the iconic club. 🎉" });
+  } catch (e) {
+    return NextResponse.json({ error: 'Server error' }, { status: 500 });
   }
 }

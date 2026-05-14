@@ -1,8 +1,13 @@
+"use client";
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Camera, Send, Mail } from "lucide-react";
 import NewsletterSignup from "@/components/NewsletterSignup";
 
 export default function Footer() {
+  const pathname = usePathname();
+  if (pathname?.startsWith("/admin")) return null;
   return (
     <footer className="bg-white border-t border-[#F5ECD7] pt-16 pb-8 px-6">
       <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">

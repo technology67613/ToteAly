@@ -12,6 +12,7 @@ import {
   Plus
 } from "lucide-react";
 import { useCartStore, CartItem } from "@/store/cartStore";
+import { toast } from "sonner";
 import { removeBackground } from "@imgly/background-removal";
 import { FALLBACK_PRODUCTS } from "@/lib/catalog";
 
@@ -381,6 +382,7 @@ export default function Customize() {
     setTimeout(() => {
       addItem(item);
       setIsAddingToCart(false);
+      toast.success("Custom design added to cart!");
       openCart();
     }, 800);
   };

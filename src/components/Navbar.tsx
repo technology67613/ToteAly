@@ -18,6 +18,8 @@ export default function Navbar() {
   const pathname = usePathname();
   const { openCart, items } = useCartStore();
   const { data: session } = useSession();
+
+  if (pathname?.startsWith("/admin")) return null;
   const [mobileOpen, setMobileOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
 

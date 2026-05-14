@@ -41,6 +41,19 @@ export default function CheckoutPage() {
 
   useEffect(() => {
     setMounted(true);
+    // Load Razorpay Script
+    const script = document.createElement('script');
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.async = true;
+    document.body.appendChild(script);
+    return () => { 
+      const existingScript = document.getElementById('razorpay-sdk');
+      if (existingScript) document.body.removeChild(existingScript);
+      else if (document.querySelector('script[src="https://checkout.razorpay.com/v1/checkout.js"]')) {
+         const rzpScript = document.querySelector('script[src="https://checkout.razorpay.com/v1/checkout.js"]');
+         if (rzpScript) document.body.removeChild(rzpScript);
+      }
+    };
   }, []);
 
   if (!mounted) return null;
@@ -77,17 +90,7 @@ export default function CheckoutPage() {
     setUploadingScreenshot(false);
   };
 
-  const loadRazorpayScript = (): Promise<boolean> => {
-    return new Promise((resolve) => {
-      if (window.Razorpay) return resolve(true);
-      const script = document.createElement("script");
-      script.src = "https://checkout.razorpay.com/v1/checkout.js";
-      script.id = "razorpay-sdk";
-      script.onload = () => resolve(true);
-      script.onerror = () => resolve(false);
-      document.body.appendChild(script);
-    });
-  };
+
 
   const handlePayment = async () => {
     setLoading(true);
@@ -125,22 +128,15 @@ export default function CheckoutPage() {
       const res = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount: total, items }),
+        body: JSON.stringify({ amount: total }), 
       });
       
-      const data = await res.json();
-      if (data.error) throw new Error(data.error);
-      const { order } = data;
+      const order = await res.json();
+      if (!res.ok) throw new Error(order.error || "Failed to create payment order");
 
-      // 2. Load SDK
-      const scriptLoaded = await loadRazorpayScript();
-      if (!scriptLoaded) {
-        throw new Error("Razorpay SDK failed to load. Check your connection.");
-      }
-
-      // 3. Configure Razorpay
+      // 2. Configure Razorpay
       const options = {
-        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "rzp_test_your_id",
+        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
         amount: order.amount,
         currency: order.currency,
         name: "Tote-ally Iconic",
@@ -172,16 +168,13 @@ export default function CheckoutPage() {
             });
             const orderResData = await orderRes.json();
             if (!orderRes.ok) {
-              console.error("Validation Details:", orderResData.details);
-              throw new Error(orderResData.error ? `${orderResData.error}: ${JSON.stringify(orderResData.details || {})}` : "Order could not be saved.");
+              throw new Error(orderResData.error || "Order could not be saved.");
             }
-            const finalOrderId = orderResData.id || response.razorpay_order_id || order.id;
-            setOrderId(finalOrderId);
             clearCart();
-            router.push(`/checkout/success?orderId=${finalOrderId}`);
-          } catch (e) {
+            router.push(`/checkout/success`);
+          } catch (e: any) {
             console.error("Order completion failed:", e);
-            alert(e instanceof Error ? e.message : "Order completion failed. Please contact support.");
+            alert(e.message || "Order completion failed. Please contact support.");
           } finally {
             setLoading(false);
           }
@@ -191,7 +184,11 @@ export default function CheckoutPage() {
         },
       };
 
-      const rzp = new window.Razorpay(options);
+      const rzp = new (window as any).Razorpay(options);
+      rzp.on('payment.failed', (response: any) => {
+        alert(`Payment failed: ${response.error.description}`);
+        setLoading(false);
+      });
       rzp.open();
     } catch (error: any) {
       console.error("Payment Process Error:", error);
