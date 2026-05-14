@@ -590,17 +590,24 @@ export default function Customize() {
 
         {/* Assets Right (Desktop & Mobile Content) */}
         <div className={`lg:col-span-3 border-l border-[#F5ECD7] bg-white p-6 lg:p-8 flex flex-col gap-6 lg:gap-8 overflow-y-auto ${!isMobile ? 'block' : activeTab === 'assets' ? 'block' : 'hidden'}`}>
-           <div className="flex flex-col gap-4">
+          {(activeTab === 'text' || !isMobile) && (
+            <div className="flex flex-col gap-4">
               <div className="flex items-center gap-2 text-[#900C3F] font-bold text-xs uppercase tracking-widest">
-                  className="w-full px-4 py-3 lg:px-5 lg:py-4 rounded-xl lg:rounded-2xl bg-[#FFF8F0] border border-[#F5ECD7] text-sm focus:outline-none focus:border-[#FF69B4] transition-all" 
-                />
+                <Type size={14} /> Add Iconic Text
+              </div>
+              <input 
+                type="text"
+                value={textInput}
+                onChange={(e) => setTextInput(e.target.value)}
+                placeholder="Type something iconic..."
+                className="w-full px-4 py-3 lg:px-5 lg:py-4 rounded-xl lg:rounded-2xl bg-[#FFF8F0] border border-[#F5ECD7] text-sm focus:outline-none focus:border-[#FF69B4] transition-all" 
+              />
                 <button 
                   onClick={addText}
                   className="w-full py-3 lg:py-4 bg-[#900C3F] text-white font-bold text-xs uppercase tracking-widest rounded-xl lg:rounded-2xl hover:bg-[#FF69B4] transition-all"
                 >
                   Place Text
                 </button>
-              </div>
             </div>
           )}
 
