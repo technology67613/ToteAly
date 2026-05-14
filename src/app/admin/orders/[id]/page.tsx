@@ -229,7 +229,23 @@ export default function OrderDetailPage() {
                 <span className="text-[10px] font-bold uppercase tracking-widest">{order.payment_status === 'paid' ? 'Transaction Success' : 'Awaiting Payment'}</span>
                 <span className="text-xl font-serif font-bold">₹{order.total_amount}</span>
              </div>
-             <button className="w-full py-4 bg-[var(--admin-light)] text-[var(--admin-text-primary)] rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-[var(--admin-border)] transition-all">
+             {order.shipping_details?.payment_screenshot_url && (
+               <div className="mt-6 p-4 bg-[var(--admin-light)] rounded-2xl border border-[var(--admin-border)]">
+                 <p className="text-[9px] font-bold uppercase tracking-widest text-[var(--admin-text-muted)] mb-3 flex items-center gap-2">
+                   <ExternalLink size={10} /> Payment Screenshot
+                 </p>
+                 <div className="relative group">
+                   <img 
+                     src={order.shipping_details.payment_screenshot_url} 
+                     alt="Payment Evidence" 
+                     className="w-full rounded-xl border border-[var(--admin-border)] shadow-sm hover:shadow-md transition-all cursor-zoom-in"
+                     onClick={() => window.open(order.shipping_details.payment_screenshot_url, '_blank')}
+                   />
+                   <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors pointer-events-none rounded-xl" />
+                 </div>
+               </div>
+             )}
+             <button className="w-full mt-6 py-4 bg-[var(--admin-light)] text-[var(--admin-text-primary)] rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-[var(--admin-border)] transition-all">
                 Update Payment Status
              </button>
           </div>

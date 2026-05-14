@@ -275,6 +275,16 @@ export function buildInvoiceHtml(order: OrderEmailDetails) {
           <p style="margin:0;font-size:13px;">${esc(o.shipping.city)}, ${esc(o.shipping.state)} - ${esc(o.shipping.pincode)}</p>
           <p style="margin:5px 0 0;font-size:13px;">Phone: ${esc(o.shipping.phone)}</p>
         </div>
+        <div style="width:48%;text-align:right;">
+          <h3 style="font-size:12px;text-transform:uppercase;color:#900C3F;margin:0 0 10px;">Payment Details</h3>
+          <p style="margin:0;font-size:13px;">Method: <strong>${esc(o.shipping.payment_method || (order.payment_id === 'MANUAL_UPI' ? 'Manual UPI' : 'Online Payment'))}</strong></p>
+          <p style="margin:5px 0;font-size:13px;">Status: <strong>${esc(order.payment_status || 'Pending')}</strong></p>
+          ${o.shipping.payment_screenshot_url ? `
+            <p style="margin:10px 0 0;font-size:11px;">
+              <a href="${o.shipping.payment_screenshot_url}" target="_blank" style="color:#900C3F;text-decoration:underline;">View Payment Screenshot</a>
+            </p>
+          ` : ""}
+        </div>
       </div>
 
       <table style="width:100%;border-collapse:collapse;margin-bottom:40px;">
@@ -385,7 +395,17 @@ async function generateInvoicePdf(order: any): Promise<Buffer> {
     doc.text(`Phone: ${order.shipping_details?.phone || ""}`);
     doc.moveDown();
 
-    // Table Header
+    // Payment Details
+    const paymentTop = 180;
+    const rightCol = 350;
+    doc.fontSize(12).text("Payment:", rightCol, 180, { underline: true });
+    doc.fontSize(10).text(`Method: ${order.shipping_details?.payment_method || (order.payment_id === 'MANUAL_UPI' ? 'Manual UPI' : 'Online Payment')}`, rightCol, 195);
+    doc.text(`Status: ${order.payment_status || 'Pending'}`, rightCol, 210);
+    if (order.shipping_details?.payment_screenshot_url) {
+      doc.fillColor(C.rose).text("Screenshot Uploaded", rightCol, 225);
+      doc.fillColor("#000000");
+    }
+    doc.moveDown();
     const tableTop = 250;
     doc.font("Helvetica-Bold").text("Item", 50, tableTop);
     doc.text("Qty", 350, tableTop);
