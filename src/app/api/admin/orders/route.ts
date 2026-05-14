@@ -96,7 +96,8 @@ export async function PATCH(request: NextRequest) {
     if (payment_status) updatePayload.payment_status = payment_status;
 
     // Special case: Manual UPI approval
-    const isManualUPI = currentOrder.payment_id === 'MANUAL_UPI';
+    const pm = currentOrder.payment_method?.toLowerCase() || '';
+    const isManualUPI = pm === 'upi' || pm === 'manual' || pm === 'manual upi' || pm.includes('manual');
     const isApproving = status?.toLowerCase() === 'confirmed' || status?.toLowerCase() === 'paid';
 
     if (isManualUPI && isApproving) {

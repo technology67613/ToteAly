@@ -548,7 +548,7 @@ export async function sendOrderConfirmationEmail(to: string, orderDetails: any) 
     const invoiceId = orderDetails.id?.slice(-6).toUpperCase() || "NEW";
 
     return transporter.sendMail({
-      from: `"Tote-ally Iconic" <noreply.toteally@gmail.com>`,
+      from: `"Tote-ally Iconic" <${sender}>`,
       to,
       subject: `✦ Order Confirmed — #${invoiceId}`,
       html: buildOrderConfirmationEmailHtml(orderDetails),
@@ -563,7 +563,7 @@ export async function sendOrderConfirmationEmail(to: string, orderDetails: any) 
   } catch (err) {
     console.error("Failed to send PDF order email:", err);
     return transporter.sendMail({
-      from: `"Tote-ally Iconic" <noreply.toteally@gmail.com>`,
+      from: `"Tote-ally Iconic" <${sender}>`,
       to,
       subject: `✦ Order Confirmed — #${orderDetails.id?.slice(-6).toUpperCase() || "NEW"}`,
       html: buildOrderConfirmationEmailHtml(orderDetails),
@@ -581,7 +581,7 @@ export async function sendPaymentConfirmedEmail(to: string, orderDetails: any) {
     const invoiceId = orderDetails.id?.slice(-6).toUpperCase() || "NEW";
 
     return transporter.sendMail({
-      from: `"Tote-ally Iconic" <noreply.toteally@gmail.com>`,
+      from: `"Tote-ally Iconic" <${sender}>`,
       to,
       subject: `✅ Payment Confirmed — Order #${invoiceId}`,
       html: buildPaymentConfirmedEmailHtml(orderDetails),
@@ -596,7 +596,7 @@ export async function sendPaymentConfirmedEmail(to: string, orderDetails: any) {
   } catch (err) {
     console.error("Failed to send Payment Confirmed email:", err);
     return transporter.sendMail({
-      from: `"Tote-ally Iconic" <noreply.toteally@gmail.com>`,
+      from: `"Tote-ally Iconic" <${sender}>`,
       to,
       subject: `✅ Payment Confirmed — Order #${orderDetails.id?.slice(-6).toUpperCase() || "NEW"}`,
       html: buildPaymentConfirmedEmailHtml(orderDetails),
