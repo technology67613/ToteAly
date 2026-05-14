@@ -239,7 +239,6 @@ export default function ProductDetail() {
 
             </div>
           </div>
-        </div>
 
         <div className="border-t border-[#F5ECD7] pt-20">
           <div className="flex flex-col lg:flex-row gap-20">
