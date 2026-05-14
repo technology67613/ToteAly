@@ -9,14 +9,31 @@ export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
     const file = formData.get("file") as File;
+    const base64Data = formData.get("base64") as string;
+    const customFilename = formData.get("filename") as string;
 
-    if (!file) {
-      return NextResponse.json({ error: "No file uploaded" }, { status: 400 });
+    if (!file && !base64Data) {
+      return NextResponse.json({ error: "No file or data provided" }, { status: 400 });
     }
 
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-    const filename = `${Date.now()}-${file.name.replace(/\s+/g, "-")}`;
+    let buffer: Buffer;
+    let filename: string;
+    let contentType: string;
+
+    if (file) {
+      const bytes = await file.arrayBuffer();
+      buffer = Buffer.from(bytes);
+      filename = `${Date.now()}-${file.name.replace(/\s+/g, "-")}`;
+      contentType = file.type;
+    } else {
+      const matches = base64Data.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+      if (!matches || matches.length !== 3) {
+        return NextResponse.json({ error: "Invalid base64 data" }, { status: 400 });
+      }
+      contentType = matches[1];
+      buffer = Buffer.from(matches[2], 'base64');
+      filename = customFilename || `${Date.now()}-design.png`;
+    }
 
     // 1. If Supabase is configured, upload to Supabase Storage
     if (isSupabaseConfigured()) {

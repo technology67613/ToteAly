@@ -186,9 +186,13 @@ function normalizeOrder(order: OrderEmailDetails) {
   const id = order.id || order._id || "N/A";
   const invoiceNo = `INV-${(id || "").toString().slice(-8).toUpperCase()}`;
   const createdAt = order.created_at ? new Date(order.created_at).toLocaleDateString() : new Date().toLocaleDateString();
-  const totalAmount = order.total_amount ?? order.totalAmount ?? 0;
+  const totalAmount = Number(order.total_amount ?? order.totalAmount ?? 0);
   const shipping = order.shipping_details || order.shippingDetails || {};
-  const items = order.order_items || order.products || [];
+  const items = (order.order_items || order.products || []).map((item: any) => ({
+    ...item,
+    price: Number(item.price || 0),
+    quantity: Number(item.quantity || 1)
+  }));
   
   return { id, invoiceNo, createdAt, totalAmount, shipping, items };
 }
@@ -269,7 +273,7 @@ function buildStyledOrderEmailHtml(order: OrderEmailDetails, title: string, subt
           ` : ''}
         </td>
         <td align="right" style="padding: 20px 0; border-bottom: 1px solid #E8D5C4; color: #2D1B1B; vertical-align: top; font-weight: 500; font-size: 15px;">
-          ${qty} × INR ${price.toFixed(2)}
+          ${qty} × INR ${Number(price).toFixed(2)}
         </td>
       </tr>
     `;
@@ -332,7 +336,7 @@ function buildStyledOrderEmailHtml(order: OrderEmailDetails, title: string, subt
         </tr>
         <tr>
           <td align="right" style="padding: 20px 0 0; color: #900C3F; font-size: 20px; font-weight: bold;">Total:</td>
-          <td width="120" align="right" style="padding: 20px 0 0; color: #900C3F; font-size: 20px; font-weight: bold;">INR ${o.totalAmount.toFixed(2)}</td>
+          <td width="120" align="right" style="padding: 20px 0 0; color: #900C3F; font-size: 20px; font-weight: bold;">INR ${Number(o.totalAmount).toFixed(2)}</td>
         </tr>
       </table>
 
@@ -405,8 +409,8 @@ export function buildInvoiceHtml(order: OrderEmailDetails) {
                 ${item.is_customized ? '<div style="font-size:11px;color:#900C3F;margin-top:2px;">✦ Custom Design Item</div>' : ""}
               </td>
               <td style="padding:12px 15px;border:1px solid #eee;font-size:13px;text-align:center;">${item.quantity}</td>
-              <td style="padding:12px 15px;border:1px solid #eee;font-size:13px;text-align:right;">\u20B9${item.price}</td>
-              <td style="padding:12px 15px;border:1px solid #eee;font-size:13px;text-align:right;">\u20B9${(item.price * item.quantity).toFixed(2)}</td>
+              <td style="padding:12px 15px;border:1px solid #eee;font-size:13px;text-align:right;">\u20B9${Number(item.price).toFixed(2)}</td>
+              <td style="padding:12px 15px;border:1px solid #eee;font-size:13px;text-align:right;">\u20B9${(Number(item.price) * Number(item.quantity)).toFixed(2)}</td>
             </tr>
           `).join("")}
         </tbody>

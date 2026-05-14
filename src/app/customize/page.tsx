@@ -9,12 +9,13 @@ import {
   RotateCcw, Palette, ArrowLeft, Loader2,
   Maximize, FlipHorizontal, FlipVertical,
   Layers, Lock, Unlock, Copy, Scissors,
-  Plus, Sparkles as SparklesIcon
+  Plus, Sparkles as SparklesIcon, Cloud
 } from "lucide-react";
 import { removeBackground } from "@imgly/background-removal";
 import { useCartStore, CartItem } from "@/store/cartStore";
 import { toast } from "sonner";
 import { FALLBACK_PRODUCTS } from "@/lib/catalog";
+import { useSession } from "next-auth/react";
 
 const FONTS = [
   { name: "Retro Serif", value: "Noto Serif" },
@@ -38,22 +39,24 @@ type CustomizableProduct = {
 };
 
 export default function Customize() {
+  const { data: session } = useSession();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [canvas, setCanvas] = useState<fabric.Canvas | null>(null);
   const [textInput, setTextInput] = useState("");
   const [selectedFont, setSelectedFont] = useState(FONTS[0].value);
   const [selectedColor, setSelectedColor] = useState(COLORS[0]);
   const [isAddingToCart, setIsAddingToCart] = useState(false);
+  const [isSavingDesign, setIsSavingDesign] = useState(false);
   const [selectedObject, setSelectedObject] = useState<fabric.Object | null>(null);
   const [products, setProducts] = useState<CustomizableProduct[]>([]);
   const [selectedBag, setSelectedBag] = useState<CustomizableProduct | null>(null);
   const [productsLoading, setProductsLoading] = useState(true);
   const [productsError, setProductsError] = useState("");
-  const [activeTab, setActiveTab] = useState<"text" | "style" | "assets">("text");
   const [isMobile, setIsMobile] = useState(false);
   const [toolbarPos, setToolbarPos] = useState({ top: 0, left: 0, visible: false });
   const containerRef = useRef<HTMLDivElement>(null);
   const [isRemovingBg, setIsRemovingBg] = useState(false);
+  const [activeTab, setActiveTab] = useState<"text" | "style" | "assets">("text");
   
   const { addItem, openCart } = useCartStore();
 
@@ -265,32 +268,48 @@ export default function Customize() {
     }
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!canvas || !e.target.files || !e.target.files[0]) return;
-    if (e.target.files[0].size > 5 * 1024 * 1024) {
-      alert("Please upload an image under 5 MB.");
+    const file = e.target.files[0];
+    
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Please upload an image under 5 MB.");
       e.target.value = "";
       return;
     }
-    const reader = new FileReader();
-    reader.onload = async (f) => {
-      const data = f.target?.result;
-      if (typeof data === "string") {
-        try {
-          const img = await fabric.FabricImage.fromURL(data, {
-            crossOrigin: 'anonymous'
-          });
-          img.scaleToWidth(150);
-          canvas.add(img);
-          canvas.centerObject(img);
-          canvas.setActiveObject(img);
-          canvas.renderAll();
-        } catch (error) {
-          console.error("Error loading image", error);
-        }
-      }
-    };
-    reader.readAsDataURL(e.target.files[0]);
+
+    const uploadToast = toast.loading("Uploading asset... ☁️");
+    
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+      
+      if (!res.ok) throw new Error("Upload failed");
+      
+      const { url } = await res.json();
+      
+      const img = await fabric.FabricImage.fromURL(url, {
+        crossOrigin: 'anonymous'
+      });
+      
+      img.scaleToWidth(150);
+      canvas.add(img);
+      canvas.centerObject(img);
+      canvas.setActiveObject(img);
+      canvas.renderAll();
+      
+      toast.success("Asset uploaded and added! ✨", { id: uploadToast });
+    } catch (error) {
+      console.error("Error uploading image", error);
+      toast.error("Upload failed. Try again.", { id: uploadToast });
+    } finally {
+      e.target.value = "";
+    }
   };
 
   const deleteSelected = () => {
@@ -397,6 +416,64 @@ export default function Customize() {
     }, 800);
   };
 
+  const handleSaveDesign = async () => {
+    if (!canvas || !selectedBag) return;
+    if (!session) {
+      toast.error("Please login to save your designs", {
+        action: {
+          label: "Login",
+          onClick: () => (window.location.href = "/login"),
+        },
+      });
+      return;
+    }
+
+    setIsSavingDesign(true);
+    try {
+      const dataUrl = canvas.toDataURL({
+        format: "png",
+        quality: 0.8,
+        multiplier: 0.5,
+      });
+
+      // 1. Upload snapshot to Storage
+      const formData = new FormData();
+      formData.append("base64", dataUrl);
+      formData.append("filename", `design-${Date.now()}.png`);
+      
+      const uploadRes = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+      
+      if (!uploadRes.ok) throw new Error("Thumbnail upload failed");
+      const { url: previewUrl } = await uploadRes.json();
+
+      // 2. Save design record
+      const res = await fetch("/api/designs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          productId: selectedBag.id,
+          previewImage: previewUrl,
+          canvasData: canvas.toJSON(),
+          title: `Custom ${selectedBag.title}`,
+        }),
+      });
+
+      if (res.ok) {
+        toast.success("Design saved to your account! ✨");
+      } else {
+        throw new Error("Failed to save record");
+      }
+    } catch (err) {
+      console.error("Save error:", err);
+      toast.error("Could not save design. Try again.");
+    } finally {
+      setIsSavingDesign(false);
+    }
+  };
+
   const downloadDesign = () => {
     if (!canvas) return;
     const dataUrl = canvas.toDataURL({
@@ -425,8 +502,16 @@ export default function Customize() {
         </div>
         
         <div className="flex gap-2 lg:gap-4">
+          <button 
+            onClick={handleSaveDesign} 
+            disabled={isSavingDesign || !selectedBag}
+            className="flex items-center gap-2 px-3 lg:px-4 py-2 text-[10px] font-bold uppercase tracking-widest text-white bg-[#FF69B4] hover:bg-[#ff85c1] transition-all rounded-xl shadow-lg shadow-[#FF69B4]/20 disabled:opacity-50"
+          >
+            {isSavingDesign ? <Loader2 size={14} className="animate-spin" /> : <Cloud size={14} />}
+            <span className="hidden sm:inline">{isSavingDesign ? "Saving..." : "Save"}</span>
+          </button>
           <button onClick={downloadDesign} className="flex items-center gap-2 px-3 lg:px-4 py-2 text-[10px] font-bold uppercase tracking-widest hover:text-[#FF69B4] transition-colors border border-[#F5ECD7] rounded-xl">
-            <Download size={14} /> <span className="hidden sm:inline">Save</span>
+            <Download size={14} /> <span className="hidden sm:inline">Export</span>
           </button>
           <button onClick={clearCanvas} className="hidden md:flex items-center gap-2 px-4 py-2 text-[10px] font-bold uppercase tracking-widest hover:text-red-600 transition-colors">
             <RotateCcw size={14} /> Reset
@@ -434,10 +519,10 @@ export default function Customize() {
           <button 
             onClick={handleAddToCart}
             disabled={isAddingToCart || !selectedBag}
-            className="flex items-center gap-2 lg:gap-3 px-4 lg:px-8 py-2 lg:py-3 bg-[#900C3F] text-white rounded-xl lg:rounded-2xl font-bold text-[10px] lg:text-sm shadow-lg shadow-[#900C3F]/20 hover:bg-[#FF69B4] transition-all active:scale-95 disabled:opacity-50"
+            className="flex items-center gap-2 px-3 lg:px-5 py-2 text-[10px] font-bold uppercase tracking-widest text-white bg-[#900C3F] hover:bg-[#FF69B4] transition-all rounded-xl shadow-lg shadow-[#900C3F]/20 disabled:opacity-50"
           >
             {isAddingToCart ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />}
-            {isAddingToCart ? "..." : selectedBag ? `Add • ₹${selectedBag.price}` : "No Product"}
+            <span className="hidden sm:inline">{isAddingToCart ? '...' : selectedBag ? `Add • ₹${selectedBag.price}` : 'No Product'}</span>
           </button>
         </div>
       </div>

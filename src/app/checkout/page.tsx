@@ -298,7 +298,14 @@ export default function CheckoutPage() {
 
               <button
                 onClick={() => setStep("payment")}
-                disabled={!form.name || !form.email || !form.phone || !form.address}
+                disabled={
+                  !form.name || 
+                  !form.email || 
+                  form.phone.length < 10 || 
+                  form.address.length < 10 || 
+                  !form.city || 
+                  !form.pincode
+                }
                 className="mt-6 w-full py-6 bg-[#900C3F] text-white rounded-[32px] font-bold text-lg hover:bg-[#FF69B4] transition-all shadow-2xl shadow-[#900C3F]/20 disabled:opacity-40"
               >
                 Proceed to Secure Payment

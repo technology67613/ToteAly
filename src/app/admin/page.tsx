@@ -26,10 +26,11 @@ import { AdminInquiriesTab } from "@/components/admin/AdminInquiriesTab";
 import { AdminReviewsTab } from "@/components/admin/AdminReviewsTab";
 import { AdminAnalyticsTab } from "@/components/admin/AdminAnalyticsTab";
 import { AdminLogsTab } from "@/components/admin/AdminLogsTab";
+import { AdminDesignsTab } from "@/components/admin/AdminDesignsTab";
 import { AdminActivityFeed } from "@/components/admin/AdminActivityFeed";
 import { ProductModal } from "@/components/admin/ProductModal";
 
-type Tab = "dashboard" | "analytics" | "orders" | "products" | "customers" | "inquiries" | "marketing" | "reviews" | "settings" | "logs";
+type Tab = "dashboard" | "analytics" | "orders" | "products" | "designs" | "customers" | "inquiries" | "marketing" | "reviews" | "settings" | "logs";
 
 const CHART_DATA = [
   { name: 'Mon', sales: 4000, revenue: 2400 },
@@ -96,7 +97,17 @@ export default function AdminPage() {
     setLoading(true);
     try {
       const statsRes = await fetch("/api/admin/stats");
-      if (statsRes.ok) setStats(await statsRes.json());
+      if (statsRes.ok) {
+        setStats(await statsRes.json());
+      } else {
+        setStats({
+          revenue: "₹0",
+          orders: 0,
+          products: 0,
+          customers: 0,
+          delta: { revenue: "+0%", orders: "Live", products: "Synced", customers: "Active" }
+        });
+      }
 
       if (tab === "products") {
         const res = await fetch("/api/admin/products");
@@ -151,6 +162,7 @@ export default function AdminPage() {
     { id: "analytics", icon: BarChart2, label: "Analytics", badge: 0 },
     { id: "orders", icon: ShoppingBag, label: "Orders", badge: orders.filter(o => o.status === 'Pending').length },
     { id: "products", icon: Package, label: "Inventory", badge: 0 },
+    { id: "designs", icon: Plus, label: "Designs", badge: 0 },
     { id: "customers", icon: Users, label: "Customers", badge: 0 },
     { id: "inquiries", icon: Mail, label: "Inquiries", badge: 0 },
     { id: "marketing", icon: Megaphone, label: "Marketing", badge: 0 },
@@ -325,7 +337,10 @@ export default function AdminPage() {
                              <p className="text-sm font-bold text-[var(--admin-text-primary)]">Check Leads</p>
                           </div>
                        </button>
-                       <button className="p-6 bg-white border border-[var(--admin-border)] rounded-3xl hover:shadow-xl hover:scale-[1.02] transition-all group flex flex-col gap-4 text-left">
+                       <button 
+                        onClick={() => window.location.href = '/api/admin/export?type=orders'}
+                        className="p-6 bg-white border border-[var(--admin-border)] rounded-3xl hover:shadow-xl hover:scale-[1.02] transition-all group flex flex-col gap-4 text-left"
+                       >
                           <div className="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-600 group-hover:bg-emerald-500 group-hover:text-white transition-all">
                              <Download size={24} />
                           </div>
@@ -432,6 +447,7 @@ export default function AdminPage() {
                     onNew={() => { setEditingProduct(null); setIsProductModalOpen(true); }}
                   />
                 )}
+                { tab === "designs" && <AdminDesignsTab /> }
                 {tab === "customers" && <AdminCustomersTab customers={customers} />}
                 {tab === "inquiries" && <AdminInquiriesTab />}
                 { tab === "marketing" && <AdminMarketingTab /> }

@@ -26,10 +26,25 @@ export async function GET() {
 
     // Group by month for trend
     const monthlyData: Record<string, number> = {};
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const prevMonth = currentMonth === 0 ? 11 : currentMonth - 1;
+    
+    let currentMonthRevenue = 0;
+    let prevMonthRevenue = 0;
+
     (paidOrders || []).forEach((o: any) => {
-      const month = new Date(o.created_at).toLocaleString('default', { month: 'short' });
+      const date = new Date(o.created_at);
+      const month = date.toLocaleString('default', { month: 'short' });
       monthlyData[month] = (monthlyData[month] || 0) + Number(o.total_amount);
+      
+      if (date.getMonth() === currentMonth) currentMonthRevenue += Number(o.total_amount);
+      if (date.getMonth() === prevMonth) prevMonthRevenue += Number(o.total_amount);
     });
+
+    const revenueDelta = prevMonthRevenue > 0 
+      ? (((currentMonthRevenue - prevMonthRevenue) / prevMonthRevenue) * 100).toFixed(1)
+      : "0.0";
 
     // 3. Category Distribution
     const { data: categoryData } = await supabase
@@ -56,7 +71,7 @@ export async function GET() {
       trend: monthlyData,
       categories: categoryDistribution,
       delta: {
-        revenue: "+12.5%",
+        revenue: `${Number(revenueDelta) >= 0 ? '+' : ''}${revenueDelta}%`,
         orders: "Live",
         products: "Synced",
         customers: "Active"

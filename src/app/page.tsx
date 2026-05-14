@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState, useEffect } from "react";
-import { ShoppingBag, Sparkles, ArrowRight, Star, Truck, ShieldCheck, Heart } from "lucide-react";
+import { ShoppingBag, Sparkles, ArrowRight, Star, Truck, ShieldCheck, Heart, Camera } from "lucide-react";
 import { useCartStore, CartItem } from "@/store/cartStore";
 import Image from "next/image";
 import { FALLBACK_PRODUCTS } from "@/lib/catalog";
@@ -56,7 +56,6 @@ export default function Home() {
     fetchFeatured();
     async function fetchIG() {
       try {
-        // Try to get real-time posts from our custom proxy
         const res = await fetch("/api/social/instagram");
         const posts = await res.json();
         
@@ -137,30 +136,10 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ── PERKS BAR ── */}
-      <section className="w-full border-y border-[#F5ECD7] py-12 px-6 md:px-8 bg-white/50">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12">
-          {PERKS.map((perk) => (
-            <div key={perk.title} className="flex items-center gap-5">
-              <div className="w-12 h-12 bg-[#F5ECD7] rounded-full flex items-center justify-center text-[#900C3F]">
-                <perk.icon size={24} />
-              </div>
-              <div>
-                <p className="font-bold text-sm uppercase tracking-widest">{perk.title}</p>
-                <p className="text-xs text-[#900C3F]/60 mt-0.5">{perk.desc}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
       {/* ── FEATURED PRODUCTS ── */}
-      <section className="max-w-7xl mx-auto w-full px-6 md:px-8 py-20 lg:py-24">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-12 gap-6 sm:gap-0">
-          <div className="flex flex-col gap-2">
-            <span className="text-xs font-bold uppercase tracking-[0.3em] text-[#FF69B4]">Curated Picks</span>
-            <h2 className="font-serif text-3xl md:text-4xl font-bold">Featured Styles</h2>
-          </div>
+      <section className="max-w-7xl mx-auto w-full px-6 md:px-8 py-20">
+        <div className="flex items-center justify-between mb-12">
+          <h2 className="font-serif text-3xl md:text-4xl font-bold">Featured Styles</h2>
           <Link href="/shop" className="flex items-center gap-2 text-sm font-bold uppercase tracking-widest hover:text-[#FF69B4] transition-colors">
             View All <ArrowRight size={16} />
           </Link>
@@ -195,6 +174,20 @@ export default function Home() {
           ))}
         </div>
       </section>
+
+      {/* ── BULK ORDERS CTA ── */}
+      <section className="max-w-7xl mx-auto w-full px-6 md:px-8 py-10">
+        <div className="bg-white border border-[#F5ECD7] rounded-[40px] p-8 md:p-12 flex flex-col md:flex-row items-center justify-between gap-8 shadow-xl shadow-[#900C3F]/5">
+          <div className="flex flex-col gap-3 text-center md:text-left">
+            <h2 className="font-serif text-3xl font-bold">Planning an event?</h2>
+            <p className="text-[#900C3F]/60 max-w-md">Get custom-designed totes for your wedding, brand launch, or corporate gifting at special bulk rates.</p>
+          </div>
+          <Link href="/contact?type=bulk" className="px-8 py-4 bg-[#900C3F] text-white font-bold rounded-xl hover:bg-[#FF69B4] transition-all whitespace-nowrap">
+            Bulk Inquiry →
+          </Link>
+        </div>
+      </section>
+
 
       {/* ── CUSTOMIZER CTA ── */}
       <section className="w-full bg-[#900C3F] text-[#FFF8F0] py-16 lg:py-20 px-6 md:px-8">
@@ -242,12 +235,38 @@ export default function Home() {
         <h2 className="font-serif text-3xl md:text-4xl font-bold mb-2 text-center">@TOTE_ALLY_ICONIC</h2>
         <p className="text-center text-[#900C3F]/60 mb-10 text-sm px-4">Follow us on Instagram for daily drops &amp; behind the scenes.</p>
         
-        <div className="w-full max-w-5xl mx-auto bg-white rounded-[32px] md:rounded-[40px] border border-[#F5ECD7] overflow-hidden shadow-2xl shadow-[#900C3F]/5 mt-10 h-[500px] md:h-[700px]">
-          <iframe 
-            src="https://www.instagram.com/tote_ally_iconic/embed" 
-            className="w-full h-full border-none"
-            title="Instagram Feed"
-          />
+        <div className="w-full max-w-7xl mx-auto px-6 mt-10">
+          {igPosts.length > 0 ? (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+              {igPosts.map((post, idx) => (
+                <a 
+                  key={idx} 
+                  href={post.permalink} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="aspect-square relative rounded-2xl overflow-hidden group border border-[#F5ECD7] shadow-sm"
+                >
+                  <Image 
+                    src={post.media_url} 
+                    alt="Instagram Post" 
+                    fill 
+                    className="object-cover group-hover:scale-110 transition-transform duration-500"
+                  />
+                  <div className="absolute inset-0 bg-[#900C3F]/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <Camera size={24} className="text-white" />
+                  </div>
+                </a>
+              ))}
+            </div>
+          ) : (
+            <div className="w-full max-w-5xl mx-auto bg-white rounded-[32px] md:rounded-[40px] border border-[#F5ECD7] overflow-hidden shadow-2xl shadow-[#900C3F]/5 h-[500px] md:h-[700px]">
+              <iframe 
+                src="https://www.instagram.com/tote_ally_iconic/embed" 
+                className="w-full h-full border-none"
+                title="Instagram Feed"
+              />
+            </div>
+          )}
         </div>
         
         <div className="text-center mt-12">

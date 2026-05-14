@@ -18,14 +18,36 @@ export const authOptions = {
         password: { label: "Password", type: "password" }
       },
       async authorize(credentials) {
-        if (
-          credentials?.username === process.env.ADMIN_USERNAME &&
-          credentials?.password === process.env.ADMIN_PASSWORD
-        ) {
+        // Artificial delay to prevent timing attacks
+        await new Promise(resolve => setTimeout(resolve, 500));
+
+        const username = credentials?.username;
+        const password = credentials?.password;
+        const adminUser = process.env.ADMIN_USERNAME;
+        const adminPass = process.env.ADMIN_PASSWORD;
+
+        if (username !== adminUser) return null;
+
+        // Check if stored password is a bcrypt hash
+        const isHash = adminPass?.startsWith("$2");
+        
+        let isValid = false;
+        if (isHash) {
+          const bcrypt = await import("bcryptjs");
+          isValid = await bcrypt.compare(password || "", adminPass || "");
+        } else {
+          // Plaintext fallback (Vulnerable - log warning)
+          isValid = password === adminPass;
+          if (isValid) {
+             console.warn("⚠️ ADMIN_PASSWORD is stored in plaintext. Use bcrypt to hash it for production.");
+          }
+        }
+
+        if (isValid) {
           return {
             id: "admin-id",
             name: "Admin",
-            email: process.env.ADMIN_USERNAME,
+            email: adminUser,
             role: "admin",
           };
         }

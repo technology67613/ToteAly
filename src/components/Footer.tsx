@@ -36,8 +36,8 @@ export default function Footer() {
           <nav className="flex flex-col gap-3 text-sm font-semibold">
             <Link href="/shop" className="hover:text-[#FF69B4] transition-colors">New Arrivals</Link>
             <Link href="/customize" className="hover:text-[#FF69B4] transition-colors">Custom Designer</Link>
-            <Link href="/shop" className="hover:text-[#FF69B4] transition-colors">Premium Collection</Link>
-            <Link href="/shop" className="hover:text-[#FF69B4] transition-colors">Hampers</Link>
+            <Link href="/shop?category=Premium" className="hover:text-[#FF69B4] transition-colors">Premium Collection</Link>
+            <Link href="/shop?category=Hampers" className="hover:text-[#FF69B4] transition-colors">Hampers</Link>
           </nav>
         </div>
 

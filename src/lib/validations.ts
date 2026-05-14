@@ -23,6 +23,8 @@ export const ShippingDetailsSchema = z.object({
   state: z.string().optional(),
   pincode: z.string().optional(),
   notes: z.string().optional().nullable(),
+  payment_method: z.string().optional().nullable(),
+  payment_screenshot_url: z.string().optional().nullable(),
 });
 
 export const OrderItemSchema = z.object({

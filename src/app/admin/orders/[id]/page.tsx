@@ -68,6 +68,9 @@ export default function OrderDetailPage() {
         const updated = await res.json();
         setOrder({ ...order, status: updated.status, payment_status: updated.payment_status });
         toast.success("Order marked as fulfilled!");
+      } else {
+        const err = await res.json();
+        toast.error(err.error || "Failed to update order status.");
       }
     } catch (e) {
       console.error(e);
@@ -80,12 +83,24 @@ export default function OrderDetailPage() {
       const res = await fetch('/api/admin/orders', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: order.id, status: 'Confirmed' })
+        body: JSON.stringify({ 
+          id: order.id, 
+          status: 'Confirmed',
+          payment_status: 'paid' 
+        })
       });
       if (res.ok) {
         const updated = await res.json();
-        setOrder({ ...order, status: updated.status, payment_status: updated.payment_status });
-        toast.success("Payment approved and confirmation email sent!");
+        // Update both the status and payment_status to ensure UI reflects 'paid'
+        setOrder({ 
+          ...order, 
+          status: updated.status || 'Confirmed', 
+          payment_status: updated.payment_status || 'paid' 
+        });
+        toast.success("Payment approved and marked as paid!");
+      } else {
+        const err = await res.json();
+        toast.error(err.error || "Failed to approve payment.");
       }
     } catch (e) {
       console.error(e);
@@ -261,7 +276,7 @@ export default function OrderDetailPage() {
                 <h4 className="text-[10px] font-bold uppercase tracking-widest text-[var(--admin-text-muted)]">Payment Logic</h4>
              </div>
 
-             {order.payment_status === 'paid' ? (
+             {order.payment_status?.toLowerCase() === 'paid' ? (
                 <div className="flex flex-col items-center justify-center py-4 gap-6 animate-in fade-in zoom-in duration-500">
                    <div className="relative">
                       <motion.div 

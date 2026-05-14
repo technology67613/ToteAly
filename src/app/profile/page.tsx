@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useSession, signOut } from "next-auth/react";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { Package, User, MapPin, Heart, Settings, LogOut, Loader2 } from "lucide-react";
+import { Package, User, MapPin, Heart, Settings, LogOut, Loader2, Zap, Plus } from "lucide-react";
 
 const STATUS_COLORS: Record<string, string> = {
   Delivered: "bg-green-100 text-green-700",
@@ -16,11 +16,15 @@ const STATUS_COLORS: Record<string, string> = {
 
 export default function ProfilePage() {
   const { data: session, status } = useSession();
-  const [activeTab, setActiveTab] = useState<"orders" | "settings" | "wishlist">("orders");
+  const [activeTab, setActiveTab] = useState<"orders" | "settings" | "wishlist" | "designs">("orders");
   
   // Data states
   const [orders, setOrders] = useState<any[]>([]);
+  const [designs, setDesigns] = useState<any[]>([]);
+  const [wishlistItems, setWishlistItems] = useState<any[]>([]);
   const [loadingOrders, setLoadingOrders] = useState(true);
+  const [loadingDesigns, setLoadingDesigns] = useState(true);
+  const [loadingWishlist, setLoadingWishlist] = useState(true);
   
   // Profile Form States
   const [profileData, setProfileData] = useState({
@@ -41,6 +45,8 @@ export default function ProfilePage() {
     if (session?.user) {
       fetchOrders();
       fetchProfile();
+      fetchDesigns();
+      fetchWishlist();
     }
   }, [session]);
 
@@ -55,6 +61,34 @@ export default function ProfilePage() {
       console.error("Failed to fetch orders:", e);
     } finally {
       setLoadingOrders(false);
+    }
+  };
+
+  const fetchDesigns = async () => {
+    try {
+      const res = await fetch("/api/designs");
+      const data = await res.json();
+      if (Array.isArray(data)) {
+        setDesigns(data);
+      }
+    } catch (e) {
+      console.error("Failed to fetch designs:", e);
+    } finally {
+      setLoadingDesigns(false);
+    }
+  };
+
+  const fetchWishlist = async () => {
+    try {
+      const res = await fetch("/api/wishlist");
+      const data = await res.json();
+      if (Array.isArray(data)) {
+        setWishlistItems(data);
+      }
+    } catch (e) {
+      console.error("Failed to fetch wishlist:", e);
+    } finally {
+      setLoadingWishlist(false);
     }
   };
 
@@ -145,12 +179,12 @@ export default function ProfilePage() {
               <Package size={18} /> My Orders
             </button>
             <button
-              onClick={() => setActiveTab("settings")}
+              onClick={() => setActiveTab("designs")}
               className={`flex items-center gap-3 p-4 rounded-xl font-semibold transition-all ${
-                activeTab === "settings" ? "bg-[#FF69B4] text-white shadow-md" : "bg-white hover:bg-[#F5ECD7]/50 border border-[#F5ECD7]"
+                activeTab === "designs" ? "bg-[#FF69B4] text-white shadow-md" : "bg-white hover:bg-[#F5ECD7]/50 border border-[#F5ECD7]"
               }`}
             >
-              <Settings size={18} /> Profile Settings
+              <Zap size={18} /> Saved Designs
             </button>
             <button
               onClick={() => setActiveTab("wishlist")}
@@ -159,6 +193,14 @@ export default function ProfilePage() {
               }`}
             >
               <Heart size={18} /> Wishlist
+            </button>
+            <button
+              onClick={() => setActiveTab("settings")}
+              className={`flex items-center gap-3 p-4 rounded-xl font-semibold transition-all ${
+                activeTab === "settings" ? "bg-[#FF69B4] text-white shadow-md" : "bg-white hover:bg-[#F5ECD7]/50 border border-[#F5ECD7]"
+              }`}
+            >
+              <Settings size={18} /> Profile Settings
             </button>
             <button
               onClick={() => signOut({ callbackUrl: "/" })}
@@ -170,7 +212,7 @@ export default function ProfilePage() {
         </div>
 
         {/* Main Content Area */}
-        <div className="w-full md:w-3/4">
+        <div className="flex-1 min-w-0">
           
           {/* Orders Tab */}
           {activeTab === "orders" && (
@@ -181,16 +223,16 @@ export default function ProfilePage() {
               ) : (
                 <div className="flex flex-col gap-4">
                   {orders.map((order) => (
-                    <div key={order._id} className="bg-white border border-[#F5ECD7] rounded-xl p-6 flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all hover:shadow-md">
+                    <div key={order.id} className="bg-white border border-[#F5ECD7] rounded-xl p-6 flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all hover:shadow-md">
                       <div className="flex flex-col gap-1">
-                        <p className="font-bold text-lg">Order #{order._id.slice(-6).toUpperCase()}</p>
-                        <p className="text-sm text-[#900C3F]/60">{new Date(order.createdAt).toLocaleDateString()} • {order.products.length} items</p>
+                        <p className="font-bold text-lg">Order #{order.id?.slice(-6).toUpperCase()}</p>
+                        <p className="text-sm text-[#900C3F]/60">{new Date(order.created_at).toLocaleDateString()} • {order.items?.length || 0} items</p>
                       </div>
                       <div className="flex flex-col md:items-end gap-2">
                         <span className={`text-xs px-3 py-1 rounded-full font-semibold w-max ${STATUS_COLORS[order.status] || ""}`}>
                           {order.status}
                         </span>
-                        <p className="font-bold text-xl">₹{order.totalAmount}</p>
+                        <p className="font-bold text-xl">₹{order.total_amount || order.totalAmount}</p>
                       </div>
                     </div>
                   ))}
@@ -198,8 +240,105 @@ export default function ProfilePage() {
                   {orders.length === 0 && (
                     <div className="bg-white border border-[#F5ECD7] rounded-2xl p-16 text-center text-[#900C3F]/50">
                       <Package size={48} className="mx-auto mb-4 opacity-30" />
-                      <p className="text-lg">No orders yet. Time to get iconic!</p>
-                      <Link href="/shop" className="inline-block mt-4 text-[#FF69B4] font-bold hover:underline">Browse Shop →</Link>
+                      <p className="text-lg font-bold">No orders yet</p>
+                      <p className="text-sm mt-1">Time to get iconic and place your first order!</p>
+                      <Link href="/shop" className="inline-block mt-6 px-8 py-3 bg-[#900C3F] text-white rounded-xl font-bold hover:bg-[#FF69B4] transition-all">Browse Shop</Link>
+                    </div>
+                  )}
+                </div>
+              )}
+            </section>
+          )}
+
+          {/* Designs Tab */}
+          {activeTab === "designs" && (
+            <section className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="font-serif text-3xl font-bold">My Saved Designs</h2>
+                <Link href="/customize" className="text-sm font-bold text-[#FF69B4] hover:underline flex items-center gap-1">
+                  <Plus size={16} /> Create New
+                </Link>
+              </div>
+              
+              {loadingDesigns ? (
+                <div className="py-20 flex justify-center"><Loader2 className="animate-spin text-[#FF69B4]" size={32} /></div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  {designs.map((design) => (
+                    <div key={design.id} className="bg-white border border-[#F5ECD7] rounded-2xl overflow-hidden group hover:shadow-xl transition-all duration-500">
+                      <div className="aspect-square bg-[#F5ECD7]/30 relative overflow-hidden">
+                        <img 
+                          src={design.preview_image || design.preview_url} 
+                          alt={design.title || design.name} 
+                          className="w-full h-full object-contain p-8 group-hover:scale-105 transition-transform duration-700"
+                        />
+                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100">
+                           <Link 
+                            href={`/customize?designId=${design.id}`}
+                            className="bg-white text-[#900C3F] px-6 py-2 rounded-full font-bold text-sm shadow-xl"
+                           >
+                            Edit Design
+                           </Link>
+                        </div>
+                      </div>
+                      <div className="p-4 border-t border-[#F5ECD7]">
+                        <p className="font-bold text-[#900C3F] truncate">{design.title || design.name}</p>
+                        <p className="text-[10px] uppercase tracking-widest text-[#900C3F]/50 mt-1">
+                          Created {new Date(design.created_at).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+
+                  {designs.length === 0 && (
+                    <div className="col-span-full bg-white border border-[#F5ECD7] rounded-2xl p-16 text-center text-[#900C3F]/50">
+                      <Zap size={48} className="mx-auto mb-4 opacity-30" />
+                      <p className="text-lg font-bold">No designs saved yet</p>
+                      <p className="text-sm mt-1">Bring your ideas to life in the Studio!</p>
+                      <Link href="/customize" className="inline-block mt-6 px-8 py-3 bg-[#900C3F] text-white rounded-xl font-bold hover:bg-[#FF69B4] transition-all">Go to Studio</Link>
+                    </div>
+                  )}
+                </div>
+              )}
+            </section>
+          )}
+
+          {/* Wishlist Tab */}
+          {activeTab === "wishlist" && (
+            <section className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+              <h2 className="font-serif text-3xl font-bold mb-6">My Wishlist</h2>
+              
+              {loadingWishlist ? (
+                <div className="py-20 flex justify-center"><Loader2 className="animate-spin text-[#FF69B4]" size={32} /></div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  {wishlistItems.map((item) => (
+                    <Link key={item.id} href={`/shop/${item.product_id}`} className="bg-white border border-[#F5ECD7] rounded-2xl overflow-hidden group hover:shadow-xl transition-all duration-500">
+                      <div className="aspect-square bg-[#F5ECD7]/30 relative overflow-hidden">
+                        <img 
+                          src={item.products?.image_url || "/images/placeholder.jpg"} 
+                          alt={item.products?.name} 
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                        />
+                      </div>
+                      <div className="p-4 border-t border-[#F5ECD7] flex justify-between items-center">
+                        <div>
+                          <p className="font-bold text-[#900C3F]">{item.products?.name}</p>
+                          <p className="text-sm font-bold text-[#FF69B4]">₹{item.products?.price}</p>
+                        </div>
+                        <div className="w-10 h-10 rounded-full bg-[#FFF8F0] flex items-center justify-center text-[#FF69B4]">
+                           <Heart size={20} fill="#FF69B4" />
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
+
+                  {wishlistItems.length === 0 && (
+                    <div className="col-span-full bg-white border border-[#F5ECD7] rounded-2xl p-16 text-center text-[#900C3F]/50">
+                      <Heart size={48} className="mx-auto mb-4 opacity-30" />
+                      <p className="text-lg font-bold">Your wishlist is empty</p>
+                      <p className="text-sm mt-1">Save your favorites while browsing the shop!</p>
+                      <Link href="/shop" className="inline-block mt-6 px-8 py-3 bg-[#900C3F] text-white rounded-xl font-bold hover:bg-[#FF69B4] transition-all">Explore Collection</Link>
                     </div>
                   )}
                 </div>
@@ -313,18 +452,6 @@ export default function ProfilePage() {
                     </button>
                   </div>
                 </form>
-              </div>
-            </section>
-          )}
-
-          {/* Wishlist Tab */}
-          {activeTab === "wishlist" && (
-            <section className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-              <h2 className="font-serif text-3xl font-bold mb-6">Wishlist</h2>
-              <div className="bg-white border border-[#F5ECD7] rounded-2xl p-16 text-center text-[#900C3F]/50">
-                <Heart size={48} className="mx-auto mb-4 opacity-30" />
-                <p className="text-lg">Your wishlist is empty. Save items while browsing!</p>
-                <Link href="/shop" className="inline-block mt-4 text-[#FF69B4] font-bold hover:underline">Explore Collection →</Link>
               </div>
             </section>
           )}

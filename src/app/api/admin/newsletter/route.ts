@@ -1,12 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseAdmin as supabase, isSupabaseAdminConfigured, isSupabaseConfigured } from "@/lib/supabase";
+import { supabaseAdmin as supabase, isSupabaseAdminConfigured } from "@/lib/supabase";
 
-export const runtime = "nodejs";
-
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
-    if (!isSupabaseConfigured() || !isSupabaseAdminConfigured()) {
-      return NextResponse.json({ error: "Supabase configuration required." }, { status: 503 });
+    if (!isSupabaseAdminConfigured()) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const { data, error } = await supabase
@@ -17,17 +15,20 @@ export async function GET(request: NextRequest) {
     if (error) throw error;
     return NextResponse.json(data);
   } catch (error: any) {
-    console.error("Newsletter Fetch Error:", error);
-    return NextResponse.json({ error: "Failed to fetch subscribers." }, { status: 500 });
+    console.error("[ADMIN NEWSLETTER GET ERROR]", error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
 
 export async function DELETE(request: NextRequest) {
   try {
+    if (!isSupabaseAdminConfigured()) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");
-
-    if (!id) return NextResponse.json({ error: "ID required." }, { status: 400 });
+    if (!id) return NextResponse.json({ error: "ID required" }, { status: 400 });
 
     const { error } = await supabase
       .from('newsletter_subscribers')
@@ -37,7 +38,7 @@ export async function DELETE(request: NextRequest) {
     if (error) throw error;
     return NextResponse.json({ success: true });
   } catch (error: any) {
-    console.error("Newsletter Delete Error:", error);
-    return NextResponse.json({ error: "Failed to delete subscriber." }, { status: 500 });
+    console.error("[ADMIN NEWSLETTER DELETE ERROR]", error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

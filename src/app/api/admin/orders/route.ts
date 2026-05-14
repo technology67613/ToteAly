@@ -96,8 +96,12 @@ export async function PATCH(request: NextRequest) {
     if (payment_status) updatePayload.payment_status = payment_status;
 
     // Special case: Manual UPI approval
-    if (currentOrder.payment_id === 'MANUAL_UPI' && status === 'Confirmed') {
+    const isManualUPI = currentOrder.payment_id === 'MANUAL_UPI';
+    const isApproving = status?.toLowerCase() === 'confirmed' || status?.toLowerCase() === 'paid';
+
+    if (isManualUPI && isApproving) {
       updatePayload.payment_status = 'paid';
+      updatePayload.status = 'Confirmed';
     }
 
     const { data: updatedOrder, error: updateError } = await supabase
@@ -110,35 +114,38 @@ export async function PATCH(request: NextRequest) {
     if (updateError) throw updateError;
 
     // 2. Send confirmation email if approved
-    if (currentOrder.payment_id === 'MANUAL_UPI' && 
-        currentOrder.status === 'Pending' && 
-        status === 'Confirmed') {
+    const wasPending = currentOrder.status?.toLowerCase() === 'pending';
+    
+    if (isManualUPI && wasPending && isApproving) {
       console.log("Manual UPI Approved. Preparing email for order:", id);
       const emailOrder = {
         ...updatedOrder,
         order_items: (currentOrder.order_items || []).map((item: any) => ({
           ...item,
-          name: item.products?.title || "Custom Tote Bag",
-          products: item.products
+          name: item.products?.title || item.product_title || "Custom Tote Bag",
+          price: Number(item.price || 0),
+          quantity: Number(item.quantity || 1)
         })),
+        total_amount: Number(updatedOrder.total_amount || 0)
       };
+      
       const customerEmail = updatedOrder.shipping_details?.email;
       if (customerEmail) {
-        console.log("Attempting to send payment confirmation email to:", customerEmail);
         try {
-          const emailResult = await sendPaymentConfirmedEmail(customerEmail, emailOrder);
-          console.log("Payment confirmation email result:", emailResult ? "Success" : "No result (likely no SMTP config)");
+          await sendPaymentConfirmedEmail(customerEmail, emailOrder);
+          console.log("Payment confirmation email sent to:", customerEmail);
         } catch (emailErr) {
-          console.error("Critical error in payment confirmation email flow:", emailErr);
+          console.error("Email sending failed:", emailErr);
         }
-      } else {
-        console.warn("No customer email found in shipping_details for order:", id);
       }
     }
 
     return NextResponse.json(updatedOrder);
   } catch (error: any) {
     console.error("Order Patch Error:", error);
-    return NextResponse.json({ error: "Failed to update order in cloud." }, { status: 500 });
+    return NextResponse.json({ 
+      error: error.message || "Failed to update order in cloud.",
+      details: error
+    }, { status: 500 });
   }
 }

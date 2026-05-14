@@ -1,20 +1,26 @@
-import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
+import { supabaseAdmin as supabase, isSupabaseAdminConfigured } from '@/lib/supabase';
 import { sendNewsletterNotificationEmail } from '@/lib/email';
+import { rateLimit } from '@/lib/rate-limit';
+
+export const runtime = "nodejs";
 
 export async function POST(req: Request) {
   try {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-    if (!supabaseUrl || !supabaseAnonKey) {
-      console.error('Supabase credentials missing in newsletter route');
+    if (!isSupabaseAdminConfigured()) {
       return NextResponse.json({ error: 'Database connection not configured' }, { status: 503 });
     }
 
-    const supabase = createClient(supabaseUrl, supabaseAnonKey);
+    const ip = req.headers.get("x-forwarded-for") || "127.0.0.1";
+    const { success } = rateLimit(ip, 3, 3600000); // 3 attempts per hour
 
-    const { email } = await req.json();
+    if (!success) {
+      return NextResponse.json({ error: 'Too many subscription attempts. Please try later.' }, { status: 429 });
+    }
+
+    const body = await req.json();
+    const email = body?.email;
+
     if (!email || !email.includes('@')) {
       return NextResponse.json({ error: 'Valid email required' }, { status: 400 });
     }
@@ -33,7 +39,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    // 🚀 Send email notification to Admin
+    // Send email notification to Admin
     try {
       await sendNewsletterNotificationEmail(cleanEmail);
     } catch (emailErr) {

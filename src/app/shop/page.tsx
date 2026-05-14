@@ -2,11 +2,14 @@
 
 import Link from "next/link";
 import { useState, useEffect } from "react";
-import { ShoppingBag, Loader2, Sparkles } from "lucide-react";
+import { ShoppingBag, Loader2, Sparkles, Heart } from "lucide-react";
 import { useCartStore, CartItem } from "@/store/cartStore";
+import { useWishlistStore } from "@/store/wishlistStore";
 import Image from "next/image";
 import { FALLBACK_PRODUCTS } from "@/lib/catalog";
 import { toast } from "sonner";
+import { useSession } from "next-auth/react";
+import { motion, AnimatePresence } from "framer-motion";
 
 const CATEGORIES = ["All Products", "Plain Totes", "Premium", "Hampers"];
 
@@ -21,27 +24,38 @@ interface Product {
 }
 
 export default function Shop() {
+  const { data: session } = useSession();
   const [activeCategory, setActiveCategory] = useState("All Products");
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const { addItem, openCart } = useCartStore();
+  const { items: wishlistItems, toggleItem, fetchWishlist } = useWishlistStore();
+
+  useEffect(() => {
+    if (session) fetchWishlist();
+  }, [session, fetchWishlist]);
 
   useEffect(() => {
     async function loadProducts() {
       try {
+        const params = new URLSearchParams(window.location.search);
+        const catParam = params.get("category");
+        if (catParam && CATEGORIES.includes(catParam)) {
+          setActiveCategory(catParam);
+        }
+
         const res = await fetch("/api/products");
         const data = await res.json();
         if (Array.isArray(data)) {
           setProducts(data.length > 0 ? data : FALLBACK_PRODUCTS);
         } else {
-          console.error("Failed to load products, expected an array but got:", data);
           setProducts(FALLBACK_PRODUCTS);
         }
       } catch (err) {
-        console.error("Failed to load products:", err);
         setProducts(FALLBACK_PRODUCTS);
       } finally {
-        setLoading(false);
+        // Artificially delay for smooth transition
+        setTimeout(() => setLoading(false), 500);
       }
     }
     loadProducts();
@@ -67,6 +81,26 @@ export default function Shop() {
     addItem(item);
     toast.success("Added to cart!", { duration: 1000 });
     openCart();
+  };
+
+  const handleWishlist = (e: React.MouseEvent, productId: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!session) {
+      toast.error("Please login to save favorites", {
+        action: {
+          label: "Login",
+          onClick: () => (window.location.href = "/login")
+        }
+      });
+      return;
+    }
+    toggleItem(productId);
+    const isInWishlist = wishlistItems.includes(productId);
+    toast(isInWishlist ? "Removed from favorites" : "Saved to favorites", {
+      icon: <Heart size={14} fill={isInWishlist ? "none" : "#FF69B4"} className="text-[#FF69B4]" />,
+      duration: 1500
+    });
   };
 
   return (
@@ -101,80 +135,104 @@ export default function Shop() {
         </header>
 
         {loading ? (
-          <div className="flex flex-col items-center justify-center py-32 gap-4">
-            <Loader2 className="w-10 h-10 animate-spin text-[#900C3F]" />
-            <p className="font-serif italic text-[#900C3F]/60">Curating the finest bags for you...</p>
-          </div>
-        ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-16">
-            {filtered.map((product) => (
-              <div key={product.id || product._id} className="group flex flex-col gap-5">
-                {/* Image Container */}
-                <div className="relative aspect-[4/5] bg-white rounded-3xl overflow-hidden border border-[#F5ECD7] shadow-sm transition-all duration-500 group-hover:shadow-2xl group-hover:shadow-[#900C3F]/10 group-hover:-translate-y-2">
-                  <Link href={`/shop/${product.id || product._id}`} className="absolute inset-0 z-10">
-                    {product.images?.[0] ? (
-                      <Image
-                        src={product.images[0]} 
-                        alt={product.title} 
-                        fill
-                        className="object-cover transition-transform duration-700 group-hover:scale-110"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-[#900C3F]/10">
-                        <ShoppingBag size={64} />
-                      </div>
-                    )}
-                  </Link>
-
-                  {/* Badges */}
-                  <div className="absolute top-4 left-4 flex flex-col gap-2 z-20">
-                    {product.isCustomizable && (
-                      <span className="text-[10px] bg-white/90 backdrop-blur-sm text-[#FF69B4] px-3 py-1.5 rounded-full font-bold shadow-sm uppercase tracking-widest border border-[#F5ECD7]">
-                        Customizable
-                      </span>
-                    )}
-                    {product.category === "Premium" && (
-                      <span className="text-[10px] bg-[#900C3F] text-white px-3 py-1.5 rounded-full font-bold shadow-sm uppercase tracking-widest border border-[#900C3F]">
-                        Premium
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Hover Quick Add */}
-                  <div className="absolute inset-0 bg-[#900C3F]/0 group-hover:bg-[#900C3F]/5 transition-all duration-500 flex items-end p-6 z-30">
-                    <button
-                      onClick={() => handleAddToCart(product)}
-                      className="w-full py-4 bg-[#900C3F] text-white font-bold text-sm uppercase tracking-widest rounded-2xl translate-y-20 group-hover:translate-y-0 transition-transform duration-500 shadow-xl shadow-[#900C3F]/30 flex items-center justify-center gap-3 hover:bg-[#FF69B4]"
-                    >
-                      <ShoppingBag size={18} /> Quick Add
-                    </button>
-                  </div>
-                </div>
-
-                {/* Info Container */}
-                <div className="flex flex-col gap-1 px-2">
-                  <div className="flex justify-between items-start">
-                    <Link href={`/shop/${product.id || product._id}`}>
-                      <h3 className="font-serif text-2xl font-bold tracking-tight group-hover:text-[#FF69B4] transition-colors">
-                        {product.title}
-                      </h3>
-                    </Link>
-                    <p className="font-bold text-lg">₹{product.price}</p>
-                  </div>
-                  <p className="text-sm text-[#900C3F]/50 font-medium uppercase tracking-widest mb-2">
-                    {product.category}
-                  </p>
-                  {product.isCustomizable && (
-                    <Link 
-                      href={`/customize?product=${product.id || product._id}`} 
-                      className="text-xs text-[#FF69B4] font-bold underline decoration-[#FF69B4]/30 underline-offset-4 hover:decoration-[#FF69B4] transition-all"
-                    >
-                      Personalize your bag →
-                    </Link>
-                  )}
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <div key={i} className="flex flex-col gap-5 animate-pulse">
+                <div className="aspect-[4/5] bg-[#F5ECD7]/50 rounded-3xl" />
+                <div className="flex flex-col gap-2">
+                  <div className="h-6 bg-[#F5ECD7]/50 rounded-md w-3/4" />
+                  <div className="h-4 bg-[#F5ECD7]/50 rounded-md w-1/4" />
                 </div>
               </div>
             ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-16">
+            {filtered.map((product) => {
+              const productId = product.id || product._id || "";
+              const isLiked = wishlistItems.includes(productId);
+              
+              return (
+                <div key={productId} className="group flex flex-col gap-5">
+                  {/* Image Container */}
+                  <div className="relative aspect-[4/5] bg-white rounded-3xl overflow-hidden border border-[#F5ECD7] shadow-sm transition-all duration-500 group-hover:shadow-2xl group-hover:shadow-[#900C3F]/10 group-hover:-translate-y-2">
+                    <Link href={`/shop/${productId}`} className="absolute inset-0 z-10">
+                      {product.images?.[0] ? (
+                        <Image
+                          src={product.images[0]} 
+                          alt={product.title} 
+                          fill
+                          className="object-cover transition-transform duration-700 group-hover:scale-110"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-[#900C3F]/10">
+                          <ShoppingBag size={64} />
+                        </div>
+                      )}
+                    </Link>
+
+                    {/* Wishlist Button */}
+                    <button
+                      onClick={(e) => handleWishlist(e, productId)}
+                      className="absolute top-4 right-4 z-30 p-3 rounded-full bg-white/80 backdrop-blur-md border border-[#F5ECD7] text-[#900C3F] hover:text-[#FF69B4] hover:scale-110 transition-all shadow-sm"
+                    >
+                      <Heart 
+                        size={18} 
+                        fill={isLiked ? "#FF69B4" : "none"} 
+                        className={isLiked ? "text-[#FF69B4]" : ""} 
+                      />
+                    </button>
+
+                    {/* Badges */}
+                    <div className="absolute top-4 left-4 flex flex-col gap-2 z-20">
+                      {product.isCustomizable && (
+                        <span className="text-[10px] bg-white/90 backdrop-blur-sm text-[#FF69B4] px-3 py-1.5 rounded-full font-bold shadow-sm uppercase tracking-widest border border-[#F5ECD7]">
+                          Customizable
+                        </span>
+                      )}
+                      {product.category === "Premium" && (
+                        <span className="text-[10px] bg-[#900C3F] text-white px-3 py-1.5 rounded-full font-bold shadow-sm uppercase tracking-widest border border-[#900C3F]">
+                          Premium
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Hover Quick Add */}
+                    <div className="absolute inset-0 bg-[#900C3F]/0 group-hover:bg-[#900C3F]/5 transition-all duration-500 flex items-end p-6 z-30">
+                      <button
+                        onClick={() => handleAddToCart(product)}
+                        className="w-full py-4 bg-[#900C3F] text-white font-bold text-sm uppercase tracking-widest rounded-2xl translate-y-20 group-hover:translate-y-0 transition-transform duration-500 shadow-xl shadow-[#900C3F]/30 flex items-center justify-center gap-3 hover:bg-[#FF69B4]"
+                      >
+                        <ShoppingBag size={18} /> Quick Add
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Info Container */}
+                  <div className="flex flex-col gap-1 px-2">
+                    <div className="flex justify-between items-start">
+                      <Link href={`/shop/${productId}`}>
+                        <h3 className="font-serif text-2xl font-bold tracking-tight group-hover:text-[#FF69B4] transition-colors">
+                          {product.title}
+                        </h3>
+                      </Link>
+                      <p className="font-bold text-lg">₹{product.price}</p>
+                    </div>
+                    <p className="text-sm text-[#900C3F]/50 font-medium uppercase tracking-widest mb-2">
+                      {product.category}
+                    </p>
+                    {product.isCustomizable && (
+                      <Link 
+                        href={`/customize?product=${productId}`} 
+                        className="text-xs text-[#FF69B4] font-bold underline decoration-[#FF69B4]/30 underline-offset-4 hover:decoration-[#FF69B4] transition-all"
+                      >
+                        Personalize your bag →
+                      </Link>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
 

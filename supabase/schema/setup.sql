@@ -83,21 +83,34 @@ CREATE TABLE IF NOT EXISTS public.orders (
   status TEXT DEFAULT 'Pending' CHECK (status IN ('Pending', 'Confirmed', 'Shipped', 'Delivered', 'Cancelled')),
   payment_status TEXT DEFAULT 'Pending' CHECK (payment_status IN ('Pending', 'Paid', 'Failed')),
   payment_id TEXT,
+  payment_method TEXT,
+  notes TEXT,
   shipping_details JSONB DEFAULT '{}',
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Ensure columns exist for existing tables
+ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS notes TEXT;
+ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS payment_method TEXT;
 
 -- 4. ORDER ITEMS TABLE
 CREATE TABLE IF NOT EXISTS public.order_items (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   order_id UUID REFERENCES public.orders ON DELETE CASCADE,
   product_id UUID REFERENCES public.products ON DELETE SET NULL,
-  name TEXT NOT NULL,
+  product_title TEXT,
+  product_image TEXT,
+  product_category TEXT,
   price DECIMAL(10, 2) NOT NULL,
   quantity INTEGER DEFAULT 1,
   is_customized BOOLEAN DEFAULT false,
   customization_details JSONB DEFAULT '{}'
 );
+
+-- Ensure columns exist for existing tables
+ALTER TABLE public.order_items ADD COLUMN IF NOT EXISTS product_title TEXT;
+ALTER TABLE public.order_items ADD COLUMN IF NOT EXISTS product_image TEXT;
+ALTER TABLE public.order_items ADD COLUMN IF NOT EXISTS product_category TEXT;
 
 -- 5. SETTINGS TABLE
 CREATE TABLE IF NOT EXISTS public.settings (
