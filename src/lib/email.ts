@@ -17,7 +17,7 @@ let transporterInstance: nodemailer.Transporter | null = null;
 
 function getTransporter() {
   if (!hasSmtpConfig()) {
-    console.error("Missing SMTP Config. Cannot initialize nodemailer transport.");
+    console.warn("⚠️ SMTP Config Missing: EMAIL_HOST, EMAIL_PORT, EMAIL_USER, or EMAIL_PASS not set.");
     throw new Error("Missing SMTP Config");
   }
   
@@ -441,7 +441,7 @@ export async function sendContactEmails(data: ContactEmailData) {
   const admin = process.env.CONTACT_TO_EMAIL || sender;
 
   await transporter.sendMail({
-    from: `"Tote-ally Iconic Support" <noreply.toteally@gmail.com>`,
+    from: `"Tote-ally Iconic Support" <${sender}>`,
     to: admin,
     replyTo: data.email,
     subject: `📬 Contact: ${data.subject}`,
