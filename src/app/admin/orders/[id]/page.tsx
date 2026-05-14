@@ -157,11 +157,11 @@ export default function OrderDetailPage() {
               {(order.order_items || []).map((item: any) => (
                 <div key={item.id} className="p-10 flex gap-8 group hover:bg-[var(--admin-light)]/10 transition-all">
                   <div className="w-24 h-24 bg-[var(--admin-light)] rounded-2xl overflow-hidden shrink-0 border border-[var(--admin-border)]">
-                     {(item.product_image || item.products?.images?.[0] || item.image) ? (
+                     {(item.customization_details?.product_snapshot?.image || item.product_image || item.products?.images?.[0] || item.image) ? (
                         <img 
-                          src={item.product_image || item.products?.images?.[0] || item.image} 
+                          src={item.customization_details?.product_snapshot?.image || item.product_image || item.products?.images?.[0] || item.image} 
                           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" 
-                          alt={item.product_title || item.products?.title || item.title} 
+                          alt={item.customization_details?.product_snapshot?.title || item.product_title || item.products?.title || item.title} 
                         />
                      ) : (
                         <div className="w-full h-full flex items-center justify-center text-[var(--admin-text-muted)]">
@@ -172,8 +172,8 @@ export default function OrderDetailPage() {
                   <div className="flex-1">
                     <div className="flex justify-between items-start mb-4">
                        <div>
-                          <h4 className="font-serif text-lg font-bold text-[var(--admin-text-primary)]">{item.product_title || item.products?.title || item.title}</h4>
-                          <p className="text-[10px] font-bold text-[var(--admin-text-muted)] uppercase tracking-widest mt-1">Category: {item.product_category || item.products?.category || item.category || 'Tote'}</p>
+                          <h4 className="font-serif text-lg font-bold text-[var(--admin-text-primary)]">{item.customization_details?.product_snapshot?.title || item.product_title || item.products?.title || item.title}</h4>
+                          <p className="text-[10px] font-bold text-[var(--admin-text-muted)] uppercase tracking-widest mt-1">Category: {item.customization_details?.product_snapshot?.category || item.product_category || item.products?.category || item.category || 'Tote'}</p>
                        </div>
                        <div className="text-right">
                           <p className="font-bold text-sm">₹{item.price}</p>

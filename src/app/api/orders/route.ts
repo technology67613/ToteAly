@@ -82,15 +82,17 @@ export async function POST(request: NextRequest) {
         status: initialStatus,
         payment_status: initialPaymentStatus,
         payment_id: paymentId,
-        shipping_details: shippingDetails,
-        notes: shippingDetails.notes // Saved at top level for easy access
+        shipping_details: {
+          ...shippingDetails,
+          notes: shippingDetails.notes // Ensure it's inside JSONB
+        }
       }])
       .select()
       .single();
 
     if (orderError) throw orderError;
 
-    // 3. Create Order Items with product snapshots
+    // 3. Create Order Items with product snapshots inside customization_details (JSONB)
     const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
     const orderItems = items.map((item: any) => ({
       order_id: order.id,
@@ -98,12 +100,14 @@ export async function POST(request: NextRequest) {
       price: item.price,
       quantity: item.quantity,
       is_customized: item.isCustomized || false,
-      product_title: item.title, // Snapshot
-      product_image: item.image, // Snapshot
-      product_category: item.category, // Snapshot
       customization_details: {
         ...(item.customizationDetails || {}),
         preview_image: getCustomizationPreview(item),
+        product_snapshot: {
+          title: item.title,
+          image: item.image,
+          category: item.category
+        }
       }
     }));
 
