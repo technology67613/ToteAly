@@ -24,6 +24,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Invalid amount' }, { status: 400 });
     }
 
+    console.log('Creating Razorpay order for amount:', amount);
     const order = await razorpay.orders.create({
       amount: Math.round(amount * 100), // convert ₹ to paise
       currency: 'INR',
@@ -33,8 +34,15 @@ export async function POST(req: Request) {
     return NextResponse.json(order);
   } catch (err: any) {
     console.error('Razorpay order creation failed:', err);
+    
+    // Provide a more descriptive error message if available
+    const errorMessage = err?.error?.description || err?.message || 'Failed to create payment order';
+    
     return NextResponse.json(
-      { error: err?.message || 'Failed to create payment order' },
+      { 
+        error: errorMessage,
+        details: err?.error || err 
+      },
       { status: 500 }
     );
   }
