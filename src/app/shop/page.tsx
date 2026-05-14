@@ -73,7 +73,7 @@ export default function Shop() {
     <main className="flex min-h-screen flex-col items-center p-6 md:p-8 lg:p-16 bg-[#FFF8F0] text-[#900C3F]">
       <div className="w-full max-w-7xl flex flex-col gap-12">
         {/* Header Section */}
-        <header className="flex flex-col md:flex-row justify-between items-end gap-6 border-b border-[#F5ECD7] pb-10">
+        <header className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 border-b border-[#F5ECD7] pb-10">
           <div className="flex flex-col gap-3">
             <div className="flex items-center gap-2 text-[#FF69B4] font-bold text-xs uppercase tracking-[0.3em]">
               <Sparkles size={14} /> The Collection
@@ -83,7 +83,7 @@ export default function Shop() {
             </h1>
           </div>
           
-          <div className="flex gap-2 md:gap-4 overflow-x-auto pb-4 md:pb-0 scrollbar-hide -mx-6 px-6 md:mx-0 md:px-0">
+          <div className="w-full md:w-auto flex gap-2 md:gap-4 overflow-x-auto pb-4 md:pb-0 scrollbar-hide -mx-6 px-6 md:mx-0 md:px-0">
             {CATEGORIES.map((cat) => (
               <button
                 key={cat}
