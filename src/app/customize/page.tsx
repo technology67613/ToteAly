@@ -311,18 +311,31 @@ export default function Customize() {
   const removeBackgroundHandler = async () => {
     if (!canvas || isRemovingBg) return;
     const activeObject = canvas.getActiveObject();
-    if (!activeObject || !(activeObject instanceof fabric.FabricImage)) return;
+    if (!activeObject || !(activeObject instanceof fabric.FabricImage)) {
+      toast.error("Please select an image first!");
+      return;
+    }
 
     try {
       setIsRemovingBg(true);
       const img = activeObject as fabric.FabricImage;
-      const element = img.getElement() as HTMLImageElement;
       
-      // Use AI to remove background
-      const blob = await removeBackground(element.src);
-      const url = URL.createObjectURL(blob);
+      // Get the image data
+      const dataUrl = img.toDataURL({ format: 'png' });
+
+      // Call our new fast API
+      const res = await fetch("/api/utils/remove-bg", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ image: dataUrl }),
+      });
+
+      const data = await res.json();
       
-      const newImg = await fabric.FabricImage.fromURL(url, { crossOrigin: 'anonymous' });
+      if (!res.ok) throw new Error(data.error || "Failed to remove background");
+
+      // Replace old image with the new transparent one
+      const newImg = await fabric.FabricImage.fromURL(data.url, { crossOrigin: 'anonymous' });
       newImg.set({
           left: img.left, top: img.top, scaleX: img.scaleX, scaleY: img.scaleY,
           angle: img.angle, flipX: img.flipX, flipY: img.flipY,
@@ -334,8 +347,10 @@ export default function Customize() {
       canvas.setActiveObject(newImg);
       canvas.renderAll();
       setSelectedObject(newImg);
-    } catch (err) {
+      toast.success("Background removed! ✨");
+    } catch (err: any) {
       console.error("AI Background removal failed:", err);
+      toast.error(err.message || "Background removal failed. Please try again.");
     } finally {
       setIsRemovingBg(false);
     }
@@ -346,7 +361,7 @@ export default function Customize() {
     const objects = canvas.getObjects();
     objects.forEach((obj: fabric.Object) => {
       // Don't remove the background mockup
-      if (obj.type !== "image" || (obj as any).src !== "/mockups/bag.png") {
+      if (obj !== canvas.backgroundImage) {
         canvas.remove(obj);
       }
     });

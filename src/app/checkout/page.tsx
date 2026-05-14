@@ -171,7 +171,7 @@ export default function CheckoutPage() {
               throw new Error(orderResData.error || "Order could not be saved.");
             }
             clearCart();
-            router.push(`/checkout/success`);
+            router.push(`/checkout/success?orderId=${orderResData.id}`);
           } catch (e: any) {
             console.error("Order completion failed:", e);
             alert(e.message || "Order completion failed. Please contact support.");
