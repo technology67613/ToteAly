@@ -157,11 +157,11 @@ export default function OrderDetailPage() {
               {(order.order_items || []).map((item: any) => (
                 <div key={item.id} className="p-10 flex gap-8 group hover:bg-[var(--admin-light)]/10 transition-all">
                   <div className="w-24 h-24 bg-[var(--admin-light)] rounded-2xl overflow-hidden shrink-0 border border-[var(--admin-border)]">
-                     {(item.products?.images?.[0] || item.image) ? (
+                     {(item.product_image || item.products?.images?.[0] || item.image) ? (
                         <img 
-                          src={item.products?.images?.[0] || item.image} 
+                          src={item.product_image || item.products?.images?.[0] || item.image} 
                           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" 
-                          alt={item.products?.title || item.title} 
+                          alt={item.product_title || item.products?.title || item.title} 
                         />
                      ) : (
                         <div className="w-full h-full flex items-center justify-center text-[var(--admin-text-muted)]">
@@ -172,11 +172,11 @@ export default function OrderDetailPage() {
                   <div className="flex-1">
                     <div className="flex justify-between items-start mb-4">
                        <div>
-                          <h4 className="font-serif text-lg font-bold text-[var(--admin-text-primary)]">{item.products?.title || item.title}</h4>
-                          <p className="text-[10px] font-bold text-[var(--admin-text-muted)] uppercase tracking-widest mt-1">Category: {item.products?.category || item.category || 'Tote'}</p>
+                          <h4 className="font-serif text-lg font-bold text-[var(--admin-text-primary)]">{item.product_title || item.products?.title || item.title}</h4>
+                          <p className="text-[10px] font-bold text-[var(--admin-text-muted)] uppercase tracking-widest mt-1">Category: {item.product_category || item.products?.category || item.category || 'Tote'}</p>
                        </div>
                        <div className="text-right">
-                          <p className="font-bold text-sm">₹{item.products?.price || item.price}</p>
+                          <p className="font-bold text-sm">₹{item.price}</p>
                           <p className="text-[10px] text-[var(--admin-text-muted)] font-bold">Qty: {item.quantity || 1}</p>
                        </div>
                     </div>
@@ -193,7 +193,9 @@ export default function OrderDetailPage() {
             <div className="p-10 bg-[var(--admin-light)]/20 grid grid-cols-2 gap-20">
                <div className="space-y-4">
                   <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--admin-text-muted)]">Order Notes</p>
-                  <p className="text-sm font-medium text-[var(--admin-text-primary)] leading-relaxed italic">"Please ensure the handle is double-stitched for extra durability. Looking forward to this iconic piece!"</p>
+                  <p className="text-sm font-medium text-[var(--admin-text-primary)] leading-relaxed italic">
+                    {order.notes ? `"${order.notes}"` : (order.shipping_details?.notes ? `"${order.shipping_details.notes}"` : "No specific instructions provided.")}
+                  </p>
                </div>
                <div className="space-y-4">
                   <div className="flex justify-between text-sm">
@@ -259,62 +261,70 @@ export default function OrderDetailPage() {
                 <h4 className="text-[10px] font-bold uppercase tracking-widest text-[var(--admin-text-muted)]">Payment Logic</h4>
              </div>
 
-             {order.payment_id === 'MANUAL_UPI' ? (
-                <div className="space-y-4">
-                   <div className={`p-6 rounded-2xl border flex flex-col items-center gap-3 ${order.payment_status === 'paid' ? 'bg-emerald-50 border-emerald-100' : 'bg-amber-50 border-amber-100'}`}>
-                      <div className="flex items-center gap-2">
-                        <div className={`w-2 h-2 rounded-full ${order.payment_status === 'paid' ? 'bg-emerald-500' : 'bg-amber-500 animate-pulse'}`} />
-                        <span className={`text-[10px] font-bold uppercase tracking-widest ${order.payment_status === 'paid' ? 'text-emerald-600' : 'text-amber-600'}`}>
-                          {order.payment_status === 'paid' ? 'UPI Verified' : 'Awaiting Approval'}
-                        </span>
-                      </div>
-                      <span className="text-2xl font-serif font-bold text-[var(--admin-text-primary)]">₹{order.total_amount}</span>
+             {order.payment_status === 'paid' ? (
+                <div className="flex flex-col items-center justify-center py-4 gap-6 animate-in fade-in zoom-in duration-500">
+                   <div className="relative">
+                      <motion.div 
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        className="w-20 h-20 bg-emerald-500 text-white rounded-full flex items-center justify-center shadow-2xl shadow-emerald-200"
+                      >
+                         <CheckCircle2 size={40} />
+                      </motion.div>
+                      <motion.div 
+                        animate={{ scale: [1, 1.2, 1], opacity: [0.5, 0, 0.5] }}
+                        transition={{ duration: 2, repeat: Infinity }}
+                        className="absolute inset-0 rounded-full bg-emerald-500 -z-10"
+                      />
                    </div>
-
-                   {order.payment_status !== 'paid' && (
-                     <div className="space-y-3">
-                        {order.shipping_details?.payment_screenshot_url && (
-                          <button 
-                            onClick={() => setShowScreenshot(true)}
-                            className="w-full py-4 bg-[var(--admin-primary)]/10 text-[var(--admin-primary)] rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-[var(--admin-primary)] hover:text-white transition-all flex items-center justify-center gap-2"
-                          >
-                            <Eye size={14} /> View Screenshot
-                          </button>
-                        )}
-                        <button 
-                          onClick={handleApprovePayment}
-                          className="w-full py-4 bg-emerald-500 text-white rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-emerald-600 shadow-lg shadow-emerald-200 transition-all flex items-center justify-center gap-2"
-                        >
-                          <CheckCircle2 size={14} /> Approve Payment
-                        </button>
-                     </div>
-                   )}
-                   
-                   {order.payment_status === 'paid' && (
-                     <div className="p-4 bg-emerald-50 text-emerald-700 rounded-xl text-[10px] font-bold uppercase tracking-widest text-center border border-emerald-100">
-                        Payment Completed via Manual UPI
-                     </div>
-                   )}
+                   <div className="text-center">
+                      <p className="text-sm font-bold text-emerald-600 uppercase tracking-[0.2em]">Payment Completed</p>
+                      <div className="mt-2 flex items-center justify-center gap-1.5 px-3 py-1 bg-emerald-50 rounded-full border border-emerald-100">
+                        <span className="text-[9px] font-bold text-emerald-500 uppercase tracking-widest">Verified by Cloud</span>
+                      </div>
+                   </div>
                 </div>
              ) : (
                 <div className="space-y-4">
-                   <div className={`p-6 rounded-2xl border flex flex-col items-center gap-3 ${order.payment_status === 'paid' ? 'bg-emerald-50 border-emerald-100 text-emerald-600' : 'bg-rose-50 border-rose-100 text-rose-600'}`}>
-                      <span className="text-[10px] font-bold uppercase tracking-widest">
-                        {order.payment_status === 'paid' ? 'Transaction Success' : 'Awaiting Payment'}
-                      </span>
-                      <span className="text-2xl font-serif font-bold">₹{order.total_amount}</span>
-                   </div>
-                   {order.payment_status === 'paid' ? (
-                     <div className="p-4 bg-emerald-50 text-emerald-700 rounded-xl text-[10px] font-bold uppercase tracking-widest text-center">
-                        Payment Completed
-                     </div>
+                   {order.payment_id === 'MANUAL_UPI' ? (
+                      <div className="space-y-4">
+                         <div className="p-6 rounded-2xl border border-amber-100 bg-amber-50 flex flex-col items-center gap-3">
+                            <div className="flex items-center gap-2">
+                              <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+                              <span className="text-[10px] font-bold uppercase tracking-widest text-amber-600">Awaiting Approval</span>
+                            </div>
+                            <span className="text-2xl font-serif font-bold text-[var(--admin-text-primary)]">₹{order.total_amount}</span>
+                         </div>
+                         <div className="space-y-3">
+                            {order.shipping_details?.payment_screenshot_url && (
+                              <button 
+                                onClick={() => setShowScreenshot(true)}
+                                className="w-full py-4 bg-[var(--admin-primary)]/10 text-[var(--admin-primary)] rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-[var(--admin-primary)] hover:text-white transition-all flex items-center justify-center gap-2"
+                              >
+                                <Eye size={14} /> View Screenshot
+                              </button>
+                            )}
+                            <button 
+                              onClick={handleApprovePayment}
+                              className="w-full py-4 bg-emerald-500 text-white rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-emerald-600 shadow-lg shadow-emerald-200 transition-all flex items-center justify-center gap-2"
+                            >
+                              <CheckCircle2 size={14} /> Approve Payment
+                            </button>
+                         </div>
+                      </div>
                    ) : (
-                     <button 
-                       onClick={handleApprovePayment}
-                       className="w-full py-4 bg-[var(--admin-light)] text-[var(--admin-text-primary)] rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-[var(--admin-border)] transition-all"
-                     >
-                       Mark as Paid
-                     </button>
+                      <div className="space-y-4">
+                         <div className="p-6 rounded-2xl border border-rose-100 bg-rose-50 flex flex-col items-center gap-3">
+                            <span className="text-[10px] font-bold uppercase tracking-widest text-rose-600">Awaiting Payment</span>
+                            <span className="text-2xl font-serif font-bold text-rose-700">₹{order.total_amount}</span>
+                         </div>
+                         <button 
+                           onClick={handleApprovePayment}
+                           className="w-full py-4 bg-[var(--admin-light)] text-[var(--admin-text-primary)] rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-[var(--admin-border)] transition-all font-bold"
+                         >
+                           MARK AS PAID
+                         </button>
+                      </div>
                    )}
                 </div>
              )}

@@ -7,7 +7,7 @@ import { useCartStore } from "@/store/cartStore";
 import { 
   ShoppingBag, CheckCircle, Loader2, ChevronRight, 
   ShieldCheck, Truck, Lock, CreditCard, ArrowLeft,
-  Sparkles, Package, MapPin, Phone, Mail, User, UploadCloud, QrCode
+  Sparkles, Package, MapPin, Phone, Mail, User, UploadCloud, QrCode, MessageSquare
 } from "lucide-react";
 
 declare global {
@@ -37,6 +37,7 @@ export default function CheckoutPage() {
     city: "",
     pincode: "",
     state: "",
+    notes: "",
   });
 
   useEffect(() => {
@@ -63,7 +64,7 @@ export default function CheckoutPage() {
   const amountUntilFreeShipping = Math.max(999 - subtotal, 0);
   const total = subtotal + SHIPPING_FEE;
 
-  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
@@ -263,6 +264,18 @@ export default function CheckoutPage() {
                 <label className="text-[10px] font-bold uppercase tracking-widest text-[#900C3F]/40 flex items-center gap-2"><MapPin size={12} /> Shipping Address</label>
                 <input name="address" value={form.address} onChange={handleFormChange} placeholder="Flat, Street, Locality"
                   className="w-full px-5 py-4 rounded-2xl bg-[#F8F9FA] border border-[#F5ECD7] focus:outline-none focus:border-[#FF69B4] transition-all font-medium" />
+              </div>
+
+              <div className="flex flex-col gap-3">
+                <label className="text-[10px] font-bold uppercase tracking-widest text-[#900C3F]/40 flex items-center gap-2"><MessageSquare size={12} /> Order Notes (Optional)</label>
+                <textarea 
+                  name="notes" 
+                  value={form.notes} 
+                  onChange={handleFormChange} 
+                  placeholder="Anything we should know? (e.g. delivery instructions)"
+                  rows={2}
+                  className="w-full px-5 py-4 rounded-2xl bg-[#F8F9FA] border border-[#F5ECD7] focus:outline-none focus:border-[#FF69B4] transition-all font-medium text-sm resize-none" 
+                />
               </div>
 
               <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
