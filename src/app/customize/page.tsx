@@ -60,7 +60,7 @@ export default function Customize() {
     async function loadProducts() {
       try {
         const res = await fetch("/api/products");
-        if (!res.ok) throw new Error("Products could not be loaded from Supabase.");
+        if (!res.ok) throw new Error("Products could not be loaded.");
         const data = await res.json();
         const customizable = Array.isArray(data)
           ? data.filter((product) => product.is_customizable || product.isCustomizable)
@@ -79,7 +79,7 @@ export default function Customize() {
 
         setProducts(fallbackProducts);
         setSelectedBag(fallbackProducts.find((product) => product.id === requestedProduct || product._id === requestedProduct) || fallbackProducts[0] || null);
-        setProductsError(error.message ? "Using launch catalogue until Supabase is available." : "");
+        setProductsError("");
       } finally {
         setProductsLoading(false);
       }
@@ -612,7 +612,7 @@ export default function Customize() {
               <div className="grid grid-cols-2 gap-2">
                 {productsLoading && (
                   <div className="col-span-2 rounded-xl border border-[#F5ECD7] p-4 text-xs font-bold uppercase tracking-widest text-[#900C3F]/50">
-                    Loading Supabase products...
+                    Loading designs...
                   </div>
                 )}
                 {!productsLoading && productsError && (
@@ -642,7 +642,7 @@ export default function Customize() {
                 <span className="text-[10px] font-bold text-[#900C3F]/40 uppercase tracking-widest">Total</span>
                 <span className="font-serif text-2xl lg:text-3xl font-bold">{selectedBag ? `₹${selectedBag.price}` : "₹0"}</span>
               </div>
-              <p className="text-[8px] text-[#900C3F]/40 leading-tight">{selectedBag ? `Includes ${selectedBag.title} + Custom AI Removal & Print.` : "Connect customizable products in Supabase."}</p>
+              <p className="text-[8px] text-[#900C3F]/40 leading-tight">{selectedBag ? `Includes ${selectedBag.title} + Custom AI Print.` : "Select a bag style to get started."}</p>
            </div>
         </div>
       </div>
