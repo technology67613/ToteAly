@@ -3,6 +3,7 @@ import { supabaseAdmin as supabase, isSupabaseConfigured } from "@/lib/supabase"
 import { FALLBACK_PRODUCTS } from "@/lib/catalog";
 
 export const runtime = "nodejs";
+export const revalidate = 60; // Cache for 60 seconds
 
 function normalizeProduct(p: any) {
   return {
