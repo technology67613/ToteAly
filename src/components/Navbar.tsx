@@ -19,13 +19,14 @@ export default function Navbar() {
   const { openCart, items } = useCartStore();
   const { data: session } = useSession();
 
-  if (pathname?.startsWith("/admin")) return null;
   const [mobileOpen, setMobileOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  if (pathname?.startsWith("/admin")) return null;
 
   const totalItems = mounted ? items.reduce((sum, i) => sum + i.quantity, 0) : 0;
 

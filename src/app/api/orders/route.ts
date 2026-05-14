@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { supabase, supabaseAdmin, isSupabaseConfigured, isSupabaseAdminConfigured } from "@/lib/supabase";
+import { supabaseAdmin, isSupabaseConfigured, isSupabaseAdminConfigured } from "@/lib/supabase";
 import { sendOrderConfirmationEmail } from "@/lib/email";
 import { createShiprocketOrder } from "@/lib/shiprocket";
 import { OrderCreateSchema } from "@/lib/validations";
@@ -66,8 +66,6 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Guest checkout stores customer data in shipping_details. Logged-in profile
-    // linking can be added later without blocking order creation.
     const profileId = isUuid((session?.user as any)?.id) ? (session?.user as any).id : null;
 
     // Determine status based on payment method
@@ -96,7 +94,6 @@ export async function POST(request: NextRequest) {
     const orderItems = items.map((item: any) => ({
       order_id: order.id,
       product_id: (item.productId && uuidPattern.test(item.productId)) ? item.productId : null,
-      name: item.title,
       price: item.price,
       quantity: item.quantity,
       is_customized: item.isCustomized || false,
@@ -114,9 +111,10 @@ export async function POST(request: NextRequest) {
       console.error("Order items insert failed after order creation:", itemsError);
     }
 
+    // 4. Send Confirmation Email
     const emailOrder = {
       ...order,
-      order_items: orderItems,
+      order_items: items, // Passing original cart items to provide images/titles
       total_amount: totalAmount,
       payment_id: paymentId,
       payment_status: initialPaymentStatus,
@@ -126,7 +124,6 @@ export async function POST(request: NextRequest) {
 
     const customerEmail = shippingDetails?.email;
     if (customerEmail) {
-      // Run these in parallel but don't await to speed up response
       Promise.all([
         sendOrderConfirmationEmail(customerEmail, emailOrder).catch(err =>
           console.error("Delayed Order Email Error:", err)
@@ -156,6 +153,7 @@ export async function POST(request: NextRequest) {
       order_items: itemsError ? [] : orderItems,
       warning: itemsError ? "Order saved, but line items could not be saved." : undefined,
     }, { status: 201 });
+
   } catch (error: any) {
     console.error("Order Save Error:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
@@ -210,7 +208,6 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "SUPABASE_SERVICE_ROLE_KEY is required to read orders." }, { status: 500 });
     }
 
-    // Efficient filtering at the SQL level
     const { data, error } = await supabaseAdmin
       .from('orders')
       .select(`

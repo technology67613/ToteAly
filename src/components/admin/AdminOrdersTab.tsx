@@ -131,7 +131,29 @@ export const AdminOrdersTab = ({ orders, loading, onRefresh, onUpdateStatus }: A
                        >
                          <Eye size={16} />
                        </button>
-                       {o.payment_status !== 'paid' && (
+                       {o.payment_id === 'MANUAL_UPI' && o.payment_status === 'Pending' && (
+                         <div className="flex gap-2">
+                           <button 
+                            onClick={(e) => { 
+                              e.stopPropagation();
+                              window.open(o.shippingDetails?.payment_screenshot_url, '_blank');
+                            }}
+                            className="px-3 py-2 bg-purple-50 text-purple-600 rounded-lg text-[9px] font-bold uppercase tracking-widest hover:bg-purple-600 hover:text-white transition-all flex items-center gap-1"
+                           >
+                             <Eye size={12} /> View Receipt
+                           </button>
+                           <button 
+                            onClick={(e) => { 
+                              e.stopPropagation(); 
+                              onUpdateStatus?.(o.id, 'Confirmed'); 
+                            }}
+                            className="px-3 py-2 bg-emerald-50 text-emerald-600 rounded-lg text-[9px] font-bold uppercase tracking-widest hover:bg-emerald-600 hover:text-white transition-all"
+                           >
+                             Approve
+                           </button>
+                         </div>
+                       )}
+                       {o.payment_status !== 'paid' && o.payment_id !== 'MANUAL_UPI' && (
                          <button 
                           onClick={(e) => { e.stopPropagation(); onUpdateStatus?.(o.id, 'paid'); }}
                           className="px-3 py-2 bg-emerald-50 text-emerald-600 rounded-lg text-[9px] font-bold uppercase tracking-widest hover:bg-emerald-600 hover:text-white transition-all"

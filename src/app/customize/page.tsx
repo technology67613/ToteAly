@@ -9,8 +9,9 @@ import {
   RotateCcw, Palette, ArrowLeft, Loader2,
   Maximize, FlipHorizontal, FlipVertical,
   Layers, Lock, Unlock, Copy, Scissors,
-  Plus
+  Plus, Sparkles as SparklesIcon
 } from "lucide-react";
+import { removeBackground } from "@imgly/background-removal";
 import { useCartStore, CartItem } from "@/store/cartStore";
 import { toast } from "sonner";
 import { FALLBACK_PRODUCTS } from "@/lib/catalog";
@@ -322,19 +323,14 @@ export default function Customize() {
       // Get the image data
       const dataUrl = img.toDataURL({ format: 'png' });
 
-      // Call our new fast API
-      const res = await fetch("/api/utils/remove-bg", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ image: dataUrl }),
-      });
+      toast.info("Removing background... 🪄", { duration: 2000 });
 
-      const data = await res.json();
-      
-      if (!res.ok) throw new Error(data.error || "Failed to remove background");
+      // Use client-side library (free and no add-on required)
+      const blob = await removeBackground(dataUrl);
+      const url = URL.createObjectURL(blob);
 
       // Replace old image with the new transparent one
-      const newImg = await fabric.FabricImage.fromURL(data.url, { crossOrigin: 'anonymous' });
+      const newImg = await fabric.FabricImage.fromURL(url, { crossOrigin: 'anonymous' });
       newImg.set({
           left: img.left, top: img.top, scaleX: img.scaleX, scaleY: img.scaleY,
           angle: img.angle, flipX: img.flipX, flipY: img.flipY,
@@ -348,8 +344,8 @@ export default function Customize() {
       setSelectedObject(newImg);
       toast.success("Background removed! ✨");
     } catch (err: any) {
-      console.error("AI Background removal failed:", err);
-      toast.error(err.message || "Background removal failed. Please try again.");
+      console.error("BG Removal Error:", err);
+      toast.error("Background removal failed. Try another image.");
     } finally {
       setIsRemovingBg(false);
     }
@@ -396,7 +392,7 @@ export default function Customize() {
     setTimeout(() => {
       addItem(item);
       setIsAddingToCart(false);
-      toast.success("Custom design added to cart!");
+      toast.success("Custom design added to cart!", { duration: 1000 });
       openCart();
     }, 800);
   };

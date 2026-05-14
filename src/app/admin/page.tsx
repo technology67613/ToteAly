@@ -116,6 +116,21 @@ export default function AdminPage() {
     setLoading(false);
   };
 
+  const handleUpdateStatus = async (id: string, status: string) => {
+    try {
+      const res = await fetch("/api/admin/orders", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, status }),
+      });
+      if (res.ok) {
+        fetchData();
+      }
+    } catch (error) {
+      console.error("Update Status Error:", error);
+    }
+  };
+
   const handleLogout = () => signOut({ callbackUrl: "/admin/login" });
 
   if (status === "loading" || (loading && !stats)) {
@@ -388,7 +403,7 @@ export default function AdminPage() {
                 )}
 
                 { tab === "analytics" && <AdminAnalyticsTab /> }
-                { tab === "orders" && <AdminOrdersTab orders={orders} loading={loading} onRefresh={fetchData} /> }
+                { tab === "orders" && <AdminOrdersTab orders={orders} loading={loading} onRefresh={fetchData} onUpdateStatus={handleUpdateStatus} /> }
                 {tab === "products" && (
                   <AdminInventoryTab 
                     products={products} 
