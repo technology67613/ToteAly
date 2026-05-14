@@ -161,8 +161,21 @@ export default function AdminPage() {
 
   return (
     <div className="flex w-full h-screen overflow-hidden bg-[var(--admin-background)]">
+      {/* Mobile Backdrop */}
+      <AnimatePresence>
+        {isSidebarOpen && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setIsSidebarOpen(false)}
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden"
+          />
+        )}
+      </AnimatePresence>
+
       {/* Sidebar */}
-      <aside className={`fixed lg:static inset-y-0 left-0 z-50 w-72 bg-[var(--admin-surface-dark)] text-white flex flex-col shrink-0 transition-transform duration-300 lg:translate-x-0 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+      <aside className={`fixed lg:static inset-y-0 left-0 z-50 w-72 bg-[var(--admin-surface-dark)] text-white flex flex-col shrink-0 transition-all duration-300 ease-in-out lg:translate-x-0 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="p-8 flex flex-col h-full">
           <div className="flex items-center justify-between mb-10">
             <div className="flex items-center gap-3">
@@ -172,13 +185,20 @@ export default function AdminPage() {
                 <span className="text-[9px] uppercase tracking-[0.2em] text-white/40 font-bold">Cloud Admin</span>
               </div>
             </div>
+            {/* Close button for mobile */}
+            <button onClick={() => setIsSidebarOpen(false)} className="lg:hidden w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 transition-all">
+              <X size={18} />
+            </button>
           </div>
 
-          <nav className="flex-1 space-y-2">
+          <nav className="flex-1 space-y-2 overflow-y-auto custom-scrollbar pr-2">
             {menuItems.map((item) => (
               <button
                 key={item.id}
-                onClick={() => setTab(item.id as Tab)}
+                onClick={() => {
+                  setTab(item.id as Tab);
+                  if (window.innerWidth < 1024) setIsSidebarOpen(false);
+                }}
                 className={`w-full flex items-center justify-between p-4 rounded-2xl transition-all group ${tab === item.id ? 'bg-white/10 text-white shadow-xl shadow-black/20 ring-1 ring-white/10' : 'text-white/40 hover:text-white hover:bg-white/5'}`}
               >
                 <div className="flex items-center gap-4">
@@ -205,39 +225,39 @@ export default function AdminPage() {
 
       <div className="flex-1 flex flex-col relative overflow-hidden">
         {/* Top Header */}
-        <header className="h-20 bg-white border-b border-[var(--admin-border)] flex items-center justify-between px-10 sticky top-0 z-40">
-          <div className="flex items-center gap-6">
-            <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="lg:hidden w-10 h-10 flex items-center justify-center rounded-xl hover:bg-[var(--admin-light)] transition-all">
-              {isSidebarOpen ? <X size={20} /> : <Menu size={20} />}
+        <header className="h-16 md:h-20 bg-white border-b border-[var(--admin-border)] flex items-center justify-between px-4 md:px-10 sticky top-0 z-40">
+          <div className="flex items-center gap-4 md:gap-6">
+            <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="lg:hidden w-10 h-10 flex items-center justify-center rounded-xl hover:bg-[var(--admin-light)] transition-all bg-[var(--admin-light)]/50">
+              <Menu size={20} />
             </button>
             <div className="flex items-center gap-4">
-               <div className="flex items-center gap-2 px-4 py-2 bg-emerald-50 border border-emerald-100 rounded-full">
-                  <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
-                  <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">Cloud Live</span>
+               <div className="flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 bg-emerald-50 border border-emerald-100 rounded-full">
+                  <div className="w-1.5 h-1.5 md:w-2 md:h-2 bg-emerald-500 rounded-full animate-pulse" />
+                  <span className="text-[8px] md:text-[10px] font-bold text-emerald-600 uppercase tracking-widest">Cloud Live</span>
                </div>
-               <div className="h-4 w-px bg-[var(--admin-border)] mx-2" />
-               <p className="text-[10px] font-bold text-[var(--admin-text-muted)] uppercase tracking-widest">Global Administrative Terminal v3.2</p>
+               <div className="hidden sm:block h-4 w-px bg-[var(--admin-border)] mx-1 md:mx-2" />
+               <p className="hidden sm:block text-[8px] md:text-[10px] font-bold text-[var(--admin-text-muted)] uppercase tracking-widest">v3.2 Terminal</p>
             </div>
           </div>
-          <div className="flex items-center gap-6">
-            <div className="relative hidden md:block">
+          <div className="flex items-center gap-3 md:gap-6">
+            <div className="relative hidden xl:block">
               <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--admin-text-muted)]" />
               <input 
                 type="text" 
-                placeholder="Deep search icons, orders, users..." 
-                className="w-80 pl-12 pr-4 py-2.5 bg-[var(--admin-light)]/50 border border-[var(--admin-border)] rounded-2xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-[var(--admin-primary)]/20 transition-all"
+                placeholder="Deep search..." 
+                className="w-64 pl-12 pr-4 py-2.5 bg-[var(--admin-light)]/50 border border-[var(--admin-border)] rounded-2xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-[var(--admin-primary)]/20 transition-all"
               />
             </div>
-            <button className="relative w-11 h-11 flex items-center justify-center rounded-xl hover:bg-[var(--admin-light)] transition-all border border-[var(--admin-border)]">
+            <button className="relative w-10 h-10 md:w-11 md:h-11 flex items-center justify-center rounded-xl hover:bg-[var(--admin-light)] transition-all border border-[var(--admin-border)]">
               <Bell size={20} className="text-[var(--admin-text-primary)]" />
-              <span className="absolute top-2 right-2 w-2 h-2 bg-rose-500 rounded-full ring-4 ring-white" />
+              <span className="absolute top-2 right-2 w-2 h-2 bg-rose-500 rounded-full ring-2 md:ring-4 ring-white" />
             </button>
-            <div className="flex items-center gap-4 p-1 pl-4 bg-[var(--admin-light)]/30 border border-[var(--admin-border)] rounded-2xl">
-               <div className="text-right flex flex-col">
-                  <span className="text-xs font-bold text-[var(--admin-text-primary)]">Admin Panel</span>
-                  <span className="text-[9px] font-bold text-[var(--admin-primary)] uppercase tracking-widest">Iconic Mode</span>
+            <div className="flex items-center gap-3 md:gap-4 p-1 md:pl-4 bg-[var(--admin-light)]/30 border border-[var(--admin-border)] rounded-2xl">
+               <div className="text-right hidden sm:flex flex-col">
+                  <span className="text-xs font-bold text-[var(--admin-text-primary)]">Admin</span>
+                  <span className="text-[8px] font-bold text-[var(--admin-primary)] uppercase tracking-widest">Iconic</span>
                </div>
-               <div className="w-9 h-9 rounded-xl bg-[var(--admin-surface-dark)] text-white flex items-center justify-center font-serif text-sm font-bold shadow-lg">A</div>
+               <div className="w-8 h-8 md:w-9 md:h-9 rounded-xl bg-[var(--admin-surface-dark)] text-white flex items-center justify-center font-serif text-xs md:text-sm font-bold shadow-lg">A</div>
             </div>
           </div>
         </header>
