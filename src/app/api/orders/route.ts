@@ -131,6 +131,21 @@ export async function POST(request: NextRequest) {
 
     if (orderError) throw orderError;
 
+    // Insert Admin Notification
+    try {
+      await supabaseAdmin
+        .from('admin_notifications')
+        .insert({
+          type: 'order',
+          title: 'New Order Received',
+          message: `Order #${order.id.slice(-6)} - ₹${verifiedTotalAmount} by ${shippingDetails.name}`,
+          reference_id: order.id,
+          is_read: false
+        });
+    } catch (notifErr) {
+      console.error("[NOTIF INSERT ERROR] Failed to insert admin notification:", notifErr);
+    }
+
     // 4. Persist Order Items (Triggers stock decrement in DB)
     const { error: itemsError } = await supabaseAdmin
       .from('order_items')
@@ -175,11 +190,19 @@ export async function GET(request: NextRequest) {
 
   if (!session?.user?.email) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { data, error } = await supabaseAdmin
+  const profileId = (session.user as any).id;
+  
+  let query = supabaseAdmin
     .from('orders')
-    .select('*, order_items(*)')
-    .filter('shipping_details->>email', 'eq', session.user.email)
-    .order('created_at', { ascending: false });
+    .select('*, order_items(*)');
+    
+  if (profileId && isUuid(profileId)) {
+    query = query.or(`user_id.eq.${profileId},shipping_details->>email.ieq.${session.user.email}`);
+  } else {
+    query = query.filter('shipping_details->>email', 'ieq', session.user.email);
+  }
+
+  const { data, error } = await query.order('created_at', { ascending: false });
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json(data);

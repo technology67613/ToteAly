@@ -96,7 +96,12 @@ export const AdminOrdersTab = ({ orders, loading, onRefresh, onUpdateStatus }: A
                   </td>
                   <td className="px-8 py-6">
                     <div className="flex flex-col">
-                      <span className="text-sm font-bold text-[var(--admin-text-primary)]">{o.user?.name || o.shippingDetails?.name || 'Guest User'}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-bold text-[var(--admin-text-primary)]">{o.user?.name || o.shippingDetails?.name || 'Guest User'}</span>
+                        {!o.user_id && (
+                          <span className="px-2 py-0.5 bg-amber-50 text-amber-600 border border-amber-100 rounded-md text-[8px] font-bold uppercase tracking-wider">Guest</span>
+                        )}
+                      </div>
                       <span className="text-[10px] text-[var(--admin-text-muted)]">{o.user?.email || o.shippingDetails?.email}</span>
                     </div>
                   </td>

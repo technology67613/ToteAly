@@ -787,8 +787,13 @@ export default function OrderDetailPage() {
                   {order.shipping_details?.name?.[0] || 'U'}
                 </div>
                 <div>
-                  <p className="text-sm font-bold text-slate-900">{order.shipping_details?.name}</p>
-                  <p className="text-[9px] text-slate-400 font-medium">Customer since {new Date().getFullYear()}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-bold text-slate-900">{order.shipping_details?.name}</p>
+                    {!order.user_id && (
+                      <span className="px-1.5 py-0.5 bg-amber-50 text-amber-600 border border-amber-100 rounded text-[8px] font-bold uppercase tracking-wider">Guest</span>
+                    )}
+                  </div>
+                  <p className="text-[9px] text-slate-400 font-medium">Customer since {new Date(order.created_at).getFullYear()}</p>
                 </div>
               </div>
               <div className="space-y-4">

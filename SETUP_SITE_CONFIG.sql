@@ -25,9 +25,9 @@ CREATE POLICY "Admin full access to config" ON public.site_config
 -- 4. Seed the table with default configuration values (matching settings options)
 INSERT INTO public.site_config (key, value, description) VALUES
   ('site_name', '"Tote-ally Iconic"', 'Store brand name'),
-  ('contact_email', '"support@totealy.com"', 'Public support email address'),
-  ('whatsapp_number', '"+91 98765 43210"', 'Store contact WhatsApp number'),
-  ('instagram_handle', '"totealy.iconic"', 'Official Instagram page handle'),
+  ('contact_email', '"toteallyiconic@gmail.com"', 'Public support email address'),
+  ('whatsapp_number', '"+91 98250 63143"', 'Store contact WhatsApp number'),
+  ('instagram_handle', '"tote_ally_iconic"', 'Official Instagram page handle'),
   ('currency_symbol', '"₹"', 'Store base currency symbol'),
   ('announcement_bar', '"Free Shipping on orders above ₹999!"', 'Storefront header announcement banner text'),
   ('shop_address', '"123 Iconic Lane, Style District Mumbai, Maharashtra 400001 India"', 'Headquarters or physical shop address'),
@@ -59,5 +59,22 @@ DROP POLICY IF EXISTS "Admin full access to logs" ON public.admin_action_log;
 CREATE POLICY "Admin full access to logs" ON public.admin_action_log
   FOR ALL USING (true);
 
--- 6. Trigger PostgREST schema cache reload to ensure instant recognition of new tables
+-- 6. Create admin_notifications table for real-time alert system
+CREATE TABLE IF NOT EXISTS public.admin_notifications (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  type TEXT NOT NULL,
+  title TEXT NOT NULL,
+  message TEXT NOT NULL,
+  reference_id TEXT,
+  is_read BOOLEAN NOT NULL DEFAULT false,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+ALTER TABLE public.admin_notifications ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Admin full access to notifications" ON public.admin_notifications;
+CREATE POLICY "Admin full access to notifications" ON public.admin_notifications
+  FOR ALL USING (true);
+
+-- 7. Trigger PostgREST schema cache reload to ensure instant recognition of new tables
 NOTIFY pgrst, 'reload schema';
