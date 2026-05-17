@@ -26,7 +26,6 @@ export default function CheckoutPage() {
   const [applyingCoupon, setApplyingCoupon] = useState(false);
 
   // Manual UPI States
-  const [utr, setUtr] = useState("");
   const [screenshotUrl, setScreenshotUrl] = useState<string | null>(null);
   const [uploadingScreenshot, setUploadingScreenshot] = useState(false);
   const [copiedUpi, setCopiedUpi] = useState(false);
@@ -127,8 +126,8 @@ export default function CheckoutPage() {
   };
 
   const handlePayment = async () => {
-    if (!utr || utr.trim().length < 8) {
-      alert("Please enter a valid UPI Transaction Reference ID (UTR)");
+    if (!screenshotUrl) {
+      alert("Please upload your payment screenshot/receipt before placing your order.");
       return;
     }
 
@@ -140,7 +139,7 @@ export default function CheckoutPage() {
         body: JSON.stringify({
           items,
           totalAmount: total,
-          paymentId: utr.trim(),
+          paymentId: "MANUAL_UPI",
           shippingDetails: {
             ...form,
             country: "India",
@@ -304,17 +303,17 @@ export default function CheckoutPage() {
                   </div>
                   
                   {/* Glowing QR Frame */}
-                  <div className="relative p-4 bg-white rounded-3xl border-2 border-[#900C3F]/20 shadow-md group hover:border-[#FF69B4] transition-colors duration-300">
+                  <div className="relative p-2 bg-white rounded-3xl border-2 border-[#900C3F]/20 shadow-md group hover:border-[#FF69B4] transition-colors duration-300">
                     <img 
-                      src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(`upi://pay?pa=toteallyiconic@ybl&pn=Tote-ally%20Iconic&am=${total}&cu=INR`)}`} 
+                      src="/payment.jpeg" 
                       alt="UPI Payment QR Code"
-                      className="w-44 h-44 object-contain rounded-xl"
+                      className="w-56 object-contain rounded-2xl"
                     />
                     <div className="absolute -inset-0.5 rounded-3xl bg-gradient-to-tr from-[#900C3F] to-[#FF69B4] opacity-0 group-hover:opacity-10 transition-opacity duration-300 pointer-events-none -z-10" />
                   </div>
 
                   <p className="text-xs text-[#900C3F]/60 max-w-[280px]">
-                    Scan this QR using <strong>GPay, PhonePe, Paytm</strong>, or any UPI app. The payee and exact amount will be pre-filled automatically!
+                    Scan the QR above using <strong>GPay, PhonePe, Paytm</strong>, or any UPI app to pay, or use the direct UPI transfer details below.
                   </p>
 
                   <div className="w-full h-[1px] bg-[#F5ECD7]" />
@@ -323,11 +322,18 @@ export default function CheckoutPage() {
                   <div className="w-full flex flex-col gap-3">
                     <div className="flex items-center justify-between bg-white px-5 py-3.5 rounded-2xl border border-[#F5ECD7]">
                       <div className="text-left">
+                        <p className="text-[9px] font-bold uppercase tracking-wider text-[#900C3F]/40">Payee Name</p>
+                        <p className="text-sm font-bold text-slate-800">Abhirami Binu Aluvila</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between bg-white px-5 py-3.5 rounded-2xl border border-[#F5ECD7]">
+                      <div className="text-left">
                         <p className="text-[9px] font-bold uppercase tracking-wider text-[#900C3F]/40">UPI ID</p>
-                        <p className="text-sm font-bold font-mono">toteallyiconic@ybl</p>
+                        <p className="text-sm font-bold font-mono">6354656157@fam</p>
                       </div>
                       <button 
-                        onClick={() => copyToClipboard("toteallyiconic@ybl", "upi")}
+                        onClick={() => copyToClipboard("6354656157@fam", "upi")}
                         className="p-2 bg-[#900C3F]/5 text-[#900C3F] hover:bg-[#900C3F] hover:text-white rounded-xl transition-all active:scale-95"
                         title="Copy UPI ID"
                       >
@@ -357,26 +363,13 @@ export default function CheckoutPage() {
                     <AlertCircle className="shrink-0 mt-0.5 text-[#FF69B4]" size={16} />
                     <div className="flex flex-col gap-1">
                       <h4 className="text-xs font-bold uppercase tracking-wider">Verification Details</h4>
-                      <p className="text-[11px] text-[#900C3F]/60">Enter your 12-digit UPI UTR / Ref No. and upload the transaction receipt to verify your order.</p>
+                      <p className="text-[11px] text-[#900C3F]/60">Upload the transaction receipt or screenshot to verify your payment.</p>
                     </div>
-                  </div>
-
-                  {/* UTR Input */}
-                  <div className="flex flex-col gap-2">
-                    <label className="text-[10px] font-bold uppercase tracking-wider text-[#900C3F]/60">UPI Transaction Ref (UTR / Ref No.) <span className="text-[#FF69B4]">*</span></label>
-                    <input 
-                      type="text" 
-                      maxLength={12}
-                      value={utr}
-                      onChange={(e) => setUtr(e.target.value.replace(/[^0-9]/g, ""))}
-                      placeholder="Enter 12-digit UTR Reference Number" 
-                      className="w-full px-5 py-4 rounded-2xl bg-[#F8F9FA] border border-[#F5ECD7] focus:outline-none focus:border-[#FF69B4] focus:bg-white transition-all font-mono font-medium text-sm text-[#900C3F] tracking-widest placeholder:tracking-normal placeholder:font-sans"
-                    />
                   </div>
 
                   {/* Screenshot Upload */}
                   <div className="flex flex-col gap-2">
-                    <label className="text-[10px] font-bold uppercase tracking-wider text-[#900C3F]/60">Upload Payment Receipt / Screenshot (Recommended)</label>
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-[#900C3F]/60">Upload Payment Receipt / Screenshot <span className="text-[#FF69B4]">*</span></label>
                     <label className="flex flex-col items-center justify-center border-2 border-dashed border-[#F5ECD7] hover:border-[#FF69B4] bg-[#F8F9FA] hover:bg-white rounded-2xl p-6 cursor-pointer transition-all relative overflow-hidden min-h-[100px]">
                       <input 
                         type="file" 
@@ -415,7 +408,7 @@ export default function CheckoutPage() {
                   {/* Submit Button */}
                   <button
                     onClick={handlePayment}
-                    disabled={loading || uploadingScreenshot || utr.trim().length < 8}
+                    disabled={loading || uploadingScreenshot || !screenshotUrl}
                     className="w-full py-5 bg-[#900C3F] text-white rounded-[24px] font-bold text-base hover:bg-[#FF69B4] transition-all shadow-xl shadow-[#900C3F]/20 flex items-center justify-center gap-3 disabled:opacity-50 disabled:hover:scale-100 disabled:hover:bg-[#900C3F]"
                   >
                     {loading ? <Loader2 size={20} className="animate-spin" /> : <Lock size={16} />}

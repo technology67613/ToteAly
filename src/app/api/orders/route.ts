@@ -95,8 +95,8 @@ export async function POST(request: NextRequest) {
     const verifiedTotalAmount = Math.max(0, verifiedSubtotal + shippingFee - discountAmount);
 
     // 2. Manual UPI Payment Verification
-    if (!paymentId || paymentId.trim().length < 8) {
-      return NextResponse.json({ error: "Invalid UPI Transaction Reference Number (UTR)" }, { status: 400 });
+    if (shippingDetails.payment_screenshot_url === undefined || !shippingDetails.payment_screenshot_url) {
+      return NextResponse.json({ error: "Payment screenshot is required to complete the order." }, { status: 400 });
     }
 
     // 3. Persist Order
