@@ -736,27 +736,47 @@ export default function OrderDetailPage() {
                     const items = order.products || order.order_items || [];
                     const itemsTotal = items.reduce((acc: number, item: any) => acc + (Number(item.price) * (item.quantity || 1)), 0);
                     
-                    // Force the logic: if total is 249 and items are 199, shipping is 50.
-                    // If itemsTotal already matches order.total_amount, assume item price included shipping and adjust.
-                    const subtotal = itemsTotal === order.total_amount ? (itemsTotal - 50) : itemsTotal;
-                    const shipping = order.total_amount - subtotal;
+                    const subtotal = itemsTotal;
+                    const discount = order.discount_amount || 0;
+                    const shipping = (order.total_amount + discount === subtotal) ? 0 : 50;
                     
                     return (
                       <div className="bg-white p-8 rounded-[32px] border border-slate-200 shadow-sm space-y-5">
-                        <h4 className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">Financial Breakdown</h4>
+                        <div className="flex justify-between items-center mb-2">
+                          <h4 className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Financial Breakdown</h4>
+                          {subtotal >= 999 && (
+                            <span className="text-[9px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded-full border border-emerald-100">
+                              Free Shipping Applied
+                            </span>
+                          )}
+                        </div>
                         <div className="space-y-4">
                           <div className="flex justify-between text-sm font-bold text-slate-500">
                             <span>Subtotal</span>
                             <span className="text-slate-900">₹{subtotal}</span>
                           </div>
-                          <div className="flex justify-between text-sm font-bold text-slate-500">
-                            <span>Shipping</span>
-                            <span className="text-slate-900">₹{shipping}</span>
+                          <div className="flex justify-between items-center text-sm font-bold text-slate-500">
+                            <div className="flex flex-col">
+                              <span>Shipping</span>
+                              {subtotal >= 999 ? (
+                                <span className="text-[9px] font-medium text-emerald-500">Free shipping on orders above ₹999</span>
+                              ) : (
+                                <span className="text-[9px] font-medium text-slate-400">Add items above ₹999 for free shipping</span>
+                              )}
+                            </div>
+                            <span className={shipping === 0 ? "text-emerald-500 font-bold" : "text-slate-900"}>
+                              {shipping === 0 ? "FREE" : `₹${shipping}`}
+                            </span>
                           </div>
-                          {order.discount_amount > 0 && (
-                            <div className="flex justify-between text-sm font-bold text-emerald-600">
-                              <span>Discount</span>
-                              <span>-₹{order.discount_amount}</span>
+                          {discount > 0 && (
+                            <div className="flex justify-between items-center text-sm font-bold text-emerald-600">
+                              <div className="flex flex-col">
+                                <span>Discount</span>
+                                {order.coupon_code && (
+                                  <span className="text-[9px] font-medium text-emerald-500">Coupon applied: {order.coupon_code}</span>
+                                )}
+                              </div>
+                              <span>-₹{discount}</span>
                             </div>
                           )}
                           <div className="pt-6 border-t border-slate-100 flex justify-between items-end">
