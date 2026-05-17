@@ -27,10 +27,10 @@ async function getEmailConfig() {
     const config = data?.reduce((acc: any, row: any) => ({ ...acc, [row.key]: row.value }), {}) || {};
     return {
       storeName: config.site_name || process.env.NEXT_PUBLIC_STORE_NAME || "Tote-ally Iconic",
-      supportEmail: config.contact_email || "hello@totallyiconic.in",
+      supportEmail: config.contact_email || "toteallyiconic@gmail.com",
     };
   } catch (e) {
-    return { storeName: process.env.NEXT_PUBLIC_STORE_NAME || "Tote-ally Iconic", supportEmail: "hello@totallyiconic.in" };
+    return { storeName: process.env.NEXT_PUBLIC_STORE_NAME || "Tote-ally Iconic", supportEmail: "toteallyiconic@gmail.com" };
   }
 }
 
@@ -289,7 +289,7 @@ export function buildCustomerConfirmationEmailHtml(
 
     <div style="padding:26px 32px 34px;text-align:center;">
       ${ctaButton("View Your Order", `https://totallyiconic.in/orders/${id}`)}
-      <p style="margin:14px 0 0;font-family:'DM Sans',sans-serif;font-size:12px;color:#AAAAAA;">Questions? Reply to this email or write to <a href="mailto:hello@totallyiconic.in" style="color:#900C3F;text-decoration:none;">hello@totallyiconic.in</a></p>
+      <p style="margin:14px 0 0;font-family:'DM Sans',sans-serif;font-size:12px;color:#AAAAAA;">Questions? Reply to this email or write to <a href="mailto:toteallyiconic@gmail.com" style="color:#900C3F;text-decoration:none;">toteallyiconic@gmail.com</a></p>
     </div>
   `;
 

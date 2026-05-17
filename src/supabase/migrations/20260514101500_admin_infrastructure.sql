@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS site_config (
 INSERT INTO site_config (key, value, description) VALUES
   ('free_shipping_threshold', '99900', 'Minimum cart value in paise for free shipping'),
   ('standard_shipping_fee', '4900', 'Standard shipping fee in paise'),
-  ('store_email', '"hello@totallyiconic.in"', 'Public contact email'),
+  ('store_email', '"toteallyiconic@gmail.com"', 'Public contact email'),
   ('announcement_bar_text', '"Free Shipping on all orders above ₹999"', 'Top banner text'),
   ('announcement_bar_enabled', 'true', 'Show/hide announcement bar'),
   ('razorpay_mode', '"test"', 'test or live')

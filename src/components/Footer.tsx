@@ -10,8 +10,8 @@ export default function Footer({ config = {} }: { config?: any }) {
   if (pathname?.startsWith("/admin")) return null;
 
   const storeName = config.site_name || "Tote-ally Iconic";
-  const supportEmail = config.contact_email || "hello@totallyiconic.in";
-  const instagramHandle = config.instagram_handle || "TOTE_ALLY_ICONIC";
+  const supportEmail = config.contact_email || "toteallyiconic@gmail.com";
+  const instagramHandle = config.instagram_handle || "tote_ally_iconic";
   const instagramUrl = instagramHandle.startsWith('http') ? instagramHandle : `https://instagram.com/${instagramHandle.replace('@', '')}`;
 
   return (
