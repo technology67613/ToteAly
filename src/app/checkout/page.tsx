@@ -232,14 +232,14 @@ export default function CheckoutPage() {
                 </div>
                 <div className="flex flex-col gap-3">
                   <label className="text-[10px] font-bold uppercase tracking-widest text-[#900C3F]/40 flex items-center gap-2"><Mail size={12} /> Email Address</label>
-                  <input name="email" value={form.email} onChange={handleFormChange} placeholder="hello@totealy.com" type="email"
+                  <input name="email" value={form.email} onChange={handleFormChange} placeholder="toteallyiconic@gmail.com" type="email"
                     className="w-full px-5 py-4 rounded-2xl bg-[#F8F9FA] border border-[#F5ECD7] focus:outline-none focus:border-[#FF69B4] transition-all font-medium" />
                 </div>
               </div>
 
               <div className="flex flex-col gap-3">
                 <label className="text-[10px] font-bold uppercase tracking-widest text-[#900C3F]/40 flex items-center gap-2"><Phone size={12} /> Phone Number</label>
-                <input name="phone" value={form.phone} onChange={handleFormChange} placeholder="+91 98765 43210" type="tel"
+                <input name="phone" value={form.phone} onChange={handleFormChange} placeholder="+91 98250 63143" type="tel"
                   className="w-full px-5 py-4 rounded-2xl bg-[#F8F9FA] border border-[#F5ECD7] focus:outline-none focus:border-[#FF69B4] transition-all font-medium" />
               </div>
 

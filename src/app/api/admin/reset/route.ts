@@ -58,9 +58,9 @@ export async function POST(req: Request) {
     // 3. Re-seed default settings so layout configuration remains fully intact and fresh
     const defaultSettings = [
       { key: 'site_name', value: 'Tote-ally Iconic', description: 'Store brand name' },
-      { key: 'contact_email', value: 'support@totealy.com', description: 'Public support email address' },
-      { key: 'whatsapp_number', value: '+91 98765 43210', description: 'Store contact WhatsApp number' },
-      { key: 'instagram_handle', value: 'totealy.iconic', description: 'Official Instagram page handle' },
+      { key: 'contact_email', value: 'toteallyiconic@gmail.com', description: 'Public support email address' },
+      { key: 'whatsapp_number', value: '+91 98250 63143', description: 'Store contact WhatsApp number' },
+      { key: 'instagram_handle', value: 'tote_ally_iconic', description: 'Official Instagram page handle' },
       { key: 'currency_symbol', value: '₹', description: 'Store base currency symbol' },
       { key: 'announcement_bar', value: 'Free Shipping on orders above ₹999!', description: 'Storefront header announcement banner text' },
       { key: 'shop_address', value: '123 Iconic Lane, Style District Mumbai, Maharashtra 400001 India', description: 'Headquarters or physical shop address' },

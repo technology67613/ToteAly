@@ -21,7 +21,7 @@ interface AdminSettings {
 export const AdminSettingsTab = () => {
   const [settings, setSettings] = useState<AdminSettings>({
     site_name: "Tote-ally Iconic",
-    contact_email: "support@totealy.com",
+    contact_email: "toteallyiconic@gmail.com",
     whatsapp_number: "",
     shop_address: "",
     instagram_handle: "",
@@ -290,7 +290,7 @@ export const AdminSettingsTab = () => {
                 value={settings.contact_email || ''}
                 onChange={e => setSettings({...settings, contact_email: e.target.value})}
                 className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 font-bold text-sm focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/30 focus:outline-none transition-all" 
-                placeholder="support@totealy.com"
+                placeholder="toteallyiconic@gmail.com"
               />
             </div>
 
@@ -305,7 +305,7 @@ export const AdminSettingsTab = () => {
                   value={settings.whatsapp_number || ''}
                   onChange={e => setSettings({...settings, whatsapp_number: e.target.value})}
                   className="w-full pl-12 pr-4 py-3 rounded-xl bg-slate-50 border border-slate-200 font-bold text-sm focus:bg-white focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500/30 focus:outline-none transition-all" 
-                  placeholder="98765 43210"
+                  placeholder="98250 63143"
                 />
               </div>
             </div>
@@ -320,7 +320,7 @@ export const AdminSettingsTab = () => {
                   value={settings.instagram_handle || ''}
                   onChange={e => setSettings({...settings, instagram_handle: e.target.value})}
                   className="w-full pl-10 pr-4 py-3 rounded-xl bg-slate-50 border border-slate-200 font-bold text-sm focus:bg-white focus:ring-2 focus:ring-pink-500/20 focus:border-pink-500/30 focus:outline-none transition-all" 
-                  placeholder="totealy.iconic"
+                  placeholder="tote_ally_iconic"
                 />
               </div>
             </div>

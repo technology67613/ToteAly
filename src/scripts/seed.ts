@@ -174,10 +174,10 @@ async function seed() {
   console.log('⚙️ Seeding site_config...');
   const siteConfigSettings = [
     { key: 'site_name', value: 'Tote-ally Iconic', description: 'Store name' },
-    { key: 'contact_email', value: 'support@totealy.com', description: 'Public contact email' },
-    { key: 'whatsapp_number', value: '+91 98765 43210', description: 'WhatsApp number for shop support' },
+    { key: 'contact_email', value: 'toteallyiconic@gmail.com', description: 'Public contact email' },
+    { key: 'whatsapp_number', value: '+91 98250 63143', description: 'WhatsApp number for shop support' },
     { key: 'shop_address', value: '123 Iconic Lane, Style District Mumbai, Maharashtra 400001 India', description: 'Headquarters or physical shop address' },
-    { key: 'instagram_handle', value: 'totealy.iconic', description: 'Instagram handle' },
+    { key: 'instagram_handle', value: 'tote_ally_iconic', description: 'Instagram handle' },
     { key: 'currency_symbol', value: '₹', description: 'Currency symbol' },
     { key: 'free_shipping_threshold', value: 999, description: 'Free shipping threshold amount' },
     { key: 'base_shipping_cost', value: 50, description: 'Flat shipping fee for orders below threshold' },

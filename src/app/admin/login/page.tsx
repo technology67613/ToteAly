@@ -66,7 +66,7 @@ export default function AdminLoginPage() {
                 value={form.username}
                 onChange={(e) => setForm({ ...form, username: e.target.value })}
                 className="w-full px-5 py-4 bg-white/5 border border-white/10 rounded-2xl text-white focus:outline-none focus:border-[#FF69B4] transition-all"
-                placeholder="admin@totealy.com"
+                placeholder="admin@toteallyiconic.com"
               />
             </div>
  

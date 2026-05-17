@@ -405,7 +405,7 @@ export default function OrderDetailPage() {
                     <strong>Tote-ally Iconic</strong><br>
                     123 Creative Lane, Art District<br>
                     Mumbai, MH - 400001<br>
-                    PH: +91 98765 43210
+                    PH: +91 98250 63143
                   </div>
                 </div>
 
