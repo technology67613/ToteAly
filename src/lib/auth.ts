@@ -26,7 +26,12 @@ export const authOptions = {
         const adminUser = process.env.ADMIN_USERNAME;
         const adminPass = process.env.ADMIN_PASSWORD;
 
-        if (username !== adminUser) return null;
+        const isAuthorizedUsername = 
+          username === adminUser || 
+          username === "toteallyiconic@gmail.com" || 
+          username === "admin@toteallyiconic.com";
+
+        if (!isAuthorizedUsername) return null;
 
         // Check if stored password is a bcrypt hash
         const isHash = adminPass?.startsWith("$2");
@@ -47,7 +52,7 @@ export const authOptions = {
           return {
             id: "admin-id",
             name: "Admin",
-            email: adminUser,
+            email: username,
             role: "admin",
           };
         }
@@ -107,7 +112,7 @@ export const authOptions = {
           }
         }
         
-        if (token.email === process.env.ADMIN_USERNAME) {
+        if (token.email === process.env.ADMIN_USERNAME || token.role === "admin") {
            (session.user as any).role = "admin";
         }
       }
