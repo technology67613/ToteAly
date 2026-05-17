@@ -59,10 +59,10 @@ END $$;
 -- 5. SEED PRODUCTS
 INSERT INTO public.products (id, title, price, description, category, images, is_customizable, is_featured, stock)
 VALUES
-  ('plain-canvas-tote', 'Everyday Canvas Tote', 599, 'A clean cotton canvas tote for daily errands.', 'Plain Totes', ARRAY['/products/plain.png'], true, true, 50),
-  ('premium-structured-tote', 'Premium Structured Tote', 1199, 'A sturdier statement tote with a premium finish.', 'Premium', ARRAY['/products/premium.png'], true, true, 30),
-  ('midnight-black-tote', 'Midnight Black Tote', 899, 'A bold black tote made for high-contrast prints.', 'Premium', ARRAY['/products/black.png'], true, true, 20),
-  ('gift-ready-hamper', 'Gift Ready Hamper', 1599, 'A curated tote gift set for bridesmaids.', 'Hampers', ARRAY['/products/hamper.png'], false, true, 10)
+  ('e0df39a3-5c21-4fa3-9097-40d99ef87b01', 'Everyday Canvas Tote', 599, 'A clean cotton canvas tote for daily errands.', 'Plain Totes', ARRAY['/products/plain.png'], true, true, 50),
+  ('e0df39a3-5c21-4fa3-9097-40d99ef87b02', 'Premium Structured Tote', 1199, 'A sturdier statement tote with a premium finish.', 'Premium', ARRAY['/products/premium.png'], true, true, 30),
+  ('e0df39a3-5c21-4fa3-9097-40d99ef87b03', 'Midnight Black Tote', 899, 'A bold black tote made for high-contrast prints.', 'Premium', ARRAY['/products/black.png'], true, true, 20),
+  ('e0df39a3-5c21-4fa3-9097-40d99ef87b04', 'Gift Ready Hamper', 1599, 'A curated tote gift set for bridesmaids.', 'Hampers', ARRAY['/products/hamper.png'], false, true, 10)
 ON CONFLICT (id) DO UPDATE SET 
   title = EXCLUDED.title,
   price = EXCLUDED.price,

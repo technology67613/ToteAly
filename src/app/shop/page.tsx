@@ -174,7 +174,7 @@ export default function Shop() {
                     {/* Wishlist Button */}
                     <button
                       onClick={(e) => handleWishlist(e, productId)}
-                      className="absolute top-4 right-4 z-30 p-3 rounded-full bg-white/80 backdrop-blur-md border border-[#F5ECD7] text-[#900C3F] hover:text-[#FF69B4] hover:scale-110 transition-all shadow-sm"
+                      className="absolute top-4 right-4 z-20 p-3 rounded-full bg-white/80 backdrop-blur-md border border-[#F5ECD7] text-[#900C3F] hover:text-[#FF69B4] hover:scale-110 transition-all shadow-sm"
                     >
                       <Heart 
                         size={18} 

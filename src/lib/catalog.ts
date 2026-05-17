@@ -15,8 +15,8 @@ export type CatalogProduct = {
 
 export const FALLBACK_PRODUCTS: CatalogProduct[] = [
   {
-    id: "plain-canvas-tote",
-    _id: "plain-canvas-tote",
+    id: "e0df39a3-5c21-4fa3-9097-40d99ef87b01",
+    _id: "e0df39a3-5c21-4fa3-9097-40d99ef87b01",
     title: "Everyday Canvas Tote",
     price: 599,
     description: "A clean cotton canvas tote for daily errands, college runs, and coffee plans.",
@@ -29,8 +29,8 @@ export const FALLBACK_PRODUCTS: CatalogProduct[] = [
     stock: 24,
   },
   {
-    id: "premium-structured-tote",
-    _id: "premium-structured-tote",
+    id: "e0df39a3-5c21-4fa3-9097-40d99ef87b02",
+    _id: "e0df39a3-5c21-4fa3-9097-40d99ef87b02",
     title: "Premium Structured Tote",
     price: 1199,
     description: "A sturdier statement tote with a premium finish and extra room for your day.",
@@ -43,8 +43,8 @@ export const FALLBACK_PRODUCTS: CatalogProduct[] = [
     stock: 14,
   },
   {
-    id: "midnight-black-tote",
-    _id: "midnight-black-tote",
+    id: "e0df39a3-5c21-4fa3-9097-40d99ef87b03",
+    _id: "e0df39a3-5c21-4fa3-9097-40d99ef87b03",
     title: "Midnight Black Tote",
     price: 899,
     description: "A bold black tote made for high-contrast prints, initials, and minimal artwork.",
@@ -57,8 +57,8 @@ export const FALLBACK_PRODUCTS: CatalogProduct[] = [
     stock: 18,
   },
   {
-    id: "gift-ready-hamper",
-    _id: "gift-ready-hamper",
+    id: "e0df39a3-5c21-4fa3-9097-40d99ef87b04",
+    _id: "e0df39a3-5c21-4fa3-9097-40d99ef87b04",
     title: "Gift Ready Hamper",
     price: 1599,
     description: "A curated tote gift set for birthdays, bridesmaids, and festive gifting.",
