@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
       const { data, error } = await supabase.storage
         .from('totealy-assets')
         .upload(`uploads/${filename}`, buffer, {
-          contentType: file.type,
+          contentType: contentType,
           upsert: true
         });
 

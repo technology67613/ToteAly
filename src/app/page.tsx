@@ -15,7 +15,6 @@ const PERKS = [
 
 export default function Home() {
   const { addItem, openCart } = useCartStore();
-  const [igPosts, setIgPosts] = useState<any[]>([]);
   const [featuredProducts, setFeaturedProducts] = useState<any[]>([]);
   const heroProduct = featuredProducts[0];
 
@@ -54,22 +53,6 @@ export default function Home() {
       }
     }
     fetchFeatured();
-    async function fetchIG() {
-      try {
-        const res = await fetch("/api/social/instagram");
-        const posts = await res.json();
-        
-        if (Array.isArray(posts) && posts.length > 0) {
-          setIgPosts(posts.slice(0, 6));
-        } else {
-            setIgPosts([]);
-        }
-      } catch (e) {
-        console.error("IG sync failed:", e);
-        setIgPosts([]);
-      }
-    }
-    fetchIG();
   }, []);
 
   const handleAddToCart = (product: any) => {
@@ -232,41 +215,15 @@ export default function Home() {
 
       {/* ── INSTAGRAM SECTION ── */}
       <section className="max-w-7xl mx-auto w-full px-6 md:px-8 pb-20">
-        <h2 className="font-serif text-3xl md:text-4xl font-bold mb-2 text-center">@TOTE_ALLY_ICONIC</h2>
+        <h2 className="font-serif text-3xl md:text-4xl font-bold mb-2 text-center uppercase tracking-tight">@TOTE_ALLY_ICONIC</h2>
         <p className="text-center text-[#900C3F]/60 mb-10 text-sm px-4">Follow us on Instagram for daily drops &amp; behind the scenes.</p>
         
-        <div className="w-full max-w-7xl mx-auto px-6 mt-10">
-          {igPosts.length > 0 ? (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-              {igPosts.map((post, idx) => (
-                <a 
-                  key={idx} 
-                  href={post.permalink} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="aspect-square relative rounded-2xl overflow-hidden group border border-[#F5ECD7] shadow-sm"
-                >
-                  <Image 
-                    src={post.media_url} 
-                    alt="Instagram Post" 
-                    fill 
-                    className="object-cover group-hover:scale-110 transition-transform duration-500"
-                  />
-                  <div className="absolute inset-0 bg-[#900C3F]/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                    <Camera size={24} className="text-white" />
-                  </div>
-                </a>
-              ))}
-            </div>
-          ) : (
-            <div className="w-full max-w-5xl mx-auto bg-white rounded-[32px] md:rounded-[40px] border border-[#F5ECD7] overflow-hidden shadow-2xl shadow-[#900C3F]/5 h-[500px] md:h-[700px]">
-              <iframe 
-                src="https://www.instagram.com/tote_ally_iconic/embed" 
-                className="w-full h-full border-none"
-                title="Instagram Feed"
-              />
-            </div>
-          )}
+        <div className="w-full max-w-5xl mx-auto bg-white rounded-[32px] md:rounded-[40px] border border-[#F5ECD7] overflow-hidden shadow-2xl shadow-[#900C3F]/5 h-[500px] md:h-[700px]">
+          <iframe 
+            src="https://www.instagram.com/tote_ally_iconic/embed" 
+            className="w-full h-full border-none"
+            title="Instagram Feed"
+          />
         </div>
         
         <div className="text-center mt-12">

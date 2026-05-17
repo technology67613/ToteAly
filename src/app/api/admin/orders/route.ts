@@ -76,7 +76,7 @@ export async function GET(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
   try {
-    const { id, status, payment_status } = await request.json();
+    const { id, status, payment_status, tracking_number, delivery_partner } = await request.json();
     
     if (!isSupabaseConfigured() || !isSupabaseAdminConfigured()) {
        return NextResponse.json({ error: "Supabase configuration required for cloud updates." }, { status: 503 });
@@ -94,6 +94,8 @@ export async function PATCH(request: NextRequest) {
     const updatePayload: any = {};
     if (status) updatePayload.status = status;
     if (payment_status) updatePayload.payment_status = payment_status;
+    if (tracking_number) updatePayload.tracking_number = tracking_number;
+    if (delivery_partner) updatePayload.delivery_partner = delivery_partner;
 
     // Special case: Manual UPI approval
     const pm = currentOrder.payment_method?.toLowerCase() || '';
@@ -139,6 +141,28 @@ export async function PATCH(request: NextRequest) {
           console.error("Email sending failed:", emailErr);
         }
       }
+    }
+
+    // New: Handle other status update emails
+    const customerEmail = updatedOrder.shipping_details?.email;
+    if (customerEmail && status && status !== currentOrder.status) {
+       const { 
+         sendShipmentUpdateEmail, 
+         sendDeliveredEmail, 
+         sendOrderCancelledEmail 
+       } = await import("@/lib/email");
+
+       try {
+         if (status === 'Shipped') {
+           await sendShipmentUpdateEmail(customerEmail, updatedOrder, updatedOrder.tracking_number || 'PENDING', updatedOrder.delivery_partner || 'Carrier', "#");
+         } else if (status === 'Delivered') {
+           await sendDeliveredEmail(customerEmail, updatedOrder, "#");
+         } else if (status === 'Cancelled') {
+           await sendOrderCancelledEmail(customerEmail, updatedOrder, "Requested by admin/customer");
+         }
+       } catch (emailErr) {
+         console.error(`Failed to send ${status} email:`, emailErr);
+       }
     }
 
     return NextResponse.json(updatedOrder);

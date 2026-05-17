@@ -3,7 +3,7 @@ import crypto from "crypto";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { supabaseAdmin, isSupabaseAdminConfigured } from "@/lib/supabase";
-import { sendOrderConfirmationEmail } from "@/lib/email";
+import { sendOrderConfirmationEmail, sendAdminOrderNotification } from "@/lib/email";
 import { OrderCreateSchema } from "@/lib/validations";
 
 export const runtime = "nodejs";
@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid request data" }, { status: 400 });
     }
 
-    const { items, paymentId, razorpayOrderId, razorpaySignature, shippingDetails } = validation.data;
+    const { items, paymentId, razorpayOrderId, razorpaySignature, shippingDetails, couponCode } = validation.data;
 
     if (!isSupabaseAdminConfigured()) {
       return NextResponse.json({ error: "Server configuration error" }, { status: 500 });
@@ -44,6 +44,7 @@ export async function POST(request: NextRequest) {
       
       return {
         product_id: dbProduct ? dbProduct.id : null,
+        name: item.title,
         product_title: item.title,
         product_image: item.image,
         product_category: item.category,
@@ -55,7 +56,43 @@ export async function POST(request: NextRequest) {
     });
 
     const shippingFee = verifiedSubtotal >= 999 ? 0 : 50;
-    const verifiedTotalAmount = verifiedSubtotal + shippingFee;
+    
+    // 1b. Coupon Verification
+    let discountAmount = 0;
+    let verifiedCouponCode = null;
+
+    if (couponCode) {
+      const { data: coupon } = await supabaseAdmin
+        .from('coupons')
+        .select('*')
+        .eq('code', couponCode.toUpperCase())
+        .eq('is_active', true)
+        .single();
+
+      if (coupon) {
+        const isExpired = coupon.expiry_date && new Date(coupon.expiry_date) < new Date();
+        const isMinOrderMet = verifiedSubtotal >= coupon.min_order_value;
+
+        if (!isExpired && isMinOrderMet) {
+          verifiedCouponCode = coupon.code;
+          if (coupon.discount_type === 'percentage') {
+            discountAmount = Math.round((verifiedSubtotal * coupon.discount_value) / 100);
+          } else {
+            discountAmount = coupon.discount_value;
+          }
+          // Ensure discount doesn't exceed subtotal
+          discountAmount = Math.min(discountAmount, verifiedSubtotal);
+          
+          // Increment usage count
+          await supabaseAdmin
+            .from('coupons')
+            .update({ usage_count: (coupon.usage_count || 0) + 1 })
+            .eq('id', coupon.id);
+        }
+      }
+    }
+
+    const verifiedTotalAmount = Math.max(0, verifiedSubtotal + shippingFee - discountAmount);
 
     // 2. Razorpay Signature Verification
     if (paymentId !== 'MANUAL_UPI') {
@@ -84,7 +121,9 @@ export async function POST(request: NextRequest) {
         payment_id: paymentId,
         payment_method: isManualUPI ? 'Manual UPI' : 'Razorpay',
         shipping_details: shippingDetails,
-        notes: shippingDetails.notes
+        notes: shippingDetails.notes,
+        coupon_code: verifiedCouponCode,
+        discount_amount: discountAmount
       }])
       .select()
       .single();
@@ -100,9 +139,14 @@ export async function POST(request: NextRequest) {
 
     // 5. Async Tasks
     const customerEmail = shippingDetails?.email;
+    const orderForEmail = { ...order, order_items: items };
+
     if (customerEmail) {
-      sendOrderConfirmationEmail(customerEmail, { ...order, order_items: items }).catch(console.error);
+      sendOrderConfirmationEmail(customerEmail, orderForEmail).catch(console.error);
     }
+    
+    // Always notify admin
+    sendAdminOrderNotification(orderForEmail).catch(console.error);
 
     return NextResponse.json({ id: order.id, totalAmount: verifiedTotalAmount }, { status: 201 });
 

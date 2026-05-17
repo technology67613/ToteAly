@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Star, CheckCircle2, XCircle, Trash2, User, Package, MessageSquare } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { toast } from "sonner";
 
 interface Review {
   id: string;
@@ -34,24 +35,43 @@ export const AdminReviewsTab = () => {
 
   const toggleApproval = async (id: string, currentStatus: string) => {
     const nextStatus = currentStatus === 'approved' ? 'pending' : 'approved';
-    const res = await fetch('/api/admin/reviews', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id, status: nextStatus })
-    });
-    if (res.ok) fetchReviews();
+    try {
+      const res = await fetch('/api/admin/reviews', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, status: nextStatus })
+      });
+      if (res.ok) {
+        fetchReviews();
+        toast.success(nextStatus === 'approved' ? "Social proof approved" : "Review sent back to moderation");
+      } else {
+        const err = await res.json();
+        toast.error(err.error || "Failed to update review status");
+      }
+    } catch (e) {
+      toast.error("Network error. Please try again.");
+    }
   };
 
   const deleteReview = async (id: string) => {
-    if (!confirm('Delete this iconic review?')) return;
-    const res = await fetch(`/api/admin/reviews?id=${id}`, { method: 'DELETE' });
-    if (res.ok) fetchReviews();
+    try {
+      const res = await fetch(`/api/admin/reviews?id=${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        fetchReviews();
+        toast.success("Social proof purged");
+      } else {
+        const err = await res.json();
+        toast.error(err.error || "Failed to delete review");
+      }
+    } catch (e) {
+      toast.error("Network error. Action aborted.");
+    }
   };
 
   if (loading) return <div className="p-20 text-center animate-pulse text-[var(--admin-text-muted)] font-bold text-xs uppercase tracking-widest">Loading Social Proof...</div>;
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-10 relative">
       <div className="flex justify-between items-center bg-white p-8 rounded-[16px] border border-[var(--admin-border)] shadow-[0_2px_12px_rgba(0,0,0,0.06)]">
         <div>
           <h2 className="text-2xl font-serif font-bold text-[var(--admin-text-primary)]">Social Proof Moderation</h2>

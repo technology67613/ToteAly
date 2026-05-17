@@ -28,6 +28,10 @@ export default function CheckoutPage() {
   const [paymentMethod, setPaymentMethod] = useState<"razorpay" | "manual_upi">("razorpay");
   const [screenshotUrl, setScreenshotUrl] = useState<string | null>(null);
   const [uploadingScreenshot, setUploadingScreenshot] = useState(false);
+  const [couponCode, setCouponCode] = useState("");
+  const [couponDiscount, setCouponDiscount] = useState(0);
+  const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
+  const [applyingCoupon, setApplyingCoupon] = useState(false);
 
   const [form, setForm] = useState({
     name: "",
@@ -62,11 +66,13 @@ export default function CheckoutPage() {
   const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const SHIPPING_FEE = subtotal >= 999 ? 0 : 50;
   const amountUntilFreeShipping = Math.max(999 - subtotal, 0);
-  const total = subtotal + SHIPPING_FEE;
+  const total = subtotal + SHIPPING_FEE - couponDiscount;
 
   const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
+
+
 
   const handleScreenshotUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -90,6 +96,35 @@ export default function CheckoutPage() {
     }
     setUploadingScreenshot(false);
   };
+  
+  const applyCoupon = async () => {
+    if (!couponCode) return;
+    setApplyingCoupon(true);
+    try {
+      const res = await fetch("/api/coupons/apply", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: couponCode, amount: subtotal }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setAppliedCoupon(data.coupon);
+        setCouponDiscount(data.discount);
+      } else {
+        alert(data.error || "Invalid coupon code");
+      }
+    } catch (error) {
+      console.error("Coupon application failed:", error);
+    } finally {
+      setApplyingCoupon(false);
+    }
+  };
+
+  const removeCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponDiscount(0);
+    setCouponCode("");
+  };
 
 
 
@@ -110,6 +145,7 @@ export default function CheckoutPage() {
             totalAmount: total,
             paymentId: "MANUAL_UPI",
             shippingDetails: { ...form, country: "India", payment_method: "Manual_UPI", payment_screenshot_url: screenshotUrl },
+            couponCode: appliedCoupon?.code || null,
           }),
         });
         const orderData = await orderRes.json();
@@ -165,6 +201,7 @@ export default function CheckoutPage() {
                 razorpayOrderId: response.razorpay_order_id,
                 razorpaySignature: response.razorpay_signature,
                 shippingDetails: { ...form, country: "India" },
+                couponCode: appliedCoupon?.code || null,
               }),
             });
             const orderResData = await orderRes.json();
@@ -234,9 +271,12 @@ export default function CheckoutPage() {
         <div className="lg:col-span-7 flex flex-col gap-10">
           <div className="flex flex-col gap-2">
             <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#FF69B4]">Secure Checkout</span>
-            <h1 className="font-serif text-4xl lg:text-5xl font-bold">
-              {step === "details" ? "Shipping Manifest" : "Review & Authorize"}
-            </h1>
+            <div className="flex justify-between items-end">
+              <h1 className="font-serif text-4xl lg:text-5xl font-bold">
+                {step === "details" ? "Shipping Manifest" : "Review & Authorize"}
+              </h1>
+
+            </div>
           </div>
 
           {step === "details" ? (
@@ -450,6 +490,42 @@ export default function CheckoutPage() {
                   <p className="text-[10px] font-bold uppercase tracking-widest text-[#FF69B4]">
                     Add ₹{amountUntilFreeShipping} more for free shipping
                   </p>
+                )}
+
+                <div className="flex flex-col gap-3 mt-6">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-white/40">Iconic Privilege Code</p>
+                  <div className="flex gap-2">
+                    <input 
+                      value={couponCode}
+                      onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                      placeholder="ENTER CODE"
+                      disabled={!!appliedCoupon}
+                      className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#FF69B4] disabled:opacity-50"
+                    />
+                    {appliedCoupon ? (
+                      <button onClick={removeCoupon} className="px-6 py-3 bg-rose-500/20 text-rose-400 rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-rose-500 hover:text-white transition-all">Remove</button>
+                    ) : (
+                      <button 
+                        onClick={applyCoupon} 
+                        disabled={applyingCoupon || !couponCode}
+                        className="px-6 py-3 bg-[#FF69B4] text-white rounded-xl text-[10px] font-bold uppercase tracking-widest hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50"
+                      >
+                        {applyingCoupon ? "..." : "Apply"}
+                      </button>
+                    )}
+                  </div>
+                  {appliedCoupon && (
+                    <p className="text-[10px] font-bold text-green-400 uppercase tracking-widest flex items-center gap-2">
+                      <CheckCircle size={12} /> Coupon "{appliedCoupon.code}" Applied!
+                    </p>
+                  )}
+                </div>
+
+                {couponDiscount > 0 && (
+                  <div className="flex justify-between text-sm text-[#FF69B4]">
+                    <span className="font-bold uppercase tracking-widest">Iconic Discount</span>
+                    <span className="font-bold">-₹{couponDiscount}</span>
+                  </div>
                 )}
                 <div className="flex justify-between items-end mt-4">
                   <div className="flex flex-col">

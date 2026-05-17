@@ -12,6 +12,10 @@ export async function POST(request: NextRequest) {
 
     const { productId, previewImage, canvasData, title } = await request.json();
 
+    // Ensure productId is a valid UUID, otherwise set to null
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const validProductId = productId && uuidRegex.test(productId) ? productId : null;
+
     if (!isSupabaseAdminConfigured()) {
       return NextResponse.json({ error: "Database not configured" }, { status: 503 });
     }
@@ -31,7 +35,7 @@ export async function POST(request: NextRequest) {
       .from('user_designs')
       .insert([{
         user_id: profile.id,
-        product_id: productId,
+        product_id: validProductId,
         preview_image: previewImage,
         canvas_data: canvasData,
         title: title || "Untitled Design",

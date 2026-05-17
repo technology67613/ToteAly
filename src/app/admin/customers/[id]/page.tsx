@@ -10,29 +10,65 @@ export const metadata: Metadata = {
 };
 
 async function getCustomerData(id: string) {
+  if (!id) return null;
+  
+  // 1. Try to find a registered profile first
   const { data: customer } = await supabase
     .from('profiles')
     .select('*')
     .eq('id', id)
     .single();
 
-  if (!customer) return null;
+  if (customer) {
+    const { data: orders } = await supabase
+      .from('orders')
+      .select('*, order_items(*, products(*))')
+      .eq('user_id', id)
+      .order('created_at', { ascending: false });
 
-  const { data: orders } = await supabase
-    .from('orders')
-    .select('*, order_items(*, products(*))')
-    .eq('user_id', id)
-    .order('created_at', { ascending: false });
+    return { 
+      customer: { ...customer, isGuest: false }, 
+      orders: orders || [] 
+    };
+  }
 
-  return { customer, orders: orders || [] };
+  // 2. If no profile, it might be a guest (id = email)
+  const decodedId = decodeURIComponent(id);
+  if (decodedId.includes('@')) {
+    const { data: guestOrders } = await supabase
+      .from('orders')
+      .select('*, order_items(*, products(*))')
+      .eq('shipping_details->>email', decodedId)
+      .order('created_at', { ascending: false });
+
+    if (guestOrders && guestOrders.length > 0) {
+      const firstOrder = guestOrders[0];
+      return {
+        customer: {
+          id: decodedId,
+          name: firstOrder.shipping_details?.name || decodedId.split('@')[0],
+          email: decodedId,
+          phone: firstOrder.shipping_details?.phone,
+          address: firstOrder.shipping_details?.address,
+          created_at: firstOrder.created_at,
+          isGuest: true
+        },
+        orders: guestOrders
+      };
+    }
+  }
+
+  return null;
 }
 
-export default async function CustomerDetailPage({ params }: { params: { id: string } }) {
-  const data = await getCustomerData(params.id);
+export default async function CustomerDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const data = await getCustomerData(id);
   if (!data) notFound();
 
   const { customer, orders } = data;
-  const totalSpent = orders.reduce((acc: number, order: any) => acc + (order.total_amount || 0), 0);
+  const activeOrders = orders.filter((o: any) => o.status?.toLowerCase() !== 'cancelled');
+  const totalSpent = activeOrders.reduce((acc: number, order: any) => acc + (order.total_amount || 0), 0);
 
   return (
     <div className="min-h-screen bg-[var(--admin-bg)] p-12">
@@ -56,18 +92,19 @@ export default async function CustomerDetailPage({ params }: { params: { id: str
                 </div>
                 <div className="pb-2">
                   <h1 className="text-4xl font-serif font-bold text-[var(--admin-text-primary)]">{customer.name || "Iconic Customer"}</h1>
-                  <p className="text-sm font-bold text-[var(--admin-primary)] uppercase tracking-widest mt-1 flex items-center gap-2">
-                    <ShieldCheck size={14} /> Verified Iconic Member
+                  <p className={`text-sm font-bold uppercase tracking-widest mt-1 flex items-center gap-2 ${customer.isGuest ? 'text-amber-600' : 'text-[var(--admin-primary)]'}`}>
+                    {customer.isGuest ? <ShoppingBag size={14} /> : <ShieldCheck size={14} />}
+                    {customer.isGuest ? "Guest Shopper" : "Verified Iconic Member"}
                   </p>
                 </div>
               </div>
               <div className="flex gap-4 pb-2">
-                 <button className="px-6 py-3 bg-[var(--admin-primary)] text-white rounded-xl text-[11px] font-bold uppercase tracking-widest shadow-xl shadow-[var(--admin-primary)]/20">
+                 <a 
+                   href={`mailto:${customer.email}`}
+                   className="px-6 py-3 bg-[var(--admin-primary)] text-white rounded-xl text-[11px] font-bold uppercase tracking-widest shadow-xl shadow-[var(--admin-primary)]/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
+                 >
                     Send Direct Message
-                 </button>
-                 <button className="px-6 py-3 border border-[var(--admin-border)] text-[var(--admin-text-primary)] rounded-xl text-[11px] font-bold uppercase tracking-widest hover:bg-[var(--admin-light)] transition-all">
-                    Account Status
-                 </button>
+                 </a>
               </div>
             </div>
           </div>
@@ -127,11 +164,11 @@ export default async function CustomerDetailPage({ params }: { params: { id: str
                 <div className="pt-6 border-t border-white/10 flex justify-between items-center">
                    <div className="flex items-center gap-2">
                       <ShoppingBag size={16} />
-                      <span className="text-xs font-bold">{orders.length} Iconic Orders</span>
+                      <span className="text-xs font-bold">{orders.length} {customer.isGuest ? 'Guest' : 'Iconic'} Orders</span>
                    </div>
                    <div className="flex items-center gap-2">
                       <Star size={16} className="fill-white" />
-                      <span className="text-xs font-bold text-white">Top 5% User</span>
+                      <span className="text-xs font-bold text-white">{customer.isGuest ? 'Recent Shopper' : 'Top 5% User'}</span>
                    </div>
                 </div>
              </div>
@@ -149,14 +186,14 @@ export default async function CustomerDetailPage({ params }: { params: { id: str
                       <Link 
                         key={order.id} 
                         href={`/admin/orders/${order.id}`}
-                        className="p-8 flex items-center justify-between hover:bg-[var(--admin-light)]/20 transition-all group"
+                        className={`p-8 flex items-center justify-between hover:bg-[var(--admin-light)]/20 transition-all group ${order.status?.toLowerCase() === 'cancelled' ? 'bg-rose-50/10 opacity-70' : ''}`}
                       >
                          <div className="flex items-center gap-6">
-                            <div className="w-14 h-14 bg-[var(--admin-light)] rounded-2xl flex items-center justify-center text-[var(--admin-primary)]">
+                            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${order.status?.toLowerCase() === 'cancelled' ? 'bg-rose-100 text-rose-600' : 'bg-[var(--admin-light)] text-[var(--admin-primary)]'}`}>
                                <Package size={24} />
                             </div>
                             <div>
-                               <p className="text-sm font-bold text-[var(--admin-text-primary)]">Order #{order.id.slice(0, 8)}</p>
+                               <p className="text-sm font-bold text-[var(--admin-text-primary)]">Order #{order.id.slice(0, 8).toUpperCase()}</p>
                                <p className="text-[10px] font-bold text-[var(--admin-text-muted)] uppercase tracking-widest mt-1">
                                   {new Date(order.created_at).toLocaleDateString()} • {order.order_items?.length || 0} Artifacts
                                </p>
@@ -164,10 +201,13 @@ export default async function CustomerDetailPage({ params }: { params: { id: str
                          </div>
                          <div className="text-right">
                             <p className="text-lg font-bold text-[var(--admin-text-primary)] group-hover:text-[var(--admin-primary)] transition-colors">₹{order.total_amount}</p>
-                            <span className={`inline-block px-2 py-1 rounded-lg text-[9px] font-bold uppercase tracking-widest mt-1 ${
-                               order.status === 'delivered' ? 'bg-emerald-50 text-emerald-600' :
-                               order.status === 'processing' ? 'bg-amber-50 text-amber-600' :
-                               'bg-slate-50 text-slate-500'
+                            <span className={`inline-block px-2 py-1 rounded-lg text-[9px] font-bold uppercase tracking-widest mt-1 border ${
+                               order.status?.toLowerCase() === 'delivered' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
+                               order.status?.toLowerCase() === 'shipped' ? 'bg-blue-50 text-blue-600 border-blue-100' :
+                               order.status?.toLowerCase() === 'processing' ? 'bg-indigo-50 text-indigo-600 border-indigo-100' :
+                               order.status?.toLowerCase() === 'pending' ? 'bg-amber-50 text-amber-600 border-amber-100' :
+                               order.status?.toLowerCase() === 'cancelled' ? 'bg-rose-50 text-rose-600 border-rose-200' :
+                               'bg-slate-50 text-slate-500 border-slate-100'
                             }`}>
                                {order.status}
                             </span>

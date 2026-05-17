@@ -14,7 +14,7 @@ const NAV_LINKS = [
   { href: "/contact", label: "Contact" },
 ];
 
-export default function Navbar() {
+export default function Navbar({ config = {} }: { config?: any }) {
   const pathname = usePathname();
   const { openCart, items } = useCartStore();
   const { data: session } = useSession();
@@ -29,13 +29,14 @@ export default function Navbar() {
   if (pathname?.startsWith("/admin")) return null;
 
   const totalItems = mounted ? items.reduce((sum, i) => sum + i.quantity, 0) : 0;
+  const storeName = config.site_name || "Tote-ally Iconic";
 
   return (
     <nav className="w-full sticky top-0 z-30 bg-[#FFF8F0]/90 backdrop-blur-sm border-b border-[#F5ECD7]">
       <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
         {/* Logo */}
         <Link href="/" className="text-2xl font-serif font-bold text-[#900C3F] tracking-tighter hover:text-[#FF69B4] transition-colors">
-          Tote-ally Iconic
+          {storeName}
         </Link>
 
         {/* Desktop Links */}

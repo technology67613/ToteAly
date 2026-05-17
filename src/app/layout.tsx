@@ -6,6 +6,9 @@ import CartSidebar from "@/components/CartSidebar";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Toaster } from "sonner";
+import { createClient } from "@supabase/supabase-js";
+
+export const revalidate = 60; // Cache the layout for 60 seconds
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://mystore-weld.vercel.app/"),
@@ -50,24 +53,49 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Fetch site configuration
+  let config: Record<string, any> = {};
+  try {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    if (supabaseUrl && supabaseKey) {
+      const supabase = createClient(supabaseUrl, supabaseKey);
+      const { data } = await supabase.from("site_config").select("key, value");
+      config = data?.reduce((acc: any, row: any) => ({ ...acc, [row.key]: row.value }), {}) || {};
+    }
+  } catch (error) {
+    console.error("Failed to fetch site config", error);
+  }
+
+  const announcement = config.announcement_bar;
+
   return (
     <html
       lang="en"
       className="h-full antialiased"
       data-scroll-behavior="smooth"
+      suppressHydrationWarning
     >
-      <body className="min-h-full flex flex-col font-sans bg-brand-cream text-brand-dark-rose">
+      <body 
+        className="min-h-full flex flex-col font-sans bg-brand-cream text-brand-dark-rose"
+        suppressHydrationWarning
+      >
         <Providers>
-          <Navbar />
+          {announcement && (
+            <div className="bg-[#900C3F] text-[#F5ECD7] py-2 px-4 text-center text-xs font-bold tracking-widest uppercase">
+              {announcement}
+            </div>
+          )}
+          <Navbar config={config} />
           <div className="flex-grow">
             {children}
           </div>
-          <Footer />
+          <Footer config={config} />
           <CartSidebar />
           <Toaster position="bottom-right" richColors />
         </Providers>

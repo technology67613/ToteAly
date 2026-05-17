@@ -1,5 +1,5 @@
 import { useRouter } from 'next/navigation';
-import { Users, Search, Download, Filter, User } from "lucide-react";
+import { Users, Search, Download, Filter, User, Eye } from "lucide-react";
 import { motion } from "framer-motion";
 
 interface Customer {
@@ -8,6 +8,8 @@ interface Customer {
   name: string;
   email: string;
   created_at: string;
+  orders?: any[];
+  isGuest?: boolean;
 }
 
 export const AdminCustomersTab = ({ customers }: { customers: Customer[] }) => {
@@ -29,11 +31,17 @@ export const AdminCustomersTab = ({ customers }: { customers: Customer[] }) => {
           />
         </div>
         <div className="flex gap-2">
-          <button className="flex items-center gap-2 px-4 py-2.5 border border-[var(--admin-border)] rounded-xl text-[10px] font-bold uppercase tracking-widest text-[var(--admin-text-muted)] hover:bg-[var(--admin-light)] transition-all">
-            <Filter size={14} /> Filter
-          </button>
-          <button className="flex items-center gap-2 px-4 py-2.5 bg-[var(--admin-primary)] text-white rounded-xl text-[10px] font-bold uppercase tracking-widest hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg shadow-[var(--admin-primary)]/20">
+          <button 
+            onClick={() => window.open(`/api/admin/export/ToteAly_Customers_Report_${new Date().toISOString().split('T')[0]}.csv`, '_blank')}
+            className="flex items-center gap-2 px-4 py-2.5 border border-[var(--admin-border)] rounded-xl text-[10px] font-bold uppercase tracking-widest text-[var(--admin-text-muted)] hover:bg-[var(--admin-light)] transition-all"
+          >
             <Download size={14} /> Export CSV
+          </button>
+          <button 
+            onClick={() => window.open(`/api/admin/export/ToteAly_Customers_Report_${new Date().toISOString().split('T')[0]}.pdf`, '_blank')}
+            className="flex items-center gap-2 px-4 py-2.5 bg-[var(--admin-primary)] text-white rounded-xl text-[10px] font-bold uppercase tracking-widest hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg shadow-[var(--admin-primary)]/20"
+          >
+            <Eye size={14} /> Preview PDF
           </button>
         </div>
       </div>
@@ -69,20 +77,24 @@ export const AdminCustomersTab = ({ customers }: { customers: Customer[] }) => {
                         </div>
                         <div className="flex flex-col">
                           <span className="text-sm font-bold text-[var(--admin-text-primary)] group-hover:text-[var(--admin-primary)] transition-colors">{c.name || "Anonymous User"}</span>
-                          <span className="text-[9px] font-bold text-[var(--admin-primary)] uppercase tracking-widest">Iconic Member</span>
+                          <span className="text-[9px] font-bold text-[var(--admin-primary)] uppercase tracking-widest">{c.isGuest ? "Guest Shopper" : "Iconic Member"}</span>
                         </div>
                       </div>
                     </td>
                     <td className="px-8 py-6 text-sm font-medium text-[var(--admin-text-primary)]">{c.email}</td>
                     <td className="px-8 py-6">
-                      <span className="text-xs font-bold text-[var(--admin-text-primary)]">2</span>
+                      <span className="text-xs font-bold text-[var(--admin-text-primary)]">{c.orders?.length || 0}</span>
                     </td>
                     <td className="px-8 py-6 text-[10px] font-bold text-[var(--admin-text-muted)] uppercase tracking-widest">
                       {new Date(c.created_at).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })}
                     </td>
                     <td className="px-8 py-6 text-right">
-                      <span className="px-2.5 py-1.5 bg-emerald-50 text-emerald-600 rounded-lg text-[9px] font-bold uppercase tracking-wider border border-emerald-100">
-                        Verified
+                      <span className={`px-2.5 py-1.5 rounded-lg text-[9px] font-bold uppercase tracking-wider border ${
+                        c.isGuest 
+                          ? 'bg-amber-50 text-amber-600 border-amber-100' 
+                          : 'bg-emerald-50 text-emerald-600 border-emerald-100'
+                      }`}>
+                        {c.isGuest ? "Guest" : "Verified"}
                       </span>
                     </td>
                   </motion.tr>

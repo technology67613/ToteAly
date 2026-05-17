@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
         id: p.id,
         name: p.full_name || p.email?.split('@')[0] || "User",
         email: p.email,
-        createdAt: p.created_at,
+        created_at: p.created_at,
         isGuest: false,
         orders: []
       });
@@ -79,7 +79,7 @@ export async function GET(request: NextRequest) {
             id: email,
             name: o.shipping_details?.name || email.split('@')[0],
             email: email,
-            createdAt: o.created_at, // use first order date
+            created_at: o.created_at, // use first order date
             isGuest: true,
             orders: []
           });
@@ -89,7 +89,7 @@ export async function GET(request: NextRequest) {
     });
 
     const normalizedData = Array.from(customerMap.values()).sort(
-      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     );
 
     return NextResponse.json(normalizedData);

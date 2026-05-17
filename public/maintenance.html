@@ -1,0 +1,686 @@
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+  *{box-sizing:border-box;margin:0;padding:0;}
+
+  :root {
+    --pink: #f472b6;
+    --pink-light: #fce7f3;
+    --pink-deep: #db2777;
+    --blush: #fdf2f8;
+    --cream: #fffbf7;
+    --nude: #f9e8d9;
+    --charcoal: #1a1a1a;
+    --mauve: #d8b4c8;
+    --rose: #e11d48;
+    --lilac: #e879f9;
+  }
+
+  .page {
+    min-height: 100vh;
+    background: var(--cream);
+    font-family: 'DM Sans', sans-serif;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  /* Animated confetti/sparkle bg */
+  .bg-pattern {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    background-image:
+      radial-gradient(circle at 20% 20%, rgba(244,114,182,0.12) 0%, transparent 50%),
+      radial-gradient(circle at 80% 80%, rgba(232,121,249,0.1) 0%, transparent 50%),
+      radial-gradient(circle at 60% 10%, rgba(251,207,232,0.2) 0%, transparent 40%);
+  }
+
+  .sparkle {
+    position: fixed;
+    font-size: 14px;
+    pointer-events: none;
+    z-index: 1;
+    animation: sparkle-drift var(--sd) ease-in-out infinite alternate;
+    opacity: 0.35;
+    color: var(--pink-deep);
+  }
+
+  @keyframes sparkle-drift {
+    from { transform: translateY(0) rotate(0deg); opacity: 0.2; }
+    to   { transform: translateY(-18px) rotate(20deg); opacity: 0.5; }
+  }
+
+  /* Top marquee */
+  .marquee-wrap {
+    width: 100%;
+    background: var(--charcoal);
+    overflow: hidden;
+    padding: 9px 0;
+    position: relative;
+    z-index: 10;
+  }
+
+  .marquee-track {
+    display: flex;
+    gap: 0;
+    animation: marquee 18s linear infinite;
+    white-space: nowrap;
+  }
+
+  .marquee-text {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 11px;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    color: var(--pink-light);
+    padding: 0 2rem;
+    white-space: nowrap;
+  }
+
+  .marquee-dot {
+    color: var(--pink);
+    padding: 0 0.4rem;
+  }
+
+  @keyframes marquee {
+    from { transform: translateX(0); }
+    to   { transform: translateX(-50%); }
+  }
+
+  /* Nav */
+  .nav {
+    width: 100%;
+    max-width: 700px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.4rem 2rem;
+    position: relative;
+    z-index: 10;
+  }
+
+  .logo {
+    font-family: 'Playfair Display', serif;
+    font-size: 19px;
+    font-weight: 900;
+    color: var(--charcoal);
+    letter-spacing: -0.5px;
+  }
+
+  .logo span { color: var(--pink-deep); font-style: italic; }
+
+  .nav-ig {
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--pink-deep);
+    text-decoration: none;
+    border-bottom: 1px solid var(--pink);
+    padding-bottom: 1px;
+    font-weight: 500;
+    transition: opacity 0.2s;
+  }
+  .nav-ig:hover { opacity: 0.7; }
+
+  /* Hero */
+  .hero {
+    position: relative;
+    z-index: 10;
+    text-align: center;
+    padding: 2rem 1.5rem 1rem;
+    max-width: 620px;
+    width: 100%;
+  }
+
+  .hero-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--pink-light);
+    border: 1px solid var(--mauve);
+    border-radius: 999px;
+    padding: 5px 14px;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--pink-deep);
+    font-weight: 600;
+    margin-bottom: 1.4rem;
+    animation: chip-pulse 2.5s ease-in-out infinite;
+  }
+
+  @keyframes chip-pulse {
+    0%,100% { box-shadow: 0 0 0 0 rgba(219,39,119,0.15); }
+    50%      { box-shadow: 0 0 0 8px rgba(219,39,119,0); }
+  }
+
+  .hero-tag {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--pink-deep);
+    animation: dot-blink 1s step-end infinite;
+  }
+
+  @keyframes dot-blink {
+    0%,49%{ opacity:1; } 50%,100%{ opacity:0; }
+  }
+
+  .hero-title {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(36px, 8vw, 56px);
+    font-weight: 900;
+    line-height: 1.05;
+    color: var(--charcoal);
+    margin-bottom: 0.5rem;
+  }
+
+  .hero-title em {
+    font-style: italic;
+    color: var(--pink-deep);
+    position: relative;
+  }
+
+  .hero-title em::after {
+    content: '';
+    position: absolute;
+    bottom: 2px; left: 0; right: 0;
+    height: 3px;
+    background: var(--pink);
+    border-radius: 2px;
+    opacity: 0.6;
+  }
+
+  .hero-sub {
+    font-size: 13px;
+    color: #888;
+    letter-spacing: 1px;
+    margin-bottom: 1.8rem;
+    font-style: italic;
+  }
+
+  /* Main closed card */
+  .closed-card {
+    position: relative;
+    z-index: 10;
+    background: white;
+    border: 1.5px solid var(--mauve);
+    border-radius: 20px;
+    width: 100%;
+    max-width: 560px;
+    padding: 2rem 2rem 1.6rem;
+    margin: 0 1rem 1.5rem;
+    overflow: hidden;
+  }
+
+  .closed-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 5px;
+    background: linear-gradient(to right, var(--pink), var(--lilac), var(--pink-deep), var(--pink));
+    background-size: 200% 100%;
+    animation: gradient-slide 3s linear infinite;
+  }
+
+  @keyframes gradient-slide {
+    from { background-position: 0% 0%; }
+    to   { background-position: 200% 0%; }
+  }
+
+  .bag-animation {
+    font-size: 52px;
+    display: block;
+    text-align: center;
+    margin-bottom: 1rem;
+    animation: bag-bounce 1.8s ease-in-out infinite;
+    line-height: 1;
+  }
+
+  @keyframes bag-bounce {
+    0%,100% { transform: translateY(0) rotate(-3deg); }
+    50%      { transform: translateY(-10px) rotate(3deg); }
+  }
+
+  .closed-headline {
+    font-family: 'Playfair Display', serif;
+    font-size: 24px;
+    font-weight: 900;
+    color: var(--charcoal);
+    text-align: center;
+    line-height: 1.2;
+    margin-bottom: 6px;
+  }
+
+  .closed-headline em { font-style: italic; color: var(--pink-deep); }
+
+  .closed-body {
+    font-size: 12px;
+    color: #888;
+    text-align: center;
+    line-height: 1.7;
+    margin-bottom: 1.4rem;
+    max-width: 360px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  /* Progress */
+  .progress-section {
+    margin-bottom: 1.4rem;
+  }
+
+  .progress-label-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: #aaa;
+    margin-bottom: 6px;
+    font-weight: 500;
+  }
+
+  .progress-label-row span:last-child { color: var(--pink-deep); font-weight: 600; }
+
+  .progress-bar {
+    height: 8px;
+    background: var(--pink-light);
+    border-radius: 99px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    border-radius: 99px;
+    background: linear-gradient(to right, var(--pink), var(--pink-deep));
+    animation: fill-grow 2.5s cubic-bezier(0.22,1,0.36,1) both;
+    position: relative;
+    overflow: hidden;
+  }
+
+  @keyframes fill-grow {
+    from { width: 0%; }
+    to   { width: 68%; }
+  }
+
+  .progress-fill::after {
+    content: '';
+    position: absolute;
+    top: 0; right: 0; bottom: 0;
+    width: 30px;
+    background: linear-gradient(to right, transparent, rgba(255,255,255,0.5));
+    animation: sheen 1.5s ease-in-out infinite;
+  }
+
+  @keyframes sheen {
+    0%,100% { opacity: 0; } 50% { opacity: 1; }
+  }
+
+  /* Countdown */
+  .countdown-row {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 1.4rem;
+  }
+
+  .time-pill {
+    background: var(--blush);
+    border: 1px solid var(--mauve);
+    border-radius: 12px;
+    padding: 10px 14px;
+    text-align: center;
+    min-width: 58px;
+  }
+
+  .time-num {
+    display: block;
+    font-family: 'Playfair Display', serif;
+    font-size: 26px;
+    font-weight: 900;
+    color: var(--charcoal);
+    line-height: 1;
+  }
+
+  .time-lbl {
+    display: block;
+    font-size: 8px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: #bbb;
+    margin-top: 3px;
+  }
+
+  .time-colon {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px;
+    color: var(--pink);
+    align-self: center;
+    padding-bottom: 6px;
+    animation: colon-blink 1s step-end infinite;
+  }
+
+  @keyframes colon-blink {
+    0%,49%{ opacity:1; } 50%,100%{ opacity:0.2; }
+  }
+
+  /* Notify */
+  .notify-section {
+    background: var(--blush);
+    border: 1px solid var(--mauve);
+    border-radius: 12px;
+    padding: 1rem 1.2rem;
+    margin-bottom: 0;
+  }
+
+  .notify-heading {
+    font-family: 'Playfair Display', serif;
+    font-size: 14px;
+    font-weight: 700;
+    font-style: italic;
+    color: var(--charcoal);
+    margin-bottom: 3px;
+  }
+
+  .notify-sub {
+    font-size: 10px;
+    color: #aaa;
+    margin-bottom: 10px;
+    letter-spacing: 0.3px;
+    line-height: 1.5;
+  }
+
+  .notify-row {
+    display: flex;
+    gap: 8px;
+  }
+
+  .notify-input {
+    flex: 1;
+    border: 1px solid var(--mauve);
+    border-radius: 8px;
+    background: white;
+    padding: 9px 12px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 11px;
+    color: var(--charcoal);
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .notify-input::placeholder { color: #ccc; }
+  .notify-input:focus { border-color: var(--pink-deep); }
+
+  .notify-btn {
+    background: var(--charcoal);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 9px 16px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+    white-space: nowrap;
+  }
+  .notify-btn:hover { background: var(--pink-deep); transform: scale(1.02); }
+  .notify-btn:active { transform: scale(0.97); }
+
+  /* Mood cards row */
+  .moods {
+    position: relative;
+    z-index: 10;
+    display: flex;
+    gap: 10px;
+    max-width: 560px;
+    width: 100%;
+    padding: 0 1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .mood-card {
+    flex: 1;
+    background: white;
+    border: 1px solid var(--mauve);
+    border-radius: 14px;
+    padding: 1rem 0.8rem;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.2s;
+  }
+  .mood-card:hover { transform: translateY(-3px); }
+
+  .mood-card::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 3px;
+  }
+  .mc1::after { background: var(--pink); }
+  .mc2::after { background: var(--lilac); }
+  .mc3::after { background: var(--nude); }
+
+  .mood-icon { font-size: 22px; display: block; margin-bottom: 6px; }
+
+  .mood-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 11px;
+    font-weight: 700;
+    font-style: italic;
+    color: var(--charcoal);
+    margin-bottom: 3px;
+  }
+
+  .mood-sub {
+    font-size: 9px;
+    color: #bbb;
+    letter-spacing: 0.5px;
+    line-height: 1.4;
+  }
+
+  /* Footer */
+  .footer {
+    position: relative;
+    z-index: 10;
+    text-align: center;
+    padding: 1rem 1rem 2rem;
+    font-size: 10px;
+    color: #ccc;
+    letter-spacing: 1px;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .footer a { color: var(--pink-deep); text-decoration: none; }
+  .footer a:hover { text-decoration: underline; }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 20px; left: 50%;
+    transform: translateX(-50%) translateY(60px);
+    background: var(--charcoal);
+    color: var(--pink-light);
+    border-radius: 99px;
+    padding: 10px 22px;
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    font-weight: 600;
+    transition: transform 0.4s cubic-bezier(0.22,1,0.36,1);
+    z-index: 999;
+    white-space: nowrap;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  .divider {
+    width: 40px; height: 1.5px;
+    background: var(--mauve);
+    border-radius: 1px;
+    margin: 0 auto 1rem;
+  }
+</style>
+
+<div class="page">
+  <h2 style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)">Tote-ally Iconic is currently closed for maintenance and will be back soon</h2>
+
+  <div class="bg-pattern"></div>
+  <div id="sparkles"></div>
+
+  <!-- Marquee -->
+  <div class="marquee-wrap">
+    <div class="marquee-track" id="mtrack"></div>
+  </div>
+
+  <!-- Nav -->
+  <nav class="nav">
+    <div class="logo">Tote<span>-ally</span> Iconic</div>
+    <a class="nav-ig" href="https://www.instagram.com/tote_ally_iconic" target="_blank">@tote_ally_iconic 🩷</a>
+  </nav>
+
+  <!-- Hero -->
+  <div class="hero">
+    <div class="hero-chip">
+      <div class="hero-tag"></div>
+      Store Temporarily Closed
+    </div>
+
+    <h1 class="hero-title">We're getting<br><em>re-iconic.</em></h1>
+    <p class="hero-sub">"Made To Be Seen — and worth the wait." ✦</p>
+  </div>
+
+  <!-- Closed card -->
+  <div class="closed-card">
+    <span class="bag-animation">👜</span>
+
+    <h2 class="closed-headline">Our bags are on a<br><em>glow-up.</em></h2>
+    <p class="closed-body">
+      We're behind the scenes doing what we do best — making absolutely everything iconic. The store is taking a little beauty sleep, but don't worry. She's coming back better, bolder, and more unhinged than ever. 🩷
+    </p>
+
+    <div class="divider"></div>
+
+    <div class="progress-section">
+      <div class="progress-label-row">
+        <span>Upgrade Progress</span>
+        <span id="pct-lbl">68%</span>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" id="prog"></div>
+      </div>
+    </div>
+
+    <div class="countdown-row">
+      <div class="time-pill">
+        <span class="time-num" id="hrs">03</span>
+        <span class="time-lbl">Hours</span>
+      </div>
+      <span class="time-colon">:</span>
+      <div class="time-pill">
+        <span class="time-num" id="mins">27</span>
+        <span class="time-lbl">Mins</span>
+      </div>
+      <span class="time-colon">:</span>
+      <div class="time-pill">
+        <span class="time-num" id="secs">00</span>
+        <span class="time-lbl">Secs</span>
+      </div>
+    </div>
+
+    <div class="notify-section">
+      <div class="notify-heading">Be first to know. 💌</div>
+      <div class="notify-sub">Leave your email and we'll slide into your inbox the second we're back.</div>
+      <div class="notify-row">
+        <input class="notify-input" id="email" placeholder="your@email.com" type="email" />
+        <button class="notify-btn" onclick="doNotify()">Notify Me ✦</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mood mini-cards -->
+  <div class="moods">
+    <div class="mood-card mc1">
+      <span class="mood-icon">🖤</span>
+      <div class="mood-title">Villain Era</div>
+      <div class="mood-sub">Dropping<br>very soon</div>
+    </div>
+    <div class="mood-card mc2">
+      <span class="mood-icon">💜</span>
+      <div class="mood-title">Soft Chaos</div>
+      <div class="mood-sub">New prints<br>incoming</div>
+    </div>
+    <div class="mood-card mc3">
+      <span class="mood-icon">✨</span>
+      <div class="mood-title">Custom</div>
+      <div class="mood-sub">DM us to<br>pre-order</div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <div style="margin-bottom:6px">✦ &nbsp; Tote-ally Iconic &nbsp; ✦</div>
+    <div style="margin-bottom:4px"><em>An exclusive creation by Khadija Memon &amp; Abhirami Aluvila</em></div>
+    <div>Made with pink energy &amp; zero apologies 🩷 &nbsp;·&nbsp; <a href="https://www.instagram.com/tote_ally_iconic" target="_blank">Follow us</a></div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+</div>
+
+<script>
+  const sparkleSym = ['✦','✧','✸','✿','♡','✩','◇'];
+  const cont = document.getElementById('sparkles');
+  for(let i=0;i<18;i++){
+    const el=document.createElement('div');
+    el.className='sparkle';
+    el.textContent=sparkleSym[Math.floor(Math.random()*sparkleSym.length)];
+    el.style.cssText=`top:${Math.random()*92}%;left:${Math.random()*96}%;--sd:${(Math.random()*3+2).toFixed(1)}s;animation-delay:${(Math.random()*3).toFixed(1)}s;font-size:${Math.floor(Math.random()*10+10)}px`;
+    cont.appendChild(el);
+  }
+
+  const marqueeItems = [
+    'We\'re Getting Iconic','✦','Glow-Up In Progress','🩷','Coming Back Fiercer','✦',
+    'Main Character Energy','✦','Made To Be Seen','🩷','New Drops Loading','✦',
+    'We\'re Getting Iconic','✦','Glow-Up In Progress','🩷','Coming Back Fiercer','✦',
+    'Main Character Energy','✦','Made To Be Seen','🩷','New Drops Loading','✦',
+  ];
+  const track = document.getElementById('mtrack');
+  marqueeItems.forEach(t=>{
+    const s=document.createElement('span');
+    s.className=t.length<=2?'marquee-text marquee-dot':'marquee-text';
+    s.textContent=t;
+    track.appendChild(s);
+  });
+
+  const target = new Date(Date.now()+3*3600000+27*60000+14000);
+  function tick(){
+    const diff=Math.max(0,target-Date.now());
+    const h=Math.floor(diff/3600000),m=Math.floor(diff%3600000/60000),s=Math.floor(diff%60000/1000);
+    document.getElementById('hrs').textContent=String(h).padStart(2,'0');
+    document.getElementById('mins').textContent=String(m).padStart(2,'0');
+    document.getElementById('secs').textContent=String(s).padStart(2,'0');
+  }
+  tick(); setInterval(tick,1000);
+
+  let pct=68;
+  setInterval(()=>{
+    if(pct<98){ pct+=Math.random()*0.4; const v=Math.min(98,Math.round(pct));
+      document.getElementById('prog').style.width=v+'%';
+      document.getElementById('pct-lbl').textContent=v+'%';
+    }
+  },2500);
+
+  function doNotify(){
+    const v=document.getElementById('email').value.trim();
+    const t=document.getElementById('toast');
+    t.textContent = v&&v.includes('@') ? '🩷 You\'re on the list, icon!' : '✦ Enter a valid email first, babe';
+    t.classList.add('show');
+    setTimeout(()=>t.classList.remove('show'),3000);
+  }
+</script>

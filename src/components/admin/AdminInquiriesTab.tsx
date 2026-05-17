@@ -19,6 +19,8 @@ export const AdminInquiriesTab = () => {
   const [inquiries, setInquiries] = useState<Inquiry[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedInquiry, setSelectedInquiry] = useState<Inquiry | null>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const fetchInquiries = useCallback(async () => {
     try {
@@ -52,16 +54,20 @@ export const AdminInquiriesTab = () => {
     }
   };
 
-  const deleteInquiry = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this iconic inquiry?")) return;
+  const handleConfirmDelete = async () => {
+    if (!selectedInquiry) return;
+    setIsDeleting(true);
     try {
-      const res = await fetch(`/api/admin/inquiries?id=${id}`, { method: 'DELETE' });
+      const res = await fetch(`/api/admin/inquiries?id=${selectedInquiry.id}`, { method: 'DELETE' });
       if (res.ok) {
-        setInquiries(prev => prev.filter(inq => inq.id !== id));
+        setInquiries(prev => prev.filter(inq => inq.id !== selectedInquiry.id));
         setSelectedInquiry(null);
+        setShowDeleteModal(false);
       }
     } catch (e) {
       console.error(e);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -140,7 +146,7 @@ export const AdminInquiriesTab = () => {
                       <button onClick={() => updateStatus(selectedInquiry.id, 'archived')} className="w-10 h-10 rounded-xl bg-white/5 hover:bg-white/10 flex items-center justify-center transition-all">
                         <Archive size={18} />
                       </button>
-                      <button onClick={() => deleteInquiry(selectedInquiry.id)} className="w-10 h-10 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 flex items-center justify-center transition-all">
+                      <button onClick={() => setShowDeleteModal(true)} className="w-10 h-10 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 flex items-center justify-center transition-all">
                         <Trash2 size={18} />
                       </button>
                     </div>
@@ -209,6 +215,55 @@ export const AdminInquiriesTab = () => {
                </div>
                <h4 className="font-serif text-xl font-bold mb-2">No Inquiry Selected</h4>
                <p className="text-sm text-[var(--admin-text-muted)]">Click on an iconic message from the left to view the full details and take action.</p>
+            </div>
+          )}
+        </AnimatePresence>
+
+        {/* Delete Confirmation Modal */}
+        <AnimatePresence>
+          {showDeleteModal && (
+            <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
+              <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => !isDeleting && setShowDeleteModal(false)}
+                className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm"
+              />
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                className="relative w-full max-w-md bg-white rounded-[32px] overflow-hidden shadow-2xl"
+              >
+                <div className="p-10 text-center space-y-6">
+                  <div className="w-20 h-20 bg-rose-50 rounded-3xl flex items-center justify-center text-rose-500 mx-auto shadow-sm">
+                    <Trash2 size={32} />
+                  </div>
+                  <div className="space-y-2">
+                    <h3 className="text-2xl font-serif font-bold text-slate-900">Purge Inquiry?</h3>
+                    <p className="text-sm text-slate-500 leading-relaxed px-4">
+                      This will permanently remove <span className="font-bold text-slate-900">{selectedInquiry?.name}'s</span> message from the atelier database. This action is irreversible.
+                    </p>
+                  </div>
+                  <div className="flex flex-col gap-3 pt-4">
+                    <button 
+                      onClick={handleConfirmDelete}
+                      disabled={isDeleting}
+                      className="w-full py-4 bg-rose-500 text-white rounded-2xl font-bold text-xs uppercase tracking-widest hover:bg-rose-600 transition-all shadow-xl shadow-rose-500/20 disabled:opacity-50"
+                    >
+                      {isDeleting ? "Purging Record..." : "Confirm Deletion"}
+                    </button>
+                    <button 
+                      onClick={() => setShowDeleteModal(false)}
+                      disabled={isDeleting}
+                      className="w-full py-4 text-slate-400 font-bold text-xs uppercase tracking-widest hover:text-slate-600 transition-colors"
+                    >
+                      Cancel Action
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
             </div>
           )}
         </AnimatePresence>

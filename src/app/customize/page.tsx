@@ -11,7 +11,7 @@ import {
   Layers, Lock, Unlock, Copy, Scissors,
   Plus, Sparkles as SparklesIcon, Cloud
 } from "lucide-react";
-import { removeBackground } from "@imgly/background-removal";
+// using remove.bg API instead of local library
 import { useCartStore, CartItem } from "@/store/cartStore";
 import { toast } from "sonner";
 import { FALLBACK_PRODUCTS } from "@/lib/catalog";
@@ -150,13 +150,29 @@ export default function Customize() {
 
   const loadBagMockup = (targetCanvas: fabric.Canvas, url: string, size?: number) => {
     const canvasSize = size || targetCanvas.width || 500;
-    fabric.FabricImage.fromURL(url).then((img) => {
+    
+    // Add cache buster to remote URLs to bypass browser CORS caching issues
+    const isRemote = url.startsWith('http');
+    const loadUrl = isRemote 
+      ? `${url}${url.includes('?') ? '&' : '?'}cb=${Date.now()}`
+      : url;
+
+    fabric.FabricImage.fromURL(loadUrl, { crossOrigin: 'anonymous' }).then((img) => {
       img.scaleToWidth(canvasSize);
-      targetCanvas.set({
-        backgroundImage: img
-      });
+      targetCanvas.set({ backgroundImage: img });
       targetCanvas.centerObject(targetCanvas.backgroundImage!);
       targetCanvas.renderAll();
+    }).catch(err => {
+      console.error("Failed to load bag mockup with CORS:", err);
+      // Fallback without crossOrigin (will taint canvas, but might display)
+      fabric.FabricImage.fromURL(url).then((img) => {
+        img.scaleToWidth(canvasSize);
+        targetCanvas.set({ backgroundImage: img });
+        targetCanvas.centerObject(targetCanvas.backgroundImage!);
+        targetCanvas.renderAll();
+      }).catch(fallbackErr => {
+        console.error("Complete failure loading bag mockup:", fallbackErr);
+      });
     });
   };
 
@@ -344,9 +360,19 @@ export default function Customize() {
 
       toast.info("Removing background... 🪄", { duration: 2000 });
 
-      // Use client-side library (free and no add-on required)
-      const blob = await removeBackground(dataUrl);
-      const url = URL.createObjectURL(blob);
+      // Call the Remove.bg API route
+      const res = await fetch("/api/remove-bg", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ image_base64: dataUrl })
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to remove background");
+      }
+
+      const { result } = await res.json();
+      const url = result;
 
       // Replace old image with the new transparent one
       const newImg = await fabric.FabricImage.fromURL(url, { crossOrigin: 'anonymous' });
@@ -382,38 +408,59 @@ export default function Customize() {
     canvas.renderAll();
   };
 
-  const handleAddToCart = () => {
+  const handleAddToCart = async () => {
     if (!canvas || !selectedBag) return;
     setIsAddingToCart(true);
     const bag = selectedBag;
     
-    // Create a high-quality capture of the design
-    const dataUrl = canvas.toDataURL({
-      format: "png",
-      quality: 1,
-      multiplier: 1,
-    });
+    try {
+      // 1. Create a high-quality capture of the design
+      const dataUrl = canvas.toDataURL({
+        format: "png",
+        quality: 1,
+        multiplier: 1,
+      });
 
-    const item: CartItem = {
-      id: `custom-${Date.now()}`,
-      productId: bag.id,
-      title: bag.title,
-      price: bag.price,
-      quantity: 1,
-      isCustomized: true,
-      customizationDetails: {
-        bagType: bag.title,
-        canvasData: dataUrl,
-        preview: dataUrl
-      }
-    };
+      // 2. Upload snapshot to Cloud Storage (Supabase)
+      // This is safer than storing huge Base64 in DB/LocalStorage
+      const formData = new FormData();
+      formData.append("base64", dataUrl);
+      formData.append("filename", `order-preview-${Date.now()}.png`);
+      
+      const uploadRes = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+      
+      if (!uploadRes.ok) throw new Error("Preview upload failed");
+      const { url: cloudImageUrl } = await uploadRes.json();
 
-    setTimeout(() => {
+      const item: CartItem = {
+        id: `custom-${Date.now()}`,
+        productId: bag.id,
+        title: bag.title,
+        price: bag.price,
+        quantity: 1,
+        isCustomized: true,
+        customizationDetails: {
+          bagType: bag.title,
+          canvasData: dataUrl, // Still keep data for local state if needed
+          preview: cloudImageUrl, // Permanent URL for admin
+          text: textInput || (selectedObject?.type === 'i-text' ? (selectedObject as any).text : ""),
+          font: selectedFont,
+          color: selectedColor
+        }
+      };
+
       addItem(item);
-      setIsAddingToCart(false);
-      toast.success("Custom design added to cart!", { duration: 1000 });
+      toast.success("Custom design added to cart! ✨");
       openCart();
-    }, 800);
+    } catch (err) {
+      console.error("Cart add error:", err);
+      toast.error("Failed to save customization. Please try again.");
+    } finally {
+      setIsAddingToCart(false);
+    }
   };
 
   const handleSaveDesign = async () => {
@@ -464,11 +511,12 @@ export default function Customize() {
       if (res.ok) {
         toast.success("Design saved to your account! ✨");
       } else {
-        throw new Error("Failed to save record");
+        const errorData = await res.json();
+        throw new Error(errorData.error || "Failed to save record");
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Save error:", err);
-      toast.error("Could not save design. Try again.");
+      toast.error(err.message || "Could not save design. Try again.");
     } finally {
       setIsSavingDesign(false);
     }

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin as supabase, isSupabaseAdminConfigured, isSupabaseConfigured } from "@/lib/supabase";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 function productPayload(body: any) {
   return {
@@ -93,6 +94,7 @@ export async function DELETE(request: NextRequest) {
     if (error) throw error;
     return NextResponse.json({ message: `Product deleted successfully from cloud.` });
   } catch (error: any) {
+    console.error("Supabase DELETE Error:", error);
     return NextResponse.json({ error: "Failed to delete product from cloud." }, { status: 500 });
   }
 }

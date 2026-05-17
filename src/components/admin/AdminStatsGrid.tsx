@@ -48,12 +48,14 @@ export const AdminStatsGrid = ({ stats }: { stats: Stats }) => {
   ];
 
   const getDeltaColor = (delta: string) => {
+    if (delta.includes('₹') && !delta.includes('₹0')) return "bg-emerald-50 text-emerald-600";
     if (delta.startsWith('+') && delta !== '+0%') return "bg-emerald-50 text-emerald-600";
     if (delta.startsWith('-')) return "bg-rose-50 text-rose-600";
     return "bg-slate-50 text-slate-500";
   };
 
   const getDeltaIcon = (delta: string) => {
+    if (delta.includes('₹') && !delta.includes('₹0')) return <TrendingUp size={12} />;
     if (delta.startsWith('+') && delta !== '+0%') return <TrendingUp size={12} />;
     if (delta.startsWith('-')) return <TrendingDown size={12} />;
     return <Minus size={12} />;

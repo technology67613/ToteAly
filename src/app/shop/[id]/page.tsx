@@ -29,9 +29,11 @@ interface Review {
   rating: number;
   comment: string;
   created_at: string;
-  profiles: {
-    name: string;
-    avatar_url: string;
+  user_name?: string;
+  profiles?: {
+    name?: string;
+    full_name?: string;
+    avatar_url?: string;
   };
 }
 
@@ -302,16 +304,16 @@ export default function ProductDetail() {
                       <div className="flex justify-between items-center">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded-full bg-[#F5ECD7] overflow-hidden">
-                            {review.profiles.avatar_url ? (
-                              <Image src={review.profiles.avatar_url} alt={review.profiles.name} width={40} height={40} />
+                            {review.profiles?.avatar_url ? (
+                              <Image src={review.profiles.avatar_url} alt={review.profiles?.full_name || review.user_name || "User"} width={40} height={40} />
                             ) : (
                               <div className="w-full h-full flex items-center justify-center text-[#900C3F]/30 font-bold uppercase">
-                                {review.profiles.name[0]}
+                                {(review.profiles?.full_name || review.profiles?.name || review.user_name || "A")[0]}
                               </div>
                             )}
                           </div>
                           <div>
-                            <p className="font-bold text-sm">{review.profiles.name}</p>
+                            <p className="font-bold text-sm">{review.profiles?.full_name || review.profiles?.name || review.user_name || "Anonymous"}</p>
                             <p className="text-[10px] text-[#900C3F]/40 uppercase tracking-widest">
                               {new Date(review.created_at).toLocaleDateString()}
                             </p>

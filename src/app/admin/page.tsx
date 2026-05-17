@@ -6,9 +6,10 @@ import { useSession, signOut } from "next-auth/react";
 import {
   BarChart2, ShoppingBag, Users, Package, TrendingUp,
   Search, Loader2, LogOut, Bell, Settings, Ticket, Megaphone,
-  LayoutDashboard, Menu, X, ArrowUpRight, ChevronRight, Globe, Calendar, Mail, Star,
-  Plus, Zap, Download, IndianRupee, History
+  LayoutDashboard, Menu, X, ArrowUpRight, ChevronRight, ChevronDown, Globe, Calendar, Mail, Star,
+  Plus, Zap, Download, IndianRupee, History, CreditCard, AlertTriangle
 } from "lucide-react";
+import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -29,18 +30,9 @@ import { AdminLogsTab } from "@/components/admin/AdminLogsTab";
 import { AdminDesignsTab } from "@/components/admin/AdminDesignsTab";
 import { AdminActivityFeed } from "@/components/admin/AdminActivityFeed";
 import { ProductModal } from "@/components/admin/ProductModal";
+import { ProductStatsModal } from "@/components/admin/ProductStatsModal";
 
-type Tab = "dashboard" | "analytics" | "orders" | "products" | "designs" | "customers" | "inquiries" | "marketing" | "reviews" | "settings" | "logs";
-
-const CHART_DATA = [
-  { name: 'Mon', sales: 4000, revenue: 2400 },
-  { name: 'Tue', sales: 3000, revenue: 1398 },
-  { name: 'Wed', sales: 2000, revenue: 9800 },
-  { name: 'Thu', sales: 2780, revenue: 3908 },
-  { name: 'Fri', sales: 1890, revenue: 4800 },
-  { name: 'Sat', sales: 2390, revenue: 3800 },
-  { name: 'Sun', sales: 3490, revenue: 4300 },
-];
+type Tab = "dashboard" | "analytics" | "orders" | "products" | "customers" | "inquiries" | "marketing" | "reviews" | "settings";
 
 export default function AdminPage() {
   const router = useRouter();
@@ -54,30 +46,101 @@ export default function AdminPage() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<any>(null);
+  const [viewingProduct, setViewingProduct] = useState<any>(null);
+  const [isStatsModalOpen, setIsStatsModalOpen] = useState(false);
+  const [selectedRange, setSelectedRange] = useState<'today' | 'week' | 'year' | 'till_date' | 'custom'>('till_date');
+  const [isRangeOpen, setIsRangeOpen] = useState(false);
+  
+  // Global Date Range
+  const now = new Date();
+  const today = now.toISOString().split('T')[0];
+  const [startDate, setStartDate] = useState('2024-01-01');
+  const [endDate, setEndDate] = useState(today);
 
-  const handleProductSave = async (formData: any) => {
-    const url = "/api/admin/products";
-    const method = editingProduct ? "PATCH" : "POST";
-    const payload = editingProduct ? { ...formData, id: editingProduct.id } : formData;
+  const ranges = [
+    { id: 'today', label: 'Today' },
+    { id: 'week', label: 'Week' },
+    { id: 'year', label: 'Year' },
+    { id: 'till_date', label: 'Till Date' },
+    { id: 'custom', label: 'Custom' },
+  ];
 
-    const res = await fetch(url, {
-      method,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
+  const handleRangeChange = (range: any) => {
+    setSelectedRange(range);
+    setIsRangeOpen(false);
+    
+    const todayStr = new Date().toISOString().split('T')[0];
+    let start = todayStr;
 
-    if (res.ok) {
-      setIsProductModalOpen(false);
-      setEditingProduct(null);
-      fetchData();
+    if (range === 'today') start = todayStr;
+    else if (range === 'week') {
+      const d = new Date();
+      d.setDate(d.getDate() - 7);
+      start = d.toISOString().split('T')[0];
+    } else if (range === 'year') {
+      const d = new Date();
+      d.setFullYear(d.getFullYear() - 1);
+      start = d.toISOString().split('T')[0];
+    } else if (range === 'till_date') {
+      start = '2024-01-01';
+    }
+
+    if (range !== 'custom') {
+      setStartDate(start);
+      setEndDate(todayStr);
     }
   };
 
-  const handleProductDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this iconic product?")) return;
-    const res = await fetch(`/api/admin/products?id=${id}`, { method: "DELETE" });
-    if (res.ok) fetchData();
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+
+  const fetchData = async () => {
+    setLoading(true);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+
+    try {
+      const statsRes = await fetch(`/api/admin/stats?range=${selectedRange}&from=${startDate}&to=${endDate}`, { 
+        cache: 'no-store',
+        signal: controller.signal 
+      });
+      
+      if (statsRes.ok) {
+        setStats(await statsRes.json());
+      } else if (statsRes.status !== 503) {
+        toast.error("Failed to sync metrics");
+      }
+
+      if (tab === "products") {
+        const res = await fetch("/api/admin/products", { cache: 'no-store', signal: controller.signal });
+        if (res.ok) setProducts(await res.json());
+      }
+      if (tab === "orders") {
+        const res = await fetch(`/api/admin/orders?from=${startDate}&to=${endDate}`, { cache: 'no-store', signal: controller.signal });
+        if (res.ok) setOrders(await res.json());
+      }
+      if (tab === "customers") {
+        const res = await fetch("/api/admin/customers", { cache: 'no-store', signal: controller.signal });
+        if (res.ok) setCustomers(await res.json());
+      }
+      
+      const notifRes = await fetch("/api/admin/notifications", { cache: 'no-store', signal: controller.signal });
+      if (notifRes.ok) {
+        const data = await notifRes.json();
+        setNotifications(data);
+      }
+    } catch (error: any) {
+      if (error.name !== 'AbortError') {
+        console.error("Fetch Error:", error);
+        toast.error("Network synchronization failed");
+      }
+    } finally {
+      clearTimeout(timeoutId);
+      setLoading(false);
+    }
   };
+
+
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -90,42 +153,18 @@ export default function AdminPage() {
   useEffect(() => {
     if (status === "authenticated" && (session?.user as any)?.role === "admin") {
       fetchData();
+      // Poll notifications every 60 seconds
+      const interval = setInterval(async () => {
+        try {
+          const res = await fetch("/api/admin/notifications", { cache: 'no-store' });
+          if (res.ok) setNotifications(await res.json());
+        } catch (err) {
+          console.error("Notification Poll Error:", err);
+        }
+      }, 60000);
+      return () => clearInterval(interval);
     }
-  }, [tab, status, session]);
-
-  const fetchData = async () => {
-    setLoading(true);
-    try {
-      const statsRes = await fetch("/api/admin/stats");
-      if (statsRes.ok) {
-        setStats(await statsRes.json());
-      } else {
-        setStats({
-          revenue: "₹0",
-          orders: 0,
-          products: 0,
-          customers: 0,
-          delta: { revenue: "+0%", orders: "Live", products: "Synced", customers: "Active" }
-        });
-      }
-
-      if (tab === "products") {
-        const res = await fetch("/api/admin/products");
-        if (res.ok) setProducts(await res.json());
-      }
-      if (tab === "orders") {
-        const res = await fetch("/api/admin/orders");
-        if (res.ok) setOrders(await res.json());
-      }
-      if (tab === "customers") {
-        const res = await fetch("/api/admin/customers");
-        if (res.ok) setCustomers(await res.json());
-      }
-    } catch (error) {
-      console.error("Fetch Error:", error);
-    }
-    setLoading(false);
-  };
+  }, [tab, status, session, selectedRange, startDate, endDate]);
 
   const handleUpdateStatus = async (id: string, status: string) => {
     try {
@@ -144,13 +183,16 @@ export default function AdminPage() {
 
   const handleLogout = () => signOut({ callbackUrl: "/admin/login" });
 
+  const handleExport = (type: string) => {
+    const date = new Date().toISOString().split('T')[0];
+    const filename = `ToteAly_${type}_Report_${date}.csv`;
+    window.open(`/api/admin/export/${filename}`, '_blank');
+  };
+
   if (status === "loading" || (loading && !stats)) {
     return (
       <div className="min-h-screen w-full bg-[var(--admin-background)] flex items-center justify-center">
-        <motion.div 
-          animate={{ rotate: 360 }}
-          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-        >
+        <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }}>
           <Loader2 className="w-10 h-10 text-[var(--admin-primary)]" />
         </motion.div>
       </div>
@@ -162,31 +204,14 @@ export default function AdminPage() {
     { id: "analytics", icon: BarChart2, label: "Analytics", badge: 0 },
     { id: "orders", icon: ShoppingBag, label: "Orders", badge: orders.filter(o => o.status === 'Pending').length },
     { id: "products", icon: Package, label: "Inventory", badge: 0 },
-    { id: "designs", icon: Plus, label: "Designs", badge: 0 },
     { id: "customers", icon: Users, label: "Customers", badge: 0 },
     { id: "inquiries", icon: Mail, label: "Inquiries", badge: 0 },
     { id: "marketing", icon: Megaphone, label: "Marketing", badge: 0 },
     { id: "reviews", icon: Star, label: "Reviews", badge: 0 },
-    { id: "settings", icon: Settings, label: "Settings", badge: 0 },
-    { id: "logs", icon: History, label: "Audit Trail", badge: 0 },
   ];
 
   return (
     <div className="flex w-full h-screen overflow-hidden bg-[var(--admin-background)]">
-      {/* Mobile Backdrop */}
-      <AnimatePresence>
-        {isSidebarOpen && (
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setIsSidebarOpen(false)}
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden"
-          />
-        )}
-      </AnimatePresence>
-
-      {/* Sidebar */}
       <aside className={`fixed lg:static inset-y-0 left-0 z-50 w-72 bg-[var(--admin-surface-dark)] text-white flex flex-col shrink-0 transition-all duration-300 ease-in-out lg:translate-x-0 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="p-8 flex flex-col h-full">
           <div className="flex items-center justify-between mb-10">
@@ -197,13 +222,8 @@ export default function AdminPage() {
                 <span className="text-[9px] uppercase tracking-[0.2em] text-white/40 font-bold">Cloud Admin</span>
               </div>
             </div>
-            {/* Close button for mobile */}
-            <button onClick={() => setIsSidebarOpen(false)} className="lg:hidden w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 transition-all">
-              <X size={18} />
-            </button>
           </div>
-
-          <nav className="flex-1 space-y-2 overflow-y-auto custom-scrollbar pr-2">
+          <nav className="flex-1 space-y-1 overflow-y-auto scrollbar-hide pr-2">
             {menuItems.map((item) => (
               <button
                 key={item.id}
@@ -211,65 +231,142 @@ export default function AdminPage() {
                   setTab(item.id as Tab);
                   if (window.innerWidth < 1024) setIsSidebarOpen(false);
                 }}
-                className={`w-full flex items-center justify-between p-4 rounded-2xl transition-all group ${tab === item.id ? 'bg-white/10 text-white shadow-xl shadow-black/20 ring-1 ring-white/10' : 'text-white/40 hover:text-white hover:bg-white/5'}`}
+                className={`w-full flex items-center justify-between p-3 rounded-xl transition-all group ${tab === item.id ? 'bg-white/10 text-white shadow-xl shadow-black/20 ring-1 ring-white/10' : 'text-white/40 hover:text-white hover:bg-white/5'}`}
               >
-                <div className="flex items-center gap-4">
-                  <item.icon size={20} className={tab === item.id ? 'text-[var(--admin-primary)]' : 'group-hover:text-white transition-colors'} />
-                  <span className="text-xs font-bold tracking-wide">{item.label}</span>
+                <div className="flex items-center gap-3">
+                  <item.icon size={18} className={tab === item.id ? 'text-[var(--admin-primary)]' : 'group-hover:text-white transition-colors'} />
+                  <span className="text-[11px] font-bold tracking-wide">{item.label}</span>
                 </div>
-                {item.badge > 0 && (
-                  <span className="px-2 py-0.5 bg-rose-500 text-white text-[9px] font-bold rounded-full shadow-lg shadow-rose-500/20">{item.badge}</span>
-                )}
+                {item.badge > 0 && <span className="px-1.5 py-0.5 bg-rose-500 text-white text-[8px] font-bold rounded-full">{item.badge}</span>}
               </button>
             ))}
           </nav>
-
-          <div className="pt-8 border-t border-white/5 mt-8">
-            <button 
-              onClick={handleLogout}
-              className="w-full flex items-center gap-4 p-4 text-white/40 hover:text-rose-400 hover:bg-rose-500/5 rounded-2xl transition-all font-bold text-xs"
+          <div className="pt-6 border-t border-white/5 mt-auto space-y-1">
+            <button
+              onClick={() => {
+                setTab("settings");
+                if (window.innerWidth < 1024) setIsSidebarOpen(false);
+              }}
+              className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all group ${tab === "settings" ? 'bg-white/10 text-white shadow-xl shadow-black/20 ring-1 ring-white/10' : 'text-white/40 hover:text-white hover:bg-white/5'}`}
             >
-              <LogOut size={20} /> Logout Account
+              <Settings size={18} className={tab === "settings" ? 'text-[var(--admin-primary)]' : 'group-hover:text-white transition-colors'} />
+              <span className="text-[11px] font-bold tracking-wide">Settings</span>
+            </button>
+            <button onClick={handleLogout} className="w-full flex items-center gap-3 p-3 text-white/40 hover:text-rose-400 hover:bg-rose-500/5 rounded-xl transition-all font-bold text-[11px]">
+              <LogOut size={18} /> Logout Account
             </button>
           </div>
         </div>
       </aside>
 
       <div className="flex-1 flex flex-col relative overflow-hidden">
-        {/* Top Header */}
         <header className="h-16 md:h-20 bg-white border-b border-[var(--admin-border)] flex items-center justify-between px-4 md:px-10 sticky top-0 z-40">
           <div className="flex items-center gap-4 md:gap-6">
-            <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="lg:hidden w-10 h-10 flex items-center justify-center rounded-xl hover:bg-[var(--admin-light)] transition-all bg-[var(--admin-light)]/50">
-              <Menu size={20} />
-            </button>
-            <div className="flex items-center gap-4">
-               <div className="flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 bg-emerald-50 border border-emerald-100 rounded-full">
-                  <div className="w-1.5 h-1.5 md:w-2 md:h-2 bg-emerald-500 rounded-full animate-pulse" />
-                  <span className="text-[8px] md:text-[10px] font-bold text-emerald-600 uppercase tracking-widest">Cloud Live</span>
-               </div>
-               <div className="hidden sm:block h-4 w-px bg-[var(--admin-border)] mx-1 md:mx-2" />
-               <p className="hidden sm:block text-[8px] md:text-[10px] font-bold text-[var(--admin-text-muted)] uppercase tracking-widest">v3.2 Terminal</p>
+            <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="lg:hidden w-10 h-10 flex items-center justify-center rounded-xl bg-[var(--admin-light)]/50"><Menu size={20} /></button>
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-50 border border-emerald-100 rounded-full">
+              <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
+              <span className="text-[8px] md:text-[10px] font-bold text-emerald-600 uppercase tracking-widest">Cloud Live</span>
             </div>
           </div>
           <div className="flex items-center gap-3 md:gap-6">
-            <div className="relative hidden xl:block">
-              <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--admin-text-muted)]" />
-              <input 
-                type="text" 
-                placeholder="Deep search..." 
-                className="w-64 pl-12 pr-4 py-2.5 bg-[var(--admin-light)]/50 border border-[var(--admin-border)] rounded-2xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-[var(--admin-primary)]/20 transition-all"
-              />
+            <div className="relative">
+              <button 
+                onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
+                className="relative w-10 h-10 flex items-center justify-center rounded-xl border border-[var(--admin-border)] hover:bg-[var(--admin-light)] transition-all"
+              >
+                <Bell size={20} />
+                {notifications.length > 0 && <span className="absolute top-2 right-2 w-2 h-2 bg-rose-500 rounded-full ring-2 ring-white" />}
+              </button>
+
+              <AnimatePresence>
+                {isNotificationsOpen && (
+                  <>
+                    <div className="fixed inset-0 z-10" onClick={() => setIsNotificationsOpen(false)} />
+                    <motion.div 
+                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                      className="absolute right-0 mt-4 w-80 md:w-96 bg-white border border-[var(--admin-border)] rounded-[32px] shadow-2xl z-20 overflow-hidden"
+                    >
+                      <div className="p-6 border-b border-[var(--admin-border)] bg-[var(--admin-light)]/30 flex justify-between items-center">
+                        <h3 className="font-serif text-lg font-bold">Priority Alerts</h3>
+                        <span className="px-3 py-1 bg-white rounded-lg text-[10px] font-bold uppercase tracking-widest text-[var(--admin-primary)] shadow-sm">{notifications.length} Active</span>
+                      </div>
+                      <div className="max-h-[400px] overflow-y-auto custom-scrollbar">
+                        {notifications.map((n) => (
+                          <div 
+                            key={n.id} 
+                            className="p-5 border-b border-[var(--admin-border)] last:border-0 hover:bg-[var(--admin-light)]/20 transition-all cursor-pointer group relative"
+                          >
+                            <div className="flex gap-4" onClick={async () => {
+                              if (n.type === 'inquiry') setTab('inquiries');
+                              else if (n.type === 'order' || n.type === 'payment') setTab('orders');
+                              else if (n.type === 'stock') setTab('products');
+                              setIsNotificationsOpen(false);
+                              // Mark as read in DB
+                              setNotifications(prev => prev.filter(x => x.id !== n.id));
+                              fetch(`/api/admin/notifications?id=${n.id}`, { method: 'PATCH' });
+                            }}>
+                              <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+                                n.type === 'stock' ? 'bg-amber-50 text-amber-600' :
+                                n.type === 'payment' ? 'bg-rose-50 text-rose-500' :
+                                n.type === 'inquiry' ? 'bg-blue-50 text-blue-600' : 'bg-emerald-50 text-emerald-600'
+                              }`}>
+                                {n.type === 'stock' ? <AlertTriangle size={18} /> : 
+                                 n.type === 'payment' ? <CreditCard size={18} /> :
+                                 n.type === 'inquiry' ? <Mail size={18} /> : <ShoppingBag size={18} />}
+                              </div>
+                              <div className="flex-1 pr-6">
+                                <div className="flex justify-between items-start">
+                                  <p className="text-xs font-bold text-[var(--admin-text-primary)]">{n.title}</p>
+                                  <span className="text-[9px] font-bold text-[var(--admin-text-muted)] uppercase tracking-widest">{new Date(n.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                </div>
+                                <p className="text-[11px] text-[var(--admin-text-muted)] mt-1 line-clamp-1">{n.message}</p>
+                              </div>
+                            </div>
+                            <button 
+                              onClick={async (e) => {
+                                e.stopPropagation();
+                                setNotifications(prev => prev.filter(x => x.id !== n.id));
+                                fetch(`/api/admin/notifications?id=${n.id}`, { method: 'PATCH' });
+                              }}
+                              className="absolute top-5 right-4 p-1 text-[var(--admin-text-muted)] hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-all"
+                            >
+                              <X size={14} />
+                            </button>
+                          </div>
+                        ))}
+                        {notifications.length === 0 && (
+                          <div className="p-10 text-center flex flex-col items-center gap-4">
+                            <div className="w-16 h-16 bg-[var(--admin-light)] rounded-full flex items-center justify-center text-[var(--admin-text-muted)]">
+                              <Bell size={24} />
+                            </div>
+                            <p className="text-xs font-bold text-[var(--admin-text-muted)] uppercase tracking-widest">All caught up!</p>
+                          </div>
+                        )}
+                      </div>
+                      {notifications.length > 0 && (
+                         <div className="p-4 bg-[var(--admin-light)]/10 text-center border-t border-[var(--admin-border)]">
+                            <button 
+                              onClick={async () => {
+                                setNotifications([]);
+                                fetch('/api/admin/notifications?all=true', { method: 'PATCH' });
+                                setIsNotificationsOpen(false);
+                              }}
+                              className="text-[10px] font-bold text-[var(--admin-primary)] uppercase tracking-widest hover:underline"
+                            >
+                              Mark all as seen
+                            </button>
+                         </div>
+                      )}
+                    </motion.div>
+                  </>
+                )}
+              </AnimatePresence>
             </div>
-            <button className="relative w-10 h-10 md:w-11 md:h-11 flex items-center justify-center rounded-xl hover:bg-[var(--admin-light)] transition-all border border-[var(--admin-border)]">
-              <Bell size={20} className="text-[var(--admin-text-primary)]" />
-              <span className="absolute top-2 right-2 w-2 h-2 bg-rose-500 rounded-full ring-2 md:ring-4 ring-white" />
-            </button>
-            <div className="flex items-center gap-3 md:gap-4 p-1 md:pl-4 bg-[var(--admin-light)]/30 border border-[var(--admin-border)] rounded-2xl">
-               <div className="text-right hidden sm:flex flex-col">
-                  <span className="text-xs font-bold text-[var(--admin-text-primary)]">Admin</span>
-                  <span className="text-[8px] font-bold text-[var(--admin-primary)] uppercase tracking-widest">Iconic</span>
-               </div>
-               <div className="w-8 h-8 md:w-9 md:h-9 rounded-xl bg-[var(--admin-surface-dark)] text-white flex items-center justify-center font-serif text-xs md:text-sm font-bold shadow-lg">A</div>
+            <div className="flex items-center gap-3 p-1 bg-[var(--admin-light)]/30 border border-[var(--admin-border)] rounded-2xl">
+               <div className="text-right hidden sm:flex flex-col"><span className="text-xs font-bold text-[var(--admin-text-primary)]">Admin</span><span className="text-[8px] font-bold text-[var(--admin-primary)] uppercase tracking-widest">Iconic</span></div>
+               <div className="w-8 h-8 rounded-xl bg-[var(--admin-surface-dark)] text-white flex items-center justify-center font-serif text-xs font-bold">A</div>
             </div>
           </div>
         </header>
@@ -277,195 +374,174 @@ export default function AdminPage() {
         <main className="flex-1 overflow-y-auto p-10 custom-scrollbar">
           <div className="max-w-[1600px] mx-auto">
             <AnimatePresence mode="wait">
-              <motion.div
-                key={tab}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.3, ease: "easeOut" }}
-              >
+              <motion.div key={tab} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.3 }}>
                 {tab === "dashboard" && (
                   <div className="space-y-10">
-                    <div className="flex items-center justify-between">
-                      <div className="flex flex-col">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                      <div>
                         <h1 className="font-serif text-3xl font-bold text-[var(--admin-text-primary)] tracking-tight">Executive Dashboard</h1>
-                        <p className="text-xs text-[var(--admin-text-muted)] mt-1 font-medium">Monitoring ToteAly Iconic metrics in real-time</p>
+                        <p className="text-[10px] font-bold text-[var(--admin-text-muted)] uppercase tracking-widest mt-1">Platform-wide overview and pulse check</p>
                       </div>
-                      <div className="flex items-center gap-3">
-                        <div className="px-4 py-2.5 bg-white border border-[var(--admin-border)] rounded-xl flex items-center gap-2 text-xs font-bold">
-                           <Calendar size={14} className="text-[var(--admin-text-muted)]" />
-                           May 2026
+                      
+                      <div className="flex flex-wrap items-center gap-4">
+                        {/* Range Selector */}
+                        <div className="relative">
+                          <button
+                            onClick={() => setIsRangeOpen(!isRangeOpen)}
+                            className="flex items-center gap-3 bg-white border border-[var(--admin-border)] rounded-2xl px-5 py-3 text-[10px] font-bold uppercase tracking-widest text-[var(--admin-text-primary)] shadow-sm hover:border-[var(--admin-primary)] transition-all min-w-[140px] justify-between group"
+                          >
+                            <div className="flex items-center gap-2">
+                              <Calendar size={14} className="text-[var(--admin-primary)]" />
+                              <span>{ranges.find(r => r.id === selectedRange)?.label}</span>
+                            </div>
+                            <ChevronDown className={`transition-transform duration-300 ${isRangeOpen ? 'rotate-180' : ''} text-[var(--admin-text-muted)] group-hover:text-[var(--admin-primary)]`} size={14} />
+                          </button>
+                          
+                          <AnimatePresence>
+                            {isRangeOpen && (
+                              <>
+                                <div className="fixed inset-0 z-40" onClick={() => setIsRangeOpen(false)} />
+                                <motion.div 
+                                  initial={{ opacity: 0, y: 10 }}
+                                  animate={{ opacity: 1, y: 0 }}
+                                  exit={{ opacity: 0, y: 10 }}
+                                  className="absolute right-0 mt-3 w-full min-w-[180px] bg-white border border-[var(--admin-border)] rounded-2xl shadow-2xl z-50 overflow-hidden py-2"
+                                >
+                                  {ranges.map((range) => (
+                                    <button
+                                      key={range.id}
+                                      onClick={() => handleRangeChange(range.id)}
+                                      className={`w-full text-left px-5 py-3.5 text-[10px] font-bold uppercase tracking-widest transition-all ${
+                                        selectedRange === range.id 
+                                          ? 'bg-[var(--admin-light)] text-[var(--admin-primary)]' 
+                                          : 'text-[var(--admin-text-muted)] hover:bg-[var(--admin-light)]/50 hover:text-[var(--admin-text-primary)]'
+                                      }`}
+                                    >
+                                      {range.label}
+                                    </button>
+                                  ))}
+                                </motion.div>
+                              </>
+                            )}
+                          </AnimatePresence>
                         </div>
+
+                        {/* Custom Date Pickers */}
+                        {selectedRange === 'custom' && (
+                          <div className="flex items-center gap-2 p-1 bg-white border border-[var(--admin-border)] rounded-2xl shadow-sm h-[50px]">
+                            <div className="flex items-center gap-2 px-4 py-2 hover:bg-[var(--admin-light)] rounded-xl transition-all">
+                               <span className="text-[10px] font-bold text-[var(--admin-text-muted)] uppercase tracking-widest">From</span>
+                               <input 
+                                type="date" 
+                                value={startDate} 
+                                onChange={(e) => setStartDate(e.target.value)}
+                                className="bg-transparent text-xs font-bold text-[var(--admin-text-primary)] focus:outline-none"
+                               />
+                            </div>
+                            <div className="w-px h-8 bg-[var(--admin-border)]" />
+                            <div className="flex items-center gap-2 px-4 py-2 hover:bg-[var(--admin-light)] rounded-xl transition-all">
+                               <span className="text-[10px] font-bold text-[var(--admin-text-muted)] uppercase tracking-widest">To</span>
+                               <input 
+                                type="date" 
+                                value={endDate} 
+                                onChange={(e) => setEndDate(e.target.value)}
+                                className="bg-transparent text-xs font-bold text-[var(--admin-text-primary)] focus:outline-none"
+                               />
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
 
-                    {/* Quick Actions */}
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-12">
-                       <button 
-                        onClick={() => { setEditingProduct(null); setIsProductModalOpen(true); }}
-                        className="p-6 bg-white border border-[var(--admin-border)] rounded-3xl hover:shadow-xl hover:scale-[1.02] transition-all group flex flex-col gap-4 text-left"
-                       >
-                          <div className="w-12 h-12 bg-[var(--admin-light)] rounded-2xl flex items-center justify-center text-[var(--admin-primary)] group-hover:bg-[var(--admin-primary)] group-hover:text-white transition-all">
-                             <Plus size={24} />
-                          </div>
-                          <div>
-                             <p className="text-[10px] font-bold text-[var(--admin-text-muted)] uppercase tracking-widest">Storefront</p>
-                             <p className="text-sm font-bold text-[var(--admin-text-primary)]">New Product</p>
-                          </div>
+                       <button onClick={() => { setEditingProduct(null); setIsProductModalOpen(true); }} className="p-6 bg-white border border-[var(--admin-border)] rounded-3xl hover:shadow-xl transition-all group flex flex-col gap-4 text-left">
+                          <div className="w-12 h-12 bg-[var(--admin-light)] rounded-2xl flex items-center justify-center text-[var(--admin-primary)] group-hover:bg-[var(--admin-primary)] group-hover:text-white transition-all"><Plus size={24} /></div>
+                          <div><p className="text-[10px] font-bold text-[var(--admin-text-muted)] uppercase tracking-widest">Inventory</p><p className="text-sm font-bold text-[var(--admin-text-primary)]">Add Product</p></div>
                        </button>
-                       <button 
-                        onClick={() => setTab("marketing")}
-                        className="p-6 bg-white border border-[var(--admin-border)] rounded-3xl hover:shadow-xl hover:scale-[1.02] transition-all group flex flex-col gap-4 text-left"
-                       >
-                          <div className="w-12 h-12 bg-amber-50 rounded-2xl flex items-center justify-center text-amber-600 group-hover:bg-amber-500 group-hover:text-white transition-all">
-                             <Zap size={24} />
-                          </div>
-                          <div>
-                             <p className="text-[10px] font-bold text-[var(--admin-text-muted)] uppercase tracking-widest">Growth</p>
-                             <p className="text-sm font-bold text-[var(--admin-text-primary)]">New Campaign</p>
-                          </div>
+                       <button onClick={() => setTab("marketing")} className="p-6 bg-white border border-[var(--admin-border)] rounded-3xl hover:shadow-xl transition-all group flex flex-col gap-4 text-left">
+                          <div className="w-12 h-12 bg-amber-50 rounded-2xl flex items-center justify-center text-amber-600 group-hover:bg-amber-500 group-hover:text-white transition-all"><Zap size={24} /></div>
+                          <div><p className="text-[10px] font-bold text-[var(--admin-text-muted)] uppercase tracking-widest">Growth</p><p className="text-sm font-bold text-[var(--admin-text-primary)]">New Campaign</p></div>
                        </button>
-                       <button 
-                        onClick={() => setTab("inquiries")}
-                        className="p-6 bg-white border border-[var(--admin-border)] rounded-3xl hover:shadow-xl hover:scale-[1.02] transition-all group flex flex-col gap-4 text-left"
-                       >
-                          <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600 group-hover:bg-blue-500 group-hover:text-white transition-all">
-                             <Mail size={24} />
-                          </div>
-                          <div>
-                             <p className="text-[10px] font-bold text-[var(--admin-text-muted)] uppercase tracking-widest">Support</p>
-                             <p className="text-sm font-bold text-[var(--admin-text-primary)]">Check Leads</p>
-                          </div>
+                       <button onClick={() => setTab("inquiries")} className="p-6 bg-white border border-[var(--admin-border)] rounded-3xl hover:shadow-xl transition-all group flex flex-col gap-4 text-left">
+                          <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600 group-hover:bg-blue-500 group-hover:text-white transition-all"><Mail size={24} /></div>
+                          <div><p className="text-[10px] font-bold text-[var(--admin-text-muted)] uppercase tracking-widest">Support</p><p className="text-sm font-bold text-[var(--admin-text-primary)]">Check Leads</p></div>
                        </button>
-                       <button 
-                        onClick={() => window.location.href = '/api/admin/export?type=orders'}
-                        className="p-6 bg-white border border-[var(--admin-border)] rounded-3xl hover:shadow-xl hover:scale-[1.02] transition-all group flex flex-col gap-4 text-left"
-                       >
-                          <div className="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-600 group-hover:bg-emerald-500 group-hover:text-white transition-all">
-                             <Download size={24} />
-                          </div>
-                          <div>
-                             <p className="text-[10px] font-bold text-[var(--admin-text-muted)] uppercase tracking-widest">Intelligence</p>
-                             <p className="text-sm font-bold text-[var(--admin-text-primary)]">Export Sales</p>
-                          </div>
+                         <button onClick={() => {
+                            const date = new Date().toISOString().split('T')[0];
+                            const filename = `ToteAly_Sales_Report_${date}.csv`;
+                            window.open(`/api/admin/export/${filename}?from=${startDate}&to=${endDate}`, '_blank');
+                         }} className="p-6 bg-white border border-[var(--admin-border)] rounded-3xl hover:shadow-xl transition-all group flex flex-col gap-4 text-left">
+                          <div className="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-600 group-hover:bg-emerald-500 group-hover:text-white transition-all"><Download size={24} /></div>
+                          <div><p className="text-[10px] font-bold text-[var(--admin-text-muted)] uppercase tracking-widest">Intelligence</p><p className="text-sm font-bold text-[var(--admin-text-primary)]">Export CSV</p></div>
                        </button>
                     </div>
 
                     <AdminStatsGrid stats={stats} />
-
-                    <div className="grid grid-cols-1 xl:grid-cols-4 gap-10">
-                      <div className="xl:col-span-2 bg-white p-8 rounded-[32px] border border-[var(--admin-border)] shadow-sm">
-                        <div className="flex items-center justify-between mb-8">
-                           <div>
-                              <h3 className="font-serif text-xl font-bold text-[var(--admin-text-primary)]">Revenue Velocity</h3>
-                              <p className="text-[10px] font-bold text-[var(--admin-text-muted)] uppercase tracking-widest mt-1">Monthly Cloud Performance</p>
-                           </div>
-                        </div>
-                        <div className="h-[400px] w-full">
-                          <ResponsiveContainer width="100%" height="100%">
-                            <AreaChart data={Object.entries(stats?.trend || {}).map(([name, revenue]) => ({ name, revenue }))}>
-                              <defs>
-                                <linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1">
-                                  <stop offset="5%" stopColor="var(--admin-primary)" stopOpacity={0.1}/>
-                                  <stop offset="95%" stopColor="var(--admin-primary)" stopOpacity={0}/>
-                                </linearGradient>
-                              </defs>
-                              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--admin-light)" />
-                              <XAxis 
-                                dataKey="name" 
-                                axisLine={false} 
-                                tickLine={false} 
-                                tick={{ fontSize: 10, fontWeight: 700, fill: 'var(--admin-text-muted)' }} 
-                                dy={10}
-                              />
-                              <Tooltip 
-                                contentStyle={{ 
-                                  backgroundColor: 'var(--admin-surface-dark)', 
-                                  borderRadius: '16px', 
-                                  border: 'none', 
-                                  color: 'white',
-                                  boxShadow: '0 20px 50px rgba(0,0,0,0.2)'
-                                }}
-                                itemStyle={{ color: 'white', fontSize: '12px', fontWeight: 'bold' }}
-                              />
-                              <Area 
-                                type="monotone" 
-                                dataKey="revenue" 
-                                stroke="var(--admin-primary)" 
-                                strokeWidth={4} 
-                                fillOpacity={1} 
-                                fill="url(#colorRev)" 
-                              />
-                            </AreaChart>
-                          </ResponsiveContainer>
-                        </div>
-                      </div>
-
-                      <div className="bg-white p-8 rounded-[32px] border border-[var(--admin-border)] shadow-sm flex flex-col">
-                         <h3 className="font-serif text-lg font-bold text-[var(--admin-text-primary)] mb-8">Popular Categories</h3>
-                         <div className="flex-1 space-y-6">
-                           {(stats?.categories || [
-                              { label: 'Plain Totes', val: 65, color: '#8B1A4A' },
-                              { label: 'Black Edition', val: 45, color: '#1A1A1A' },
-                              { label: 'Premium Canvas', val: 30, color: '#C0A080' },
-                              { label: 'Custom Prints', val: 85, color: '#FF69B4' },
-                           ]).map((cat: any) => (
-                              <div key={cat.label} className="space-y-3">
-                                <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-widest">
-                                  <span className="text-[var(--admin-text-primary)]">{cat.label}</span>
-                                  <span className="text-[var(--admin-text-muted)]">{cat.val}%</span>
-                                </div>
-                                <div className="w-full bg-[var(--admin-light)] h-2 rounded-full overflow-hidden">
-                                   <motion.div 
-                                    initial={{ width: 0 }}
-                                    animate={{ width: `${cat.val}%` }}
-                                    transition={{ duration: 1.5, ease: "easeOut" }}
-                                    style={{ backgroundColor: cat.color }}
-                                    className="h-full rounded-full" 
-                                   />
-                                </div>
-                              </div>
-                           ))}
-                         </div>
-                      </div>
-
-                      <div className="bg-white p-8 rounded-[32px] border border-[var(--admin-border)] shadow-sm">
-                         <h3 className="font-serif text-lg font-bold text-[var(--admin-text-primary)] mb-8">Recent Activity</h3>
-                         <AdminActivityFeed />
-                      </div>
-                    </div>
                   </div>
                 )}
-
-                { tab === "analytics" && <AdminAnalyticsTab /> }
+                { tab === "analytics" && <AdminAnalyticsTab startDate={startDate} endDate={endDate} setStartDate={setStartDate} setEndDate={setEndDate} /> }
                 { tab === "orders" && <AdminOrdersTab orders={orders} loading={loading} onRefresh={fetchData} onUpdateStatus={handleUpdateStatus} /> }
                 {tab === "products" && (
-                  <AdminInventoryTab 
-                    products={products} 
-                    onEdit={(p) => { setEditingProduct(p); setIsProductModalOpen(true); }} 
-                    onDelete={handleProductDelete}
+                  <AdminInventoryTab
+                    products={products}
+                    onEdit={(p) => { setEditingProduct(p); setIsProductModalOpen(true); }}
+                    onDelete={async (id: string) => {
+                      const toastId = toast.loading("Deleting product...");
+                      try {
+                        const res = await fetch(`/api/admin/products?id=${id}`, { method: "DELETE" });
+                        if (res.ok) { toast.success("Product deleted", { id: toastId }); fetchData(); }
+                        else { const e = await res.json(); toast.error(e.error || "Delete failed", { id: toastId }); }
+                      } catch { toast.error("Unexpected error", { id: toastId }); }
+                    }}
+                    onView={(p) => { setViewingProduct(p); setIsStatsModalOpen(true); }}
                     onNew={() => { setEditingProduct(null); setIsProductModalOpen(true); }}
                   />
                 )}
-                { tab === "designs" && <AdminDesignsTab /> }
-                {tab === "customers" && <AdminCustomersTab customers={customers} />}
-                {tab === "inquiries" && <AdminInquiriesTab />}
+
+                { tab === "customers" && <AdminCustomersTab customers={customers} /> }
+                { tab === "inquiries" && <AdminInquiriesTab /> }
                 { tab === "marketing" && <AdminMarketingTab /> }
                 { tab === "reviews" && <AdminReviewsTab /> }
                 { tab === "settings" && <AdminSettingsTab /> }
-                { tab === "logs" && <AdminLogsTab /> }
+
               </motion.div>
             </AnimatePresence>
           </div>
         </main>
       </div>
 
-      <ProductModal 
+      <ProductModal
         isOpen={isProductModalOpen}
         onClose={() => { setIsProductModalOpen(false); setEditingProduct(null); }}
         product={editingProduct}
-        onSave={handleProductSave}
+        onDelete={async (id: string) => {
+          const toastId = toast.loading("Deleting product...");
+          try {
+            const res = await fetch(`/api/admin/products?id=${id}`, { method: "DELETE" });
+            if (res.ok) { 
+              toast.success("Product deleted", { id: toastId }); 
+              setIsProductModalOpen(false);
+              setEditingProduct(null);
+              fetchData(); 
+            }
+            else { const e = await res.json(); toast.error(e.error || "Delete failed", { id: toastId }); }
+          } catch { toast.error("Unexpected error", { id: toastId }); }
+        }}
+        onSave={async (formData: any) => {
+          const url = "/api/admin/products";
+          const method = editingProduct ? "PATCH" : "POST";
+          const payload = editingProduct ? { ...formData, id: editingProduct.id } : formData;
+          const res = await fetch(url, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+          if (res.ok) { setIsProductModalOpen(false); setEditingProduct(null); fetchData(); }
+        }}
+      />
+      <ProductStatsModal
+        isOpen={isStatsModalOpen}
+        onClose={() => { setIsStatsModalOpen(false); setViewingProduct(null); }}
+        productId={viewingProduct?.id || viewingProduct?._id}
+        productTitle={viewingProduct?.title}
       />
     </div>
   );
 }
+

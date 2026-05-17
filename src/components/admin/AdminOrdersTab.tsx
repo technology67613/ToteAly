@@ -2,6 +2,7 @@ import React from 'react';
 import { ShoppingBag, Eye, CheckCircle2, Clock, Truck, Package, Search, Filter, Download, MoreHorizontal, IndianRupee } from "lucide-react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 interface AdminOrdersTabProps {
   orders: any[];
@@ -16,9 +17,10 @@ export const AdminOrdersTab = ({ orders, loading, onRefresh, onUpdateStatus }: A
   const getStatusStyle = (status: string) => {
     switch (status?.toLowerCase()) {
       case 'delivered': return 'bg-emerald-50 text-emerald-600 border-emerald-100';
-      case 'processing': return 'bg-amber-50 text-amber-600 border-amber-100';
-      case 'pending': return 'bg-rose-50 text-rose-600 border-rose-100';
+      case 'processing': return 'bg-indigo-50 text-indigo-600 border-indigo-100';
+      case 'pending': return 'bg-amber-50 text-amber-600 border-amber-100';
       case 'shipped': return 'bg-blue-50 text-blue-600 border-blue-100';
+      case 'cancelled': return 'bg-rose-50 text-rose-600 border-rose-200 ring-1 ring-rose-500/20';
       default: return 'bg-slate-50 text-slate-500 border-slate-100';
     }
   };
@@ -28,30 +30,15 @@ export const AdminOrdersTab = ({ orders, loading, onRefresh, onUpdateStatus }: A
   };
 
   const handleExport = () => {
-    if (orders.length === 0) return;
-    const headers = ['Order ID', 'Customer', 'Email', 'Amount', 'Status', 'Date'];
-    const rows = orders.map(o => [
-      o.id,
-      o.user?.name || o.shippingDetails?.name || 'Guest',
-      o.user?.email || o.shippingDetails?.email,
-      o.totalAmount || o.total_amount,
-      o.status,
-      new Date(o.created_at).toLocaleDateString()
-    ]);
-    const csvContent = "data:text/csv;charset=utf-8," + [headers, ...rows].map(e => e.join(",")).join("\n");
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `totealy_orders_${new Date().toISOString().split('T')[0]}.csv`);
-    document.body.appendChild(link);
-    link.click();
+    const filename = `ToteAly_Orders_Report_${new Date().toISOString().split('T')[0]}.pdf`;
+    window.open(`/api/admin/export/${filename}`, '_blank');
   };
+
 
   if (loading) return <div className="p-20 text-center text-[var(--admin-text-muted)] animate-pulse font-bold uppercase tracking-widest text-xs">Loading Cloud Orders...</div>;
 
   return (
     <div className="space-y-6">
-      {/* Controls */}
       <div className="flex justify-between items-center bg-white p-6 rounded-[16px] border border-[var(--admin-border)] shadow-[0_2px_12px_rgba(0,0,0,0.06)]">
         <div className="relative w-72">
           <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--admin-text-muted)]" />
@@ -62,14 +49,17 @@ export const AdminOrdersTab = ({ orders, loading, onRefresh, onUpdateStatus }: A
           />
         </div>
         <div className="flex gap-2">
-          <button className="flex items-center gap-2 px-4 py-2.5 border border-[var(--admin-border)] rounded-xl text-[10px] font-bold uppercase tracking-widest text-[var(--admin-text-muted)] hover:bg-[var(--admin-light)] transition-all">
-            <Filter size={14} /> Filter
-          </button>
           <button 
-            onClick={handleExport}
-            className="flex items-center gap-2 px-4 py-2.5 bg-[var(--admin-primary)] text-white border border-[var(--admin-primary)] rounded-xl text-[10px] font-bold uppercase tracking-widest hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg shadow-[var(--admin-primary)]/20"
+            onClick={() => window.open(`/api/admin/export/ToteAly_Orders_Report_${new Date().toISOString().split('T')[0]}.csv`, '_blank')}
+            className="flex items-center gap-2 px-4 py-2.5 border border-[var(--admin-border)] rounded-xl text-[10px] font-bold uppercase tracking-widest text-[var(--admin-text-muted)] hover:bg-[var(--admin-light)] transition-all"
           >
             <Download size={14} /> Export CSV
+          </button>
+          <button 
+            onClick={() => window.open(`/api/admin/export/ToteAly_Orders_Report_${new Date().toISOString().split('T')[0]}.pdf`, '_blank')}
+            className="flex items-center gap-2 px-4 py-2.5 bg-[var(--admin-primary)] text-white rounded-xl text-[10px] font-bold uppercase tracking-widest hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg shadow-[var(--admin-primary)]/20"
+          >
+            <Eye size={14} /> Preview PDF
           </button>
         </div>
       </div>
@@ -94,7 +84,7 @@ export const AdminOrdersTab = ({ orders, loading, onRefresh, onUpdateStatus }: A
                   animate={{ opacity: 1 }}
                   transition={{ delay: idx * 0.05 }}
                   onClick={() => handleView(o.id)}
-                  className="group hover:bg-[var(--admin-light)]/20 transition-colors cursor-pointer"
+                  className={`group hover:bg-[var(--admin-light)]/20 transition-colors cursor-pointer ${o.status?.toLowerCase() === 'cancelled' ? 'bg-rose-50/30 opacity-75' : ''}`}
                 >
                   <td className="px-8 py-6">
                     <div className="flex flex-col">
@@ -131,55 +121,10 @@ export const AdminOrdersTab = ({ orders, loading, onRefresh, onUpdateStatus }: A
                        >
                          <Eye size={16} />
                        </button>
-                       {o.payment_id === 'MANUAL_UPI' && o.payment_status === 'Pending' && (
-                         <div className="flex gap-2">
-                           <button 
-                            onClick={(e) => { 
-                              e.stopPropagation();
-                              window.open(o.shippingDetails?.payment_screenshot_url, '_blank');
-                            }}
-                            className="px-3 py-2 bg-purple-50 text-purple-600 rounded-lg text-[9px] font-bold uppercase tracking-widest hover:bg-purple-600 hover:text-white transition-all flex items-center gap-1"
-                           >
-                             <Eye size={12} /> View Receipt
-                           </button>
-                           <button 
-                            onClick={(e) => { 
-                              e.stopPropagation(); 
-                              onUpdateStatus?.(o.id, 'Confirmed'); 
-                            }}
-                            className="px-3 py-2 bg-emerald-50 text-emerald-600 rounded-lg text-[9px] font-bold uppercase tracking-widest hover:bg-emerald-600 hover:text-white transition-all"
-                           >
-                             Approve
-                           </button>
-                         </div>
-                       )}
-                       {o.payment_status !== 'paid' && o.payment_id !== 'MANUAL_UPI' && (
-                         <button 
-                          onClick={(e) => { e.stopPropagation(); onUpdateStatus?.(o.id, 'paid'); }}
-                          className="px-3 py-2 bg-emerald-50 text-emerald-600 rounded-lg text-[9px] font-bold uppercase tracking-widest hover:bg-emerald-600 hover:text-white transition-all"
-                         >
-                           Paid
-                         </button>
-                       )}
                     </div>
                   </td>
                 </motion.tr>
               ))}
-              {orders.length === 0 && (
-                <tr>
-                  <td colSpan={5} className="px-8 py-20 text-center">
-                    <div className="flex flex-col items-center gap-6">
-                      <div className="w-20 h-20 bg-[var(--admin-light)] rounded-full flex items-center justify-center text-[var(--admin-primary)]/20">
-                        <ShoppingBag size={40} />
-                      </div>
-                      <div className="space-y-2">
-                        <p className="text-lg font-serif font-bold text-[var(--admin-text-primary)]">No orders yet</p>
-                        <p className="text-sm text-[var(--admin-text-muted)] max-w-xs mx-auto">When customers place orders, they will appear here in real-time.</p>
-                      </div>
-                    </div>
-                  </td>
-                </tr>
-              )}
             </tbody>
           </table>
         </div>

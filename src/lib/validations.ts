@@ -43,4 +43,5 @@ export const OrderCreateSchema = z.object({
   razorpayOrderId: z.string().optional().nullable(),
   razorpaySignature: z.string().optional().nullable(),
   shippingDetails: ShippingDetailsSchema,
+  couponCode: z.string().optional().nullable(),
 });
