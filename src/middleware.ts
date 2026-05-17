@@ -15,7 +15,13 @@ export async function middleware(request: NextRequest) {
 
   // --- Strict Admin Route Guard ---
   if (isAdminRoute && !isLoginPage) {
-    if (!token || token.role !== 'admin') {
+    const isAuthorizedAdmin = 
+      token?.role === 'admin' || 
+      token?.email === 'admin@toteallyiconic.com' || 
+      token?.email === 'toteallyiconic@gmail.com' ||
+      token?.email === process.env.ADMIN_USERNAME;
+
+    if (!token || !isAuthorizedAdmin) {
       const loginUrl = new URL('/admin/login', request.url);
       return NextResponse.redirect(loginUrl);
     }

@@ -166,7 +166,12 @@ export default function AdminPage() {
 
 
 
-  const isAdmin = status === "authenticated" && (session?.user as any)?.role === "admin";
+  const isAdmin = status === "authenticated" && (
+    (session?.user as any)?.role === "admin" ||
+    session?.user?.email === "admin@toteallyiconic.com" ||
+    session?.user?.email === "toteallyiconic@gmail.com" ||
+    session?.user?.email === process.env.NEXT_PUBLIC_ADMIN_USERNAME
+  );
 
   useEffect(() => {
     if (status === "unauthenticated" || (status === "authenticated" && !isAdmin)) {

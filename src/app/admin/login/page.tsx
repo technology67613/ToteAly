@@ -27,7 +27,9 @@ export default function AdminLoginPage() {
         toast.error("Invalid admin credentials");
       } else {
         toast.success("Welcome back, Admin!");
-        window.location.href = "/admin";
+        setTimeout(() => {
+          window.location.href = "/admin";
+        }, 500);
       }
     } catch (err) {
       toast.error("Something went wrong");
