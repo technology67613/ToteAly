@@ -55,7 +55,26 @@ export async function POST(request: NextRequest) {
       };
     });
 
-    const shippingFee = verifiedSubtotal >= 999 ? 0 : 50;
+    // Fetch threshold and base shipping cost from database site_config
+    let shippingThreshold = 999;
+    let baseShippingCost = 50;
+    try {
+      const { data: configData } = await supabaseAdmin
+        .from('site_config')
+        .select('key, value');
+      
+      const config = configData?.reduce((acc: any, row: any) => ({ ...acc, [row.key]: row.value }), {}) || {};
+      if (config.free_shipping_threshold !== undefined) {
+        shippingThreshold = Number(config.free_shipping_threshold);
+      }
+      if (config.base_shipping_cost !== undefined) {
+        baseShippingCost = Number(config.base_shipping_cost);
+      }
+    } catch (err) {
+      console.error("[SETTINGS FETCH ERROR]", err);
+    }
+
+    const shippingFee = verifiedSubtotal >= shippingThreshold ? 0 : baseShippingCost;
     
     // 1b. Coupon Verification
     let discountAmount = 0;

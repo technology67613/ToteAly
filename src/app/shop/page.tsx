@@ -197,14 +197,23 @@ export default function Shop() {
                       )}
                     </div>
 
-                    {/* Hover Quick Add */}
+                    {/* Hover Quick Add / Customize Now */}
                     <div className="absolute inset-0 bg-[#900C3F]/0 group-hover:bg-[#900C3F]/5 transition-all duration-500 flex items-end p-6 z-30">
-                      <button
-                        onClick={() => handleAddToCart(product)}
-                        className="w-full py-4 bg-[#900C3F] text-white font-bold text-sm uppercase tracking-widest rounded-2xl translate-y-20 group-hover:translate-y-0 transition-transform duration-500 shadow-xl shadow-[#900C3F]/30 flex items-center justify-center gap-3 hover:bg-[#FF69B4]"
-                      >
-                        <ShoppingBag size={18} /> Quick Add
-                      </button>
+                      {product.isCustomizable ? (
+                        <Link
+                          href={`/customize?product=${productId}`}
+                          className="w-full py-4 bg-[#FF69B4] text-white font-bold text-sm uppercase tracking-widest rounded-2xl translate-y-20 group-hover:translate-y-0 transition-all duration-500 shadow-xl shadow-[#FF69B4]/30 flex items-center justify-center gap-3 hover:bg-[#900C3F] text-center"
+                        >
+                          <Sparkles size={18} /> Customize Now
+                        </Link>
+                      ) : (
+                        <button
+                          onClick={() => handleAddToCart(product)}
+                          className="w-full py-4 bg-[#900C3F] text-white font-bold text-sm uppercase tracking-widest rounded-2xl translate-y-20 group-hover:translate-y-0 transition-transform duration-500 shadow-xl shadow-[#900C3F]/30 flex items-center justify-center gap-3 hover:bg-[#FF69B4]"
+                        >
+                          <ShoppingBag size={18} /> Quick Add
+                        </button>
+                      )}
                     </div>
                   </div>
 

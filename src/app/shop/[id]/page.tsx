@@ -211,12 +211,21 @@ export default function ProductDetail() {
 
             <div className="flex flex-col gap-4 mt-4">
               <div className="flex gap-4">
-                <button 
-                  onClick={handleAddToCart}
-                  className="flex-[2] py-5 bg-[#900C3F] text-white rounded-3xl font-bold text-sm uppercase tracking-widest shadow-xl shadow-[#900C3F]/20 hover:bg-[#FF69B4] transition-all active:scale-95 flex items-center justify-center gap-3"
-                >
-                  <ShoppingBag size={20} /> Add to Cart
-                </button>
+                {product.is_customizable ? (
+                  <Link 
+                    href={`/customize?product=${product.id}`}
+                    className="flex-[2] py-5 bg-[#FF69B4] text-white rounded-3xl font-bold text-sm uppercase tracking-widest shadow-xl shadow-[#FF69B4]/20 hover:bg-[#900C3F] transition-all active:scale-95 flex items-center justify-center gap-3 text-center"
+                  >
+                    <Sparkles size={20} /> Customize Now
+                  </Link>
+                ) : (
+                  <button 
+                    onClick={handleAddToCart}
+                    className="flex-[2] py-5 bg-[#900C3F] text-white rounded-3xl font-bold text-sm uppercase tracking-widest shadow-xl shadow-[#900C3F]/20 hover:bg-[#FF69B4] transition-all active:scale-95 flex items-center justify-center gap-3"
+                  >
+                    <ShoppingBag size={20} /> Add to Cart
+                  </button>
+                )}
                 
                 <button 
                   onClick={handleWishlist}
@@ -230,12 +239,9 @@ export default function ProductDetail() {
               </div>
 
               {product.is_customizable && (
-                <Link 
-                  href={`/customize?product=${product.id}`}
-                  className="w-full py-5 bg-white border border-[#F5ECD7] text-[#900C3F] rounded-3xl font-bold text-sm uppercase tracking-widest hover:border-[#FF69B4] transition-all active:scale-95 flex items-center justify-center gap-3 shadow-sm"
-                >
-                  <Palette size={20} /> Personalize this bag
-                </Link>
+                <div className="text-center text-xs text-[#FF69B4] font-bold uppercase tracking-widest animate-pulse mt-1">
+                  ✨ Interactive Custom Design Studio Available for this Bag ✨
+                </div>
               )}
             </div>
 

@@ -137,12 +137,21 @@ export default function Home() {
                     Design
                   </Link>
                 )}
-                <button
-                  onClick={() => handleAddToCart(product)}
-                  className="absolute bottom-0 left-0 right-0 py-3 bg-[#900C3F] text-[#FFF8F0] text-xs font-bold uppercase tracking-widest translate-y-full group-hover:translate-y-0 transition-transform duration-300 flex items-center justify-center gap-2 z-30"
-                >
-                  <ShoppingBag size={14} /> Add to Cart
-                </button>
+                {product.isCustomizable ? (
+                  <Link
+                    href={`/customize?product=${product.id}`}
+                    className="absolute bottom-0 left-0 right-0 py-3 bg-[#FF69B4] text-white text-xs font-bold uppercase tracking-widest translate-y-full group-hover:translate-y-0 transition-transform duration-300 flex items-center justify-center gap-2 z-30 hover:bg-[#900C3F]"
+                  >
+                    <Sparkles size={14} /> Customize Now
+                  </Link>
+                ) : (
+                  <button
+                    onClick={() => handleAddToCart(product)}
+                    className="absolute bottom-0 left-0 right-0 py-3 bg-[#900C3F] text-[#FFF8F0] text-xs font-bold uppercase tracking-widest translate-y-full group-hover:translate-y-0 transition-transform duration-300 flex items-center justify-center gap-2 z-30 hover:bg-[#FF69B4]"
+                  >
+                    <ShoppingBag size={14} /> Add to Cart
+                  </button>
+                )}
               </div>
               <Link href={`/shop/${product.id}`}>
                 <h3 className="font-serif font-bold group-hover:text-[#FF69B4] transition-colors">{product.title}</h3>

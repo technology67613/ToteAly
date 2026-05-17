@@ -10,16 +10,25 @@ export default function CartSidebar() {
   const pathname = usePathname();
   const { isOpen, closeCart, items, updateQuantity, removeItem } = useCartStore();
   const [mounted, setMounted] = useState(false);
+  const [threshold, setThreshold] = useState(999);
 
-  // Prevent hydration mismatch
+  // Prevent hydration mismatch & fetch configuration
   useEffect(() => {
     setMounted(true);
+    fetch("/api/admin/settings")
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.free_shipping_threshold !== undefined) {
+          setThreshold(Number(data.free_shipping_threshold));
+        }
+      })
+      .catch(err => console.error("[CART SETTINGS ERROR] Failed to load shipping threshold:", err));
   }, []);
 
   if (!mounted || pathname?.startsWith("/admin")) return null;
 
   const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const amountUntilFreeShipping = Math.max(999 - total, 0);
+  const amountUntilFreeShipping = Math.max(threshold - total, 0);
 
   return (
     <>

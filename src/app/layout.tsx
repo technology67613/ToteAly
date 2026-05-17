@@ -7,6 +7,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Toaster } from "sonner";
 import { createClient } from "@supabase/supabase-js";
+import AnnouncementBar from "@/components/AnnouncementBar";
 
 export const revalidate = 60; // Cache the layout for 60 seconds
 
@@ -72,7 +73,20 @@ export default async function RootLayout({
     console.error("Failed to fetch site config", error);
   }
 
-  const announcement = config.announcement_bar;
+  const announcementBarEnabled = config.announcement_bar_enabled !== "false" && config.announcement_bar_enabled !== false;
+  const threshold = config.free_shipping_threshold !== undefined ? Number(config.free_shipping_threshold) : 999;
+  const announcementText = config.announcement_bar || config.announcement_bar_text;
+
+  let announcement = "";
+  if (announcementBarEnabled) {
+    if (announcementText && announcementText.trim() !== "") {
+      // Dynamically replace 999 references with the active threshold
+      announcement = announcementText.replace(/999/g, threshold.toString());
+    } else {
+      // Premium dynamic default fallback
+      announcement = `Free Delivery on orders above ₹${threshold}!`;
+    }
+  }
 
   return (
     <html
@@ -86,12 +100,8 @@ export default async function RootLayout({
         suppressHydrationWarning
       >
         <Providers>
-          {announcement && (
-            <div className="bg-[#900C3F] text-[#F5ECD7] py-2 px-4 text-center text-xs font-bold tracking-widest uppercase">
-              {announcement}
-            </div>
-          )}
           <Navbar config={config} />
+          <AnnouncementBar announcement={announcement} />
           <div className="flex-grow">
             {children}
           </div>

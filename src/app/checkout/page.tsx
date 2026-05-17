@@ -42,15 +42,31 @@ export default function CheckoutPage() {
     notes: "",
   });
 
+  const [threshold, setThreshold] = useState(999);
+  const [shippingCost, setShippingCost] = useState(50);
+
   useEffect(() => {
     setMounted(true);
+    fetch("/api/admin/settings")
+      .then(res => res.json())
+      .then(data => {
+        if (data) {
+          if (data.free_shipping_threshold !== undefined) {
+            setThreshold(Number(data.free_shipping_threshold));
+          }
+          if (data.base_shipping_cost !== undefined) {
+            setShippingCost(Number(data.base_shipping_cost));
+          }
+        }
+      })
+      .catch(err => console.error("[CHECKOUT SETTINGS ERROR] Failed to load shipping settings:", err));
   }, []);
 
   if (!mounted) return null;
 
   const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const SHIPPING_FEE = subtotal >= 999 ? 0 : 50;
-  const amountUntilFreeShipping = Math.max(999 - subtotal, 0);
+  const SHIPPING_FEE = subtotal >= threshold ? 0 : shippingCost;
+  const amountUntilFreeShipping = Math.max(threshold - subtotal, 0);
   const total = subtotal + SHIPPING_FEE - couponDiscount;
 
   const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
