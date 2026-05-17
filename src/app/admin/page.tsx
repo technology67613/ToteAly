@@ -142,12 +142,22 @@ export default function AdminPage() {
 
 
 
-  useEffect(() => {
-    // Session redirects disabled for open development
-  }, []);
+  const isAdmin = status === "authenticated" && (session?.user as any)?.role === "admin";
 
   useEffect(() => {
-    fetchData();
+    if (status === "unauthenticated" || (status === "authenticated" && !isAdmin)) {
+      router.push("/admin/login");
+    }
+  }, [status, isAdmin, router]);
+
+  useEffect(() => {
+    if (isAdmin) {
+      fetchData();
+    }
+  }, [tab, selectedRange, startDate, endDate, isAdmin]);
+
+  useEffect(() => {
+    if (!isAdmin) return;
     // Poll notifications every 60 seconds
     const interval = setInterval(async () => {
       try {
@@ -158,7 +168,7 @@ export default function AdminPage() {
       }
     }, 60000);
     return () => clearInterval(interval);
-  }, [tab, selectedRange, startDate, endDate]);
+  }, [isAdmin]);
 
   const handleUpdateStatus = async (id: string, status: string) => {
     try {
@@ -183,7 +193,7 @@ export default function AdminPage() {
     window.open(`/api/admin/export/${filename}`, '_blank');
   };
 
-  if (status === "loading" || (loading && !stats)) {
+  if (status === "loading" || !isAdmin || (loading && !stats)) {
     return (
       <div className="min-h-screen w-full bg-[var(--admin-background)] flex items-center justify-center">
         <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }}>
