@@ -93,6 +93,30 @@ export default function AdminPage() {
 
   const [notifications, setNotifications] = useState<any[]>([]);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [prevNotifIds, setPrevNotifIds] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (notifications.length > 0) {
+      let isFirstLoad = prevNotifIds.length === 0;
+      
+      // Filter out any notification IDs that we haven't seen yet
+      const newAlerts = notifications.filter(n => !prevNotifIds.includes(n.id));
+      
+      if (!isFirstLoad && newAlerts.length > 0) {
+        newAlerts.forEach((n) => {
+          toast(n.title, {
+            description: n.message,
+            duration: 8000,
+            icon: <Bell size={16} className="text-[var(--admin-primary)] animate-bounce" />,
+          });
+        });
+      }
+      
+      setPrevNotifIds(notifications.map(n => n.id));
+    } else {
+      setPrevNotifIds([]);
+    }
+  }, [notifications, prevNotifIds]);
 
   const fetchData = async () => {
     setLoading(true);
