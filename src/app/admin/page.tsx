@@ -7,7 +7,7 @@ import {
   BarChart2, ShoppingBag, Users, Package, TrendingUp,
   Search, Loader2, LogOut, Bell, Settings, Ticket, Megaphone,
   LayoutDashboard, Menu, X, ArrowUpRight, ChevronRight, ChevronDown, Globe, Calendar, Mail, Star,
-  Plus, Zap, Download, IndianRupee, History, CreditCard, AlertTriangle
+  Plus, Zap, Download, IndianRupee, History, CreditCard, AlertTriangle, Palette
 } from "lucide-react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
@@ -32,7 +32,7 @@ import { AdminActivityFeed } from "@/components/admin/AdminActivityFeed";
 import { ProductModal } from "@/components/admin/ProductModal";
 import { ProductStatsModal } from "@/components/admin/ProductStatsModal";
 
-type Tab = "dashboard" | "analytics" | "orders" | "products" | "customers" | "inquiries" | "marketing" | "reviews" | "settings";
+type Tab = "dashboard" | "analytics" | "orders" | "products" | "customers" | "inquiries" | "marketing" | "reviews" | "settings" | "designs";
 
 export default function AdminPage() {
   const router = useRouter();
@@ -199,6 +199,7 @@ export default function AdminPage() {
     { id: "orders", icon: ShoppingBag, label: "Orders", badge: orders.filter(o => o.status === 'Pending').length },
     { id: "products", icon: Package, label: "Inventory", badge: 0 },
     { id: "customers", icon: Users, label: "Customers", badge: 0 },
+    { id: "designs", icon: Palette, label: "Custom Designs", badge: 0 },
     { id: "inquiries", icon: Mail, label: "Inquiries", badge: 0 },
     { id: "marketing", icon: Megaphone, label: "Marketing", badge: 0 },
     { id: "reviews", icon: Star, label: "Reviews", badge: 0 },
@@ -493,6 +494,7 @@ export default function AdminPage() {
                 )}
 
                 { tab === "customers" && <AdminCustomersTab customers={customers} /> }
+                { tab === "designs" && <AdminDesignsTab /> }
                 { tab === "inquiries" && <AdminInquiriesTab /> }
                 { tab === "marketing" && <AdminMarketingTab /> }
                 { tab === "reviews" && <AdminReviewsTab /> }

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Save, ShieldCheck, Truck, Mail, Store, AlertTriangle, RefreshCcw, Power, Upload, ImageIcon, MessageCircle, MapPin, AtSign } from "lucide-react";
-import { motion } from "framer-motion";
+import { Save, ShieldCheck, Truck, Mail, Store, AlertTriangle, RefreshCcw, Power, Upload, ImageIcon, MessageCircle, MapPin, AtSign, Loader2 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { toast } from 'sonner';
 
 interface AdminSettings {
@@ -35,6 +35,57 @@ export const AdminSettingsTab = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+
+  // Factory Reset states
+  const [isResetModalOpen, setIsResetModalOpen] = useState(false);
+  const [phraseConfirm, setPhraseConfirm] = useState("");
+  const [usidConfirm, setUsidConfirm] = useState("");
+  const [passwordConfirm, setPasswordConfirm] = useState("");
+  const [resetting, setResetting] = useState(false);
+
+  const handleFactoryReset = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (phraseConfirm !== "I want to delete my database") {
+      toast.error("Confirmation phrase does not match.");
+      return;
+    }
+    if (!usidConfirm || !passwordConfirm) {
+      toast.error("Please enter admin credentials.");
+      return;
+    }
+    
+    setResetting(true);
+    const toastId = toast.loading("Wiping database and resetting to fresh state...");
+    try {
+      const res = await fetch('/api/admin/reset', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          phrase: phraseConfirm,
+          usid: usidConfirm,
+          password: passwordConfirm
+        })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        toast.success(data.message || "Factory Reset complete! Website is completely fresh.", { id: toastId });
+        setIsResetModalOpen(false);
+        setPhraseConfirm("");
+        setUsidConfirm("");
+        setPasswordConfirm("");
+        setTimeout(() => {
+          window.location.reload();
+        }, 1500);
+      } else {
+        toast.error(data.error || "Reset failed.", { id: toastId });
+      }
+    } catch (e: any) {
+      console.error(e);
+      toast.error("Reset failed due to a server error.", { id: toastId });
+    } finally {
+      setResetting(false);
+    }
+  };
 
   useEffect(() => {
     const fetchSettings = async () => {
@@ -348,10 +399,110 @@ export const AdminSettingsTab = () => {
             </p>
           </div>
         </div>
-        <button className="shrink-0 px-6 py-3 bg-rose-600 text-white rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-rose-700 transition-all shadow-lg shadow-rose-600/20">
+        <button 
+          type="button"
+          onClick={() => setIsResetModalOpen(true)}
+          className="shrink-0 px-6 py-3 bg-[#E60042] text-white rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-[#F21A58] transition-all shadow-lg shadow-rose-600/20 active:scale-95"
+        >
           Factory Reset
         </button>
       </div>
+
+      {/* FACTORY RESET CONFIRMATION MODAL */}
+      <AnimatePresence>
+        {isResetModalOpen && (
+          <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white rounded-[32px] border border-rose-100 max-w-lg w-full overflow-hidden shadow-[0_20px_50px_rgba(230,0,66,0.15)] p-8 text-left"
+            >
+              <div className="flex items-center gap-4 text-[#E60042] mb-6">
+                <div className="w-12 h-12 bg-rose-50 rounded-2xl flex items-center justify-center shrink-0">
+                  <AlertTriangle size={24} />
+                </div>
+                <div>
+                  <h3 className="font-serif text-xl font-bold text-rose-950">Confirm Database Purge</h3>
+                  <p className="text-[8px] font-bold text-rose-500 uppercase tracking-widest mt-1">This action is permanent and irreversible.</p>
+                </div>
+              </div>
+
+              <p className="text-xs text-slate-500 font-medium mb-6 leading-relaxed">
+                This factory reset will wipe all custom designs, products, orders, customers, reviews, and transaction records. A fresh copy of the configuration settings will be restored.
+              </p>
+
+              <form onSubmit={handleFactoryReset} className="space-y-5">
+                <div className="space-y-2">
+                  <label className="text-[9px] font-bold uppercase tracking-widest text-slate-400 block">
+                    Confirm Phrase
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder='Type "I want to delete my database"'
+                    value={phraseConfirm}
+                    onChange={e => setPhraseConfirm(e.target.value)}
+                    className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-xs font-bold focus:bg-white focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500/30 focus:outline-none transition-all placeholder-slate-400"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-[9px] font-bold uppercase tracking-widest text-slate-400 block">
+                      Admin USID
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="Admin username"
+                      value={usidConfirm}
+                      onChange={e => setUsidConfirm(e.target.value)}
+                      className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-xs font-bold focus:bg-white focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500/30 focus:outline-none transition-all placeholder-slate-400"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[9px] font-bold uppercase tracking-widest text-slate-400 block">
+                      Admin Password
+                    </label>
+                    <input
+                      type="password"
+                      required
+                      placeholder="Admin password"
+                      value={passwordConfirm}
+                      onChange={e => setPasswordConfirm(e.target.value)}
+                      className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-xs font-bold focus:bg-white focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500/30 focus:outline-none transition-all placeholder-slate-400"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex gap-4 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsResetModalOpen(false);
+                      setPhraseConfirm("");
+                      setUsidConfirm("");
+                      setPasswordConfirm("");
+                    }}
+                    className="flex-1 py-3 border border-slate-200 text-slate-500 hover:bg-slate-50 rounded-xl text-[9px] font-bold uppercase tracking-widest transition-all"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={phraseConfirm !== "I want to delete my database" || resetting}
+                    className="flex-1 py-3 bg-[#E60042] text-white rounded-xl text-[9px] font-bold uppercase tracking-widest hover:bg-[#F21A58] transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-rose-600/20 flex items-center justify-center gap-2"
+                  >
+                    {resetting ? <Loader2 className="animate-spin" size={12} /> : null}
+                    Purge All Data
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 };
