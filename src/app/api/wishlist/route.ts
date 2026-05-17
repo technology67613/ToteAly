@@ -8,16 +8,24 @@ export const runtime = "nodejs";
 export async function GET(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!session?.user?.email) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     if (!isSupabaseAdminConfigured()) {
       return NextResponse.json({ error: "Database not configured" }, { status: 503 });
     }
 
+    const { data: profile } = await supabaseAdmin
+      .from('profiles')
+      .select('id')
+      .eq('email', session.user.email)
+      .single();
+
+    if (!profile) return NextResponse.json([]);
+
     const { data, error } = await supabaseAdmin
       .from("wishlist")
       .select("product_id, products(*)")
-      .eq("user_id", (session.user as any).id);
+      .eq("user_id", profile.id);
 
     if (error) throw error;
     return NextResponse.json(data || []);
@@ -29,15 +37,29 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!session?.user?.email) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const { productId } = await req.json();
     if (!productId) return NextResponse.json({ error: "Product ID required" }, { status: 400 });
 
+    if (!isSupabaseAdminConfigured()) {
+      return NextResponse.json({ error: "Database not configured" }, { status: 503 });
+    }
+
+    const { data: profile } = await supabaseAdmin
+      .from('profiles')
+      .select('id')
+      .eq('email', session.user.email)
+      .single();
+
+    if (!profile) {
+      return NextResponse.json({ error: "User profile not found" }, { status: 404 });
+    }
+
     const { error } = await supabaseAdmin
       .from("wishlist")
       .upsert({ 
-        user_id: (session.user as any).id, 
+        user_id: profile.id, 
         product_id: productId 
       }, { onConflict: "user_id,product_id" });
 
@@ -51,15 +73,29 @@ export async function POST(req: NextRequest) {
 export async function DELETE(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!session?.user?.email) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const { productId } = await req.json();
     if (!productId) return NextResponse.json({ error: "Product ID required" }, { status: 400 });
 
+    if (!isSupabaseAdminConfigured()) {
+      return NextResponse.json({ error: "Database not configured" }, { status: 503 });
+    }
+
+    const { data: profile } = await supabaseAdmin
+      .from('profiles')
+      .select('id')
+      .eq('email', session.user.email)
+      .single();
+
+    if (!profile) {
+      return NextResponse.json({ error: "User profile not found" }, { status: 404 });
+    }
+
     const { error } = await supabaseAdmin
       .from("wishlist")
       .delete()
-      .eq("user_id", (session.user as any).id)
+      .eq("user_id", profile.id)
       .eq("product_id", productId);
 
     if (error) throw error;
