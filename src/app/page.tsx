@@ -71,11 +71,6 @@ export default function Home() {
 
   return (
     <main className="flex min-h-screen flex-col items-center bg-[#FFF8F0] text-[#900C3F]">
-      {/* ── TOP BANNER ── */}
-      <div className="w-full bg-[#FF69B4] text-white py-2 px-4 text-center text-[8px] md:text-[10px] font-bold uppercase tracking-[0.3em]">
-        Free Shipping on all orders above ₹999 • Shop Now
-      </div>
-
       {/* ── HERO SECTION ── */}
       <section className="max-w-7xl mx-auto w-full px-6 md:px-8 py-12 lg:py-24 grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
         <div className="flex flex-col gap-8">

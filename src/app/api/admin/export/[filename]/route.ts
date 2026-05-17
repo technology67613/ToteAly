@@ -83,11 +83,13 @@ export async function GET(req: Request, context: any) {
     const params = await context.params;
     const rawFilename = params?.filename || "Export.pdf";
 
-    // Auth check
+    // Auth check disabled for open development
+    /*
     const session = await getServerSession(authOptions);
     if (!session || (session.user as any).role !== 'admin') {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+    */
 
     // Determine report type
     const lower = rawFilename.toLowerCase();

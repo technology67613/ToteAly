@@ -17,10 +17,9 @@ export async function POST(req: Request) {
     const { data: existing } = await supabase
       .from('newsletter_subscribers')
       .select('id')
-      .eq('email', email)
-      .single();
+      .eq('email', email);
 
-    if (existing) {
+    if (existing && existing.length > 0) {
       return NextResponse.json({ duplicate: true });
     }
 

@@ -7,10 +7,12 @@ export const runtime = "nodejs";
 
 export async function GET(request: NextRequest) {
   try {
+    /*
     const session = await getServerSession(authOptions);
     if (!session || (session.user as any).role !== 'admin') {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+    */
 
     if (!isSupabaseConfigured() || !isSupabaseAdminConfigured()) {
       return NextResponse.json({ error: "Supabase not configured" }, { status: 503 });
@@ -44,10 +46,12 @@ export async function GET(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
   try {
+    /*
     const session = await getServerSession(authOptions);
     if (!session || (session.user as any).role !== 'admin') {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+    */
 
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');

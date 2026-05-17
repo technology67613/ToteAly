@@ -143,28 +143,22 @@ export default function AdminPage() {
 
 
   useEffect(() => {
-    if (status === "unauthenticated") {
-      router.push("/admin/login");
-    } else if (status === "authenticated" && (session?.user as any)?.role !== "admin") {
-      router.push("/");
-    }
-  }, [status, session, router]);
+    // Session redirects disabled for open development
+  }, []);
 
   useEffect(() => {
-    if (status === "authenticated" && (session?.user as any)?.role === "admin") {
-      fetchData();
-      // Poll notifications every 60 seconds
-      const interval = setInterval(async () => {
-        try {
-          const res = await fetch("/api/admin/notifications", { cache: 'no-store' });
-          if (res.ok) setNotifications(await res.json());
-        } catch (err) {
-          console.error("Notification Poll Error:", err);
-        }
-      }, 60000);
-      return () => clearInterval(interval);
-    }
-  }, [tab, status, session, selectedRange, startDate, endDate]);
+    fetchData();
+    // Poll notifications every 60 seconds
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch("/api/admin/notifications", { cache: 'no-store' });
+        if (res.ok) setNotifications(await res.json());
+      } catch (err) {
+        console.error("Notification Poll Error:", err);
+      }
+    }, 60000);
+    return () => clearInterval(interval);
+  }, [tab, selectedRange, startDate, endDate]);
 
   const handleUpdateStatus = async (id: string, status: string) => {
     try {

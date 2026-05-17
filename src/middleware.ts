@@ -10,18 +10,6 @@ export async function middleware(request: NextRequest) {
   const isApiRoute = request.nextUrl.pathname.startsWith('/api');
   const isMaintenancePage = request.nextUrl.pathname === '/maintenance.html';
 
-  // Protect admin routes
-  if (isAdminRoute && !isLoginPage) {
-    if (!token || token.role !== 'admin') {
-      return NextResponse.redirect(new URL('/admin/login', request.url));
-    }
-  }
-
-  // If already logged in as admin, don't show login page
-  if (isLoginPage && token?.role === 'admin') {
-    return NextResponse.redirect(new URL('/admin', request.url));
-  }
-
   // --- Maintenance Mode Check ---
   // Only check for public storefront routes (not admin, api, or the maintenance page itself)
   if (!isAdminRoute && !isApiRoute && !isMaintenancePage && request.nextUrl.pathname !== '/_next/image' && !request.nextUrl.pathname.match(/\.(ico|png|jpg|jpeg|svg|css|js)$/)) {
