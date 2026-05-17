@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
     // Try to save to DB, but don't fail if DB isn't configured
     if (isSupabaseConfigured() && isSupabaseAdminConfigured()) {
       try {
-        await supabase
+        const { data, error: insertError } = await supabase
           .from("contact_messages")
           .insert({
             name,
@@ -41,10 +41,31 @@ export async function POST(request: NextRequest) {
             bag_type: bagType || null,
             logo_url: logoUrl || null,
             status: "new",
-          });
+          })
+          .select("id")
+          .single();
+
+        if (insertError) throw insertError;
+
+        if (data?.id) {
+          // Send notification to Admin Priority Alerts
+          const { error: notifError } = await supabase
+            .from("admin_notifications")
+            .insert({
+              type: "inquiry",
+              title: "New Inquiry Received",
+              message: `${name} (${email}) - ${subject}`,
+              reference_id: data.id,
+              is_read: false
+            });
+
+          if (notifError) {
+            console.warn("[CONTACT API] Failed to insert admin notification:", notifError.message);
+          }
+        }
       } catch (dbError) {
         // Log but don't block email sending
-        console.warn("[CONTACT API] DB insert failed, continuing with email:", dbError);
+        console.warn("[CONTACT API] DB insert/notification failed, continuing with email:", dbError);
       }
     }
 
