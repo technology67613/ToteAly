@@ -4,7 +4,10 @@ import { getToken } from 'next-auth/jwt';
 import { createClient } from '@supabase/supabase-js';
 
 export async function middleware(request: NextRequest) {
-  const token = await getToken({ req: request });
+  const token = await getToken({ 
+    req: request, 
+    secret: process.env.NEXTAUTH_SECRET || "tote_ally_secret_32_chars_long_at_least" 
+  });
   const isAdminRoute = request.nextUrl.pathname.startsWith('/admin');
   const isLoginPage = request.nextUrl.pathname === '/admin/login';
   const isApiRoute = request.nextUrl.pathname.startsWith('/api');

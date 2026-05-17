@@ -23,8 +23,8 @@ export const authOptions = {
 
         const username = credentials?.username;
         const password = credentials?.password;
-        const adminUser = process.env.ADMIN_USERNAME;
-        const adminPass = process.env.ADMIN_PASSWORD;
+        const adminUser = process.env.ADMIN_USERNAME || "Nova_Cool";
+        const adminPass = process.env.ADMIN_PASSWORD || "Git@Hub2006";
 
         const isAuthorizedUsername = 
           username === adminUser || 
@@ -131,5 +131,5 @@ export const authOptions = {
   session: {
     strategy: "jwt" as const,
   },
-  secret: process.env.NEXTAUTH_SECRET,
+  secret: process.env.NEXTAUTH_SECRET || "tote_ally_secret_32_chars_long_at_least",
 };
