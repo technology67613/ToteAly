@@ -95,31 +95,32 @@ export async function POST(request: NextRequest) {
     const verifiedTotalAmount = Math.max(0, verifiedSubtotal + shippingFee - discountAmount);
 
     // 2. Razorpay Signature Verification
-    if (paymentId !== 'MANUAL_UPI') {
-      const secret = process.env.RAZORPAY_KEY_SECRET;
-      const generated_signature = crypto
-        .createHmac("sha256", secret!)
-        .update(razorpayOrderId + "|" + paymentId)
-        .digest("hex");
+    if (!razorpayOrderId || !razorpaySignature) {
+      return NextResponse.json({ error: "Missing payment signature details" }, { status: 400 });
+    }
 
-      if (generated_signature !== razorpaySignature) {
-        return NextResponse.json({ error: "Invalid payment signature" }, { status: 400 });
-      }
+    const secret = process.env.RAZORPAY_KEY_SECRET;
+    const generated_signature = crypto
+      .createHmac("sha256", secret!)
+      .update(razorpayOrderId + "|" + paymentId)
+      .digest("hex");
+
+    if (generated_signature !== razorpaySignature) {
+      return NextResponse.json({ error: "Invalid payment signature" }, { status: 400 });
     }
 
     // 3. Persist Order
     const profileId = isUuid((session?.user as any)?.id) ? (session?.user as any).id : null;
-    const isManualUPI = paymentId === 'MANUAL_UPI';
 
     const { data: order, error: orderError } = await supabaseAdmin
       .from('orders')
       .insert([{
         user_id: profileId,
         total_amount: verifiedTotalAmount,
-        status: isManualUPI ? 'Pending' : 'Confirmed',
-        payment_status: isManualUPI ? 'Pending' : 'Paid',
+        status: 'Confirmed',
+        payment_status: 'Paid',
         payment_id: paymentId,
-        payment_method: isManualUPI ? 'Manual UPI' : 'Razorpay',
+        payment_method: 'Razorpay',
         shipping_details: shippingDetails,
         notes: shippingDetails.notes,
         coupon_code: verifiedCouponCode,

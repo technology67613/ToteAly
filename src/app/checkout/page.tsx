@@ -7,7 +7,7 @@ import { useCartStore } from "@/store/cartStore";
 import { 
   ShoppingBag, CheckCircle, Loader2, ChevronRight, 
   ShieldCheck, Truck, Lock, CreditCard, ArrowLeft,
-  Sparkles, Package, MapPin, Phone, Mail, User, UploadCloud, QrCode, MessageSquare
+  Sparkles, Package, MapPin, Phone, Mail, User, MessageSquare
 } from "lucide-react";
 
 declare global {
@@ -25,9 +25,6 @@ export default function CheckoutPage() {
   const [step, setStep] = useState<Step>("details");
   const [loading, setLoading] = useState(false);
   const [orderId, setOrderId] = useState<string | null>(null);
-  const [paymentMethod, setPaymentMethod] = useState<"razorpay" | "manual_upi">("razorpay");
-  const [screenshotUrl, setScreenshotUrl] = useState<string | null>(null);
-  const [uploadingScreenshot, setUploadingScreenshot] = useState(false);
   const [couponCode, setCouponCode] = useState("");
   const [couponDiscount, setCouponDiscount] = useState(0);
   const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
@@ -73,30 +70,6 @@ export default function CheckoutPage() {
   };
 
 
-
-  const handleScreenshotUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setUploadingScreenshot(true);
-    const formData = new FormData();
-    formData.append("file", file);
-
-    try {
-      const res = await fetch("/api/upload", {
-        method: "POST",
-        body: formData,
-      });
-      const data = await res.json();
-      if (data.url) {
-        setScreenshotUrl(data.url);
-      }
-    } catch (error) {
-      console.error("Screenshot upload failed:", error);
-    }
-    setUploadingScreenshot(false);
-  };
-  
   const applyCoupon = async () => {
     if (!couponCode) return;
     setApplyingCoupon(true);
@@ -131,36 +104,6 @@ export default function CheckoutPage() {
   const handlePayment = async () => {
     setLoading(true);
     try {
-      if (paymentMethod === "manual_upi") {
-        if (!screenshotUrl) {
-           alert("Please upload a payment screenshot first.");
-           setLoading(false);
-           return;
-        }
-        const orderRes = await fetch("/api/orders", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            items,
-            totalAmount: total,
-            paymentId: "MANUAL_UPI",
-            shippingDetails: { ...form, country: "India", payment_method: "Manual_UPI", payment_screenshot_url: screenshotUrl },
-            couponCode: appliedCoupon?.code || null,
-          }),
-        });
-        const orderData = await orderRes.json();
-        if (!orderRes.ok) {
-          console.error("Validation Details:", orderData.details);
-          throw new Error(orderData.error ? `${orderData.error}: ${JSON.stringify(orderData.details || {})}` : "Order could not be saved.");
-        }
-        const finalOrderId = orderData.id || orderData._id || "MANUAL_" + Date.now();
-        setOrderId(finalOrderId);
-        clearCart();
-        router.push(`/checkout/success?orderId=${finalOrderId}`);
-        setLoading(false);
-        return;
-      }
-
       // 1. Create Order on Backend
       const res = await fetch("/api/checkout", {
         method: "POST",
@@ -366,76 +309,26 @@ export default function CheckoutPage() {
               </div>
 
               <div className="flex flex-col gap-6">
-                <div className="flex gap-4 mb-2">
-                   <button 
-                     onClick={() => setPaymentMethod("razorpay")} 
-                     className={`flex-1 py-4 rounded-2xl font-bold flex items-center justify-center gap-2 transition-all border-2 ${paymentMethod === 'razorpay' ? 'bg-[#900C3F] text-white border-[#900C3F]' : 'bg-transparent text-[#900C3F] border-[#F5ECD7] hover:border-[#900C3F]'}`}
-                   >
-                     <CreditCard size={18} /> Razorpay
-                   </button>
-                   <button 
-                     onClick={() => setPaymentMethod("manual_upi")} 
-                     className={`flex-1 py-4 rounded-2xl font-bold flex items-center justify-center gap-2 transition-all border-2 ${paymentMethod === 'manual_upi' ? 'bg-[#900C3F] text-white border-[#900C3F]' : 'bg-transparent text-[#900C3F] border-[#F5ECD7] hover:border-[#900C3F]'}`}
-                   >
-                     <QrCode size={18} /> Manual UPI
-                   </button>
+                <div className="flex flex-col gap-6">
+                  <div className="flex items-center gap-4 p-6 rounded-3xl border-2 border-[#900C3F] bg-[#900C3F]/5">
+                    <div className="w-12 h-12 bg-[#900C3F] text-white rounded-2xl flex items-center justify-center">
+                      <CreditCard size={24} />
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-bold">Razorpay Secure Checkout</p>
+                      <p className="text-xs text-[#900C3F]/60">Cards, UPI, NetBanking & Wallets</p>
+                    </div>
+                    <Lock size={18} className="text-[#900C3F]/20" />
+                  </div>
                 </div>
-
-                {paymentMethod === "razorpay" ? (
-                  <div className="flex flex-col gap-6">
-                    <div className="flex items-center gap-4 p-6 rounded-3xl border-2 border-[#900C3F] bg-[#900C3F]/5">
-                      <div className="w-12 h-12 bg-[#900C3F] text-white rounded-2xl flex items-center justify-center">
-                        <CreditCard size={24} />
-                      </div>
-                      <div className="flex-1">
-                        <p className="font-bold">Razorpay Secure Checkout</p>
-                        <p className="text-xs text-[#900C3F]/60">Cards, UPI, NetBanking & Wallets</p>
-                      </div>
-                      <Lock size={18} className="text-[#900C3F]/20" />
-                    </div>
-                  </div>
-                ) : (
-                  <div className="flex flex-col items-center gap-6 p-8 rounded-3xl border-2 border-[#900C3F] bg-[#900C3F]/5">
-                    <img src="/payment.jpeg" alt="UPI QR Code" className="w-48 h-48 rounded-xl shadow-lg" />
-                    <div className="text-center">
-                      <p className="font-bold text-lg">Scan to Pay via UPI</p>
-                      <p className="text-sm text-[#900C3F]/60">Total: ₹{total}</p>
-                    </div>
-                    
-                    <div className="w-full relative">
-                      <input 
-                        type="file" 
-                        accept="image/*" 
-                        onChange={handleScreenshotUpload} 
-                        disabled={uploadingScreenshot}
-                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                      />
-                      <div className="w-full py-4 bg-white border-2 border-dashed border-[#900C3F]/30 rounded-2xl flex flex-col items-center justify-center text-[#900C3F] gap-2 hover:bg-[#900C3F]/5 transition-colors">
-                        {uploadingScreenshot ? (
-                           <Loader2 size={24} className="animate-spin" />
-                        ) : screenshotUrl ? (
-                           <>
-                             <CheckCircle size={24} className="text-green-500" />
-                             <span className="text-sm font-bold">Screenshot Uploaded</span>
-                           </>
-                        ) : (
-                           <>
-                             <UploadCloud size={24} />
-                             <span className="text-sm font-bold">Upload Payment Screenshot</span>
-                           </>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                )}
 
                 <button
                   onClick={handlePayment}
-                  disabled={loading || (paymentMethod === "manual_upi" && !screenshotUrl)}
+                  disabled={loading}
                   className="w-full py-6 bg-[#900C3F] text-white rounded-[32px] font-bold text-xl hover:bg-[#FF69B4] transition-all shadow-2xl shadow-[#900C3F]/30 flex items-center justify-center gap-4 disabled:opacity-50"
                 >
                   {loading ? <Loader2 size={24} className="animate-spin" /> : <Lock size={20} />}
-                  {paymentMethod === "razorpay" ? (loading ? "Establishing Secure Link..." : `Authorize Payment • ₹${total}`) : (loading ? "Processing..." : `Complete Order • ₹${total}`)}
+                  {loading ? "Establishing Secure Link..." : `Authorize Payment • ₹${total}`}
                 </button>
               </div>
 
