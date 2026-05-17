@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 import {
@@ -93,14 +93,15 @@ export default function AdminPage() {
 
   const [notifications, setNotifications] = useState<any[]>([]);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
-  const [prevNotifIds, setPrevNotifIds] = useState<string[]>([]);
+  const prevNotifIdsRef = useRef<string[]>([]);
 
   useEffect(() => {
     if (notifications.length > 0) {
-      let isFirstLoad = prevNotifIds.length === 0;
+      const prevIds = prevNotifIdsRef.current;
+      const isFirstLoad = prevIds.length === 0;
       
       // Filter out any notification IDs that we haven't seen yet
-      const newAlerts = notifications.filter(n => !prevNotifIds.includes(n.id));
+      const newAlerts = notifications.filter(n => !prevIds.includes(n.id));
       
       if (!isFirstLoad && newAlerts.length > 0) {
         newAlerts.forEach((n) => {
@@ -112,11 +113,11 @@ export default function AdminPage() {
         });
       }
       
-      setPrevNotifIds(notifications.map(n => n.id));
+      prevNotifIdsRef.current = notifications.map(n => n.id);
     } else {
-      setPrevNotifIds([]);
+      prevNotifIdsRef.current = [];
     }
-  }, [notifications, prevNotifIds]);
+  }, [notifications]);
 
   const fetchData = async () => {
     setLoading(true);
