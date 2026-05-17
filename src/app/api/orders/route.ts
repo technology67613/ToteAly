@@ -197,9 +197,9 @@ export async function GET(request: NextRequest) {
     .select('*, order_items(*)');
     
   if (profileId && isUuid(profileId)) {
-    query = query.or(`user_id.eq.${profileId},shipping_details->>email.ieq.${session.user.email}`);
+    query = query.or(`user_id.eq.${profileId},shipping_details->>email.ilike.${session.user.email}`);
   } else {
-    query = query.filter('shipping_details->>email', 'ieq', session.user.email);
+    query = query.filter('shipping_details->>email', 'ilike', session.user.email);
   }
 
   const { data, error } = await query.order('created_at', { ascending: false });
