@@ -441,6 +441,7 @@ export default function Customize() {
         title: bag.title,
         price: bag.price,
         quantity: 1,
+        image: cloudImageUrl,
         isCustomized: true,
         customizationDetails: {
           bagType: bag.title,

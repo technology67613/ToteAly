@@ -528,25 +528,48 @@ export default function ProfilePage() {
               <div>
                 <h4 className="text-xs font-bold uppercase tracking-wider mb-4 flex items-center gap-2"><Package size={16} /> Order Items</h4>
                 <div className="divide-y divide-[#F5ECD7]/40">
-                  {(selectedOrder.order_items || selectedOrder.items || []).map((item: any, index: number) => (
-                    <div key={item.id || index} className="py-4 flex gap-4 items-center">
-                      <div className="w-16 h-16 rounded-xl bg-[#F5ECD7]/30 border border-[#F5ECD7]/50 flex items-center justify-center overflow-hidden flex-shrink-0">
-                        <img 
-                          src={item.product_image || item.products?.image_url || "/images/placeholder.jpg"} 
-                          alt={item.product_title || item.name} 
-                          className="w-full h-full object-contain p-1"
-                        />
+                  {(selectedOrder.order_items || selectedOrder.items || []).map((item: any, index: number) => {
+                    const rawDetails = item.customization_details || item.customizationDetails;
+                    let parsedDetails = rawDetails;
+                    if (typeof parsedDetails === 'string') {
+                      try {
+                        parsedDetails = JSON.parse(parsedDetails);
+                      } catch (e) {
+                        console.error("Failed to parse customization details string:", e);
+                      }
+                    }
+
+                    console.log("Profile Modal Item:", {
+                      name: item.product_title || item.name,
+                      product_image: item.product_image,
+                      hasRawDetails: !!rawDetails,
+                      parsedPreview: parsedDetails?.preview || parsedDetails?.previewImage
+                    });
+
+                    const imgUrl = (item.product_image && item.product_image !== "null")
+                      ? item.product_image
+                      : (parsedDetails?.preview || parsedDetails?.previewImage || parsedDetails?.canvasData || item.products?.image_url || "/images/placeholder.jpg");
+
+                    return (
+                      <div key={item.id || index} className="py-4 flex gap-4 items-center">
+                        <div className="w-16 h-16 rounded-xl bg-[#F5ECD7]/30 border border-[#F5ECD7]/50 flex items-center justify-center overflow-hidden flex-shrink-0">
+                          <img 
+                            src={imgUrl} 
+                            alt={item.product_title || item.name} 
+                            className="w-full h-full object-contain p-1"
+                          />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-bold text-sm truncate">{item.product_title || item.name}</p>
+                          <p className="text-xs text-[#900C3F]/60 mt-1">₹{item.price} × {item.quantity}</p>
+                          {(item.is_customized || item.isCustomized) && (
+                            <span className="inline-block mt-1 text-[8px] font-bold uppercase tracking-wider bg-pink-100 text-pink-700 px-2 py-0.5 rounded-full">Customized Masterpiece</span>
+                          )}
+                        </div>
+                        <p className="font-bold text-sm">₹{item.price * item.quantity}</p>
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-bold text-sm truncate">{item.product_title || item.name}</p>
-                        <p className="text-xs text-[#900C3F]/60 mt-1">₹{item.price} × {item.quantity}</p>
-                        {item.is_customized && (
-                          <span className="inline-block mt-1 text-[8px] font-bold uppercase tracking-wider bg-pink-100 text-pink-700 px-2 py-0.5 rounded-full">Customized Masterpiece</span>
-                        )}
-                      </div>
-                      <p className="font-bold text-sm">₹{item.price * item.quantity}</p>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
 
