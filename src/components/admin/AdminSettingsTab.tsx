@@ -305,7 +305,7 @@ export const AdminSettingsTab = () => {
                   value={settings.whatsapp_number || ''}
                   onChange={e => setSettings({...settings, whatsapp_number: e.target.value})}
                   className="w-full pl-12 pr-4 py-3 rounded-xl bg-slate-50 border border-slate-200 font-bold text-sm focus:bg-white focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500/30 focus:outline-none transition-all" 
-                  placeholder="98250 63143"
+                  placeholder="98765 43210"
                 />
               </div>
             </div>

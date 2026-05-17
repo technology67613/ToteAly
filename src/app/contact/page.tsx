@@ -151,7 +151,7 @@ function ContactForm() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1.5">
                   <label className="text-xs font-bold uppercase tracking-widest text-[#900C3F]/60">Your Name</label>
-                  <input value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder="Abhirami" required
+                  <input value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder="Your Name" required
                     className="w-full p-3 border-b border-[#900C3F]/30 bg-transparent focus:outline-none focus:border-[#FF69B4] transition-colors" />
                 </div>
                 <div className="flex flex-col gap-1.5">
@@ -189,7 +189,7 @@ function ContactForm() {
                 </div>
                 <div>
                   <p className="font-bold text-sm">Email</p>
-                  <a href="mailto:hello@totallyiconic.in" className="text-[#900C3F]/70 text-sm hover:text-[#FF69B4] transition-colors">hello@totallyiconic.in</a>
+                  <a href="mailto:toteallyiconic@gmail.com" className="text-[#900C3F]/70 text-sm hover:text-[#FF69B4] transition-colors">toteallyiconic@gmail.com</a>
                 </div>
               </div>
               <div className="flex gap-4 items-start">
@@ -198,9 +198,9 @@ function ContactForm() {
                 </div>
                 <div>
                   <p className="font-bold text-sm">WhatsApp</p>
-                  <a href="https://wa.me/919999999999" target="_blank" rel="noopener noreferrer"
+                  <a href="https://wa.me/919825063143" target="_blank" rel="noopener noreferrer"
                     className="text-[#900C3F]/70 text-sm hover:text-[#FF69B4] transition-colors">
-                    +91 99999 99999
+                    +91 98250 63143
                   </a>
                 </div>
               </div>
@@ -210,9 +210,9 @@ function ContactForm() {
                 </div>
                 <div>
                   <p className="font-bold text-sm">Instagram</p>
-                  <a href="https://instagram.com/TOTE_ALLY_ICONIC" target="_blank" rel="noopener noreferrer"
+                  <a href="https://instagram.com/tote_ally_iconic" target="_blank" rel="noopener noreferrer"
                     className="text-[#900C3F]/70 text-sm hover:text-[#FF69B4] transition-colors">
-                    @TOTE_ALLY_ICONIC
+                    @tote_ally_iconic
                   </a>
                 </div>
               </div>

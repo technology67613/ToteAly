@@ -396,7 +396,7 @@ export default function ProfilePage() {
                         type="tel" 
                         value={profileData.phone}
                         onChange={(e) => setProfileData({...profileData, phone: e.target.value})}
-                        placeholder="+91 98250 63143"
+                        placeholder="+91 98765 43210"
                         className="p-3 bg-[#F5ECD7]/30 border border-[#F5ECD7] rounded-xl focus:outline-none focus:border-[#FF69B4]"
                       />
                     </div>

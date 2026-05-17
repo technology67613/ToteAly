@@ -227,7 +227,7 @@ export default function CheckoutPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="flex flex-col gap-3">
                   <label className="text-[10px] font-bold uppercase tracking-widest text-[#900C3F]/40 flex items-center gap-2"><User size={12} /> Full Name</label>
-                  <input name="name" value={form.name} onChange={handleFormChange} placeholder="Abhirami Aluvila" 
+                  <input name="name" value={form.name} onChange={handleFormChange} placeholder="Your full name" 
                     className="w-full px-5 py-4 rounded-2xl bg-[#F8F9FA] border border-[#F5ECD7] focus:outline-none focus:border-[#FF69B4] transition-all font-medium" />
                 </div>
                 <div className="flex flex-col gap-3">
@@ -239,7 +239,7 @@ export default function CheckoutPage() {
 
               <div className="flex flex-col gap-3">
                 <label className="text-[10px] font-bold uppercase tracking-widest text-[#900C3F]/40 flex items-center gap-2"><Phone size={12} /> Phone Number</label>
-                <input name="phone" value={form.phone} onChange={handleFormChange} placeholder="+91 98250 63143" type="tel"
+                <input name="phone" value={form.phone} onChange={handleFormChange} placeholder="+91 98765 43210" type="tel"
                   className="w-full px-5 py-4 rounded-2xl bg-[#F8F9FA] border border-[#F5ECD7] focus:outline-none focus:border-[#FF69B4] transition-all font-medium" />
               </div>
 
