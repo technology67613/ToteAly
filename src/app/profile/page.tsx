@@ -4,7 +4,11 @@ import { useState, useEffect } from "react";
 import { useSession, signOut } from "next-auth/react";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { Package, User, MapPin, Heart, Settings, LogOut, Loader2, Zap, Plus } from "lucide-react";
+import { 
+  Package, User, MapPin, Heart, Settings, LogOut, Loader2, Zap, Plus,
+  X, CheckCircle2, Clipboard, Phone, Calendar, CreditCard, Receipt, FileText, ChevronRight
+} from "lucide-react";
+import DownloadInvoice from "@/components/DownloadInvoice";
 
 const STATUS_COLORS: Record<string, string> = {
   Delivered: "bg-green-100 text-green-700",
@@ -17,6 +21,7 @@ const STATUS_COLORS: Record<string, string> = {
 export default function ProfilePage() {
   const { data: session, status } = useSession();
   const [activeTab, setActiveTab] = useState<"orders" | "settings" | "wishlist" | "designs">("orders");
+  const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
   
   // Data states
   const [orders, setOrders] = useState<any[]>([]);
@@ -223,10 +228,14 @@ export default function ProfilePage() {
               ) : (
                 <div className="flex flex-col gap-4">
                   {orders.map((order) => (
-                    <div key={order.id} className="bg-white border border-[#F5ECD7] rounded-xl p-6 flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all hover:shadow-md">
+                    <div 
+                      key={order.id} 
+                      onClick={() => setSelectedOrder(order)}
+                      className="bg-white border border-[#F5ECD7] rounded-xl p-6 flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all hover:shadow-md cursor-pointer hover:border-[#FF69B4]/50 hover:bg-[#FFF8F0]/30"
+                    >
                       <div className="flex flex-col gap-1">
                         <p className="font-bold text-lg">Order #{order.id?.slice(-6).toUpperCase()}</p>
-                        <p className="text-sm text-[#900C3F]/60">{new Date(order.created_at).toLocaleDateString()} • {order.items?.length || 0} items</p>
+                        <p className="text-sm text-[#900C3F]/60">{new Date(order.created_at).toLocaleDateString()} • {(order.order_items || order.items || [])?.length || 0} items</p>
                       </div>
                       <div className="flex flex-col md:items-end gap-2">
                         <span className={`text-xs px-3 py-1 rounded-full font-semibold w-max ${STATUS_COLORS[order.status] || ""}`}>
@@ -458,6 +467,155 @@ export default function ProfilePage() {
 
         </div>
       </div>
+
+      {/* Order Details & Bill Modal */}
+      {selectedOrder && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-300">
+          <div className="bg-white border border-[#F5ECD7] w-full max-w-2xl rounded-3xl overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300 flex flex-col max-h-[90vh]">
+            
+            {/* Modal Header */}
+            <div className="p-6 border-b border-[#F5ECD7] flex items-center justify-between bg-[#FFF8F0]">
+              <div>
+                <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#FF69B4]">Order Details</span>
+                <h3 className="font-serif text-2xl font-bold flex items-center gap-2 mt-1">
+                  #{selectedOrder.id?.slice(-8).toUpperCase()}
+                </h3>
+              </div>
+              <button 
+                onClick={() => setSelectedOrder(null)}
+                className="w-10 h-10 rounded-full hover:bg-red-50 hover:text-red-500 flex items-center justify-center transition-colors text-[#900C3F]/50"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="flex-1 overflow-y-auto p-6 md:p-8 space-y-8">
+              
+              {/* Order Status Tracker */}
+              <div className="bg-[#F5ECD7]/20 border border-[#F5ECD7]/40 rounded-2xl p-6">
+                <h4 className="text-xs font-bold uppercase tracking-wider mb-4 flex items-center gap-2"><CheckCircle2 size={16} /> Fulfillment Status</h4>
+                <div className="relative flex justify-between items-center w-full mt-6">
+                  {/* Progress Line */}
+                  <div className="absolute top-1/2 left-0 right-0 h-1 bg-[#F5ECD7] -translate-y-1/2 z-0" />
+                  
+                  {/* Status Steps */}
+                  {['Pending', 'Confirmed', 'Shipped', 'Delivered'].map((step, idx) => {
+                    const statuses = ['Pending', 'Confirmed', 'Shipped', 'Delivered'];
+                    const currentIdx = statuses.indexOf(selectedOrder.status || 'Pending');
+                    const isActive = idx <= currentIdx;
+                    const isCurrent = idx === currentIdx;
+                    
+                    return (
+                      <div key={step} className="flex flex-col items-center relative z-10">
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs border-2 transition-all ${
+                          isCurrent 
+                            ? "bg-[#FF69B4] text-white border-[#FF69B4] scale-110 shadow-lg shadow-[#FF69B4]/30" 
+                            : isActive 
+                            ? "bg-[#900C3F] text-white border-[#900C3F]" 
+                            : "bg-white text-[#900C3F]/40 border-[#F5ECD7]"
+                        }`}>
+                          {idx + 1}
+                        </div>
+                        <span className={`text-[10px] font-bold mt-2 uppercase tracking-wider ${isActive ? "text-[#900C3F]" : "text-[#900C3F]/40"}`}>{step}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Items Purchased List */}
+              <div>
+                <h4 className="text-xs font-bold uppercase tracking-wider mb-4 flex items-center gap-2"><Package size={16} /> Order Items</h4>
+                <div className="divide-y divide-[#F5ECD7]/40">
+                  {(selectedOrder.order_items || selectedOrder.items || []).map((item: any, index: number) => (
+                    <div key={item.id || index} className="py-4 flex gap-4 items-center">
+                      <div className="w-16 h-16 rounded-xl bg-[#F5ECD7]/30 border border-[#F5ECD7]/50 flex items-center justify-center overflow-hidden flex-shrink-0">
+                        <img 
+                          src={item.product_image || item.products?.image_url || "/images/placeholder.jpg"} 
+                          alt={item.product_title || item.name} 
+                          className="w-full h-full object-contain p-1"
+                        />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-bold text-sm truncate">{item.product_title || item.name}</p>
+                        <p className="text-xs text-[#900C3F]/60 mt-1">₹{item.price} × {item.quantity}</p>
+                        {item.is_customized && (
+                          <span className="inline-block mt-1 text-[8px] font-bold uppercase tracking-wider bg-pink-100 text-pink-700 px-2 py-0.5 rounded-full">Customized Masterpiece</span>
+                        )}
+                      </div>
+                      <p className="font-bold text-sm">₹{item.price * item.quantity}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4">
+                {/* Shipping Details */}
+                <div className="bg-[#FFF8F0]/50 border border-[#F5ECD7] rounded-2xl p-6">
+                  <h4 className="text-xs font-bold uppercase tracking-wider mb-4 flex items-center gap-2"><MapPin size={16} /> Delivery Manifest</h4>
+                  <div className="text-xs space-y-2 text-[#900C3F]/80">
+                    <p className="font-bold text-[#900C3F]">{selectedOrder.shipping_details?.name}</p>
+                    <p>{selectedOrder.shipping_details?.email}</p>
+                    <p className="flex items-center gap-1 mt-1"><Phone size={12} /> {selectedOrder.shipping_details?.phone}</p>
+                    <hr className="border-[#F5ECD7]/60 my-2" />
+                    <p className="leading-relaxed">{selectedOrder.shipping_details?.address}</p>
+                    <p>{selectedOrder.shipping_details?.city}, {selectedOrder.shipping_details?.state} - {selectedOrder.shipping_details?.pincode}</p>
+                    {selectedOrder.shipping_details?.notes && (
+                      <p className="mt-3 p-3 bg-white border border-[#F5ECD7]/60 rounded-xl italic">" {selectedOrder.shipping_details.notes} "</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Billing Summary */}
+                <div className="bg-[#FFF8F0]/50 border border-[#F5ECD7] rounded-2xl p-6 flex flex-col justify-between">
+                  <div>
+                    <h4 className="text-xs font-bold uppercase tracking-wider mb-4 flex items-center gap-2"><Receipt size={16} /> Billing Details</h4>
+                    <div className="space-y-3 text-xs">
+                      <div className="flex justify-between text-[#900C3F]/70">
+                        <span>Subtotal</span>
+                        <span>₹{((selectedOrder.order_items || selectedOrder.items || []).reduce((acc: number, item: any) => acc + (item.price * item.quantity), 0))}</span>
+                      </div>
+                      
+                      {selectedOrder.discount_amount > 0 && (
+                        <div className="flex justify-between text-green-600 font-medium">
+                          <span>Coupon Discount {selectedOrder.coupon_code ? `(${selectedOrder.coupon_code})` : ""}</span>
+                          <span>- ₹{selectedOrder.discount_amount}</span>
+                        </div>
+                      )}
+
+                      <div className="flex justify-between text-[#900C3F]/70">
+                        <span>Shipping Manifest</span>
+                        <span>{selectedOrder.total_amount >= 999 ? "FREE" : "₹50"}</span>
+                      </div>
+
+                      <hr className="border-[#F5ECD7]" />
+
+                      <div className="flex justify-between font-bold text-sm text-[#900C3F] pt-1">
+                        <span>Total Bill</span>
+                        <span className="text-[#FF69B4] text-lg">₹{selectedOrder.total_amount}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-6 pt-4 border-t border-[#F5ECD7]/60 text-[10px] text-[#900C3F]/50 space-y-1">
+                    <p className="flex items-center gap-1"><CreditCard size={10} /> Payment via {selectedOrder.payment_method || 'Razorpay'}</p>
+                    <p>Transaction Ref ID: {selectedOrder.payment_id || 'N/A'}</p>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-6 border-t border-[#F5ECD7] bg-[#FFF8F0] flex flex-col sm:flex-row gap-4 items-center justify-between">
+              <span className="text-[10px] text-[#900C3F]/50">Placed on {new Date(selectedOrder.created_at).toLocaleString("en-IN")}</span>
+              <DownloadInvoice order={selectedOrder} />
+            </div>
+
+          </div>
+        </div>
+      )}
     </main>
   );
 }
