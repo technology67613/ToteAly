@@ -817,6 +817,21 @@ export default function OrderDetailPage() {
             {/* Payment Details */}
             <div className="bg-white p-6 rounded-2xl border border-[var(--admin-border)] shadow-sm">
               <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-6">Payment</h4>
+              
+              {order.payment_method && (
+                <div className="mb-4 text-[11px] text-slate-600 flex flex-col gap-1">
+                  <span className="text-slate-400 uppercase text-[9px] font-bold">Method</span>
+                  <span className="font-bold text-slate-800">{order.payment_method}</span>
+                </div>
+              )}
+
+              {order.payment_id && (
+                <div className="mb-4 text-[11px] text-slate-600 flex flex-col gap-1">
+                  <span className="text-slate-400 uppercase text-[9px] font-bold">Transaction / UTR ID</span>
+                  <span className="font-mono font-bold bg-slate-50 text-slate-800 px-2 py-1 rounded border border-slate-100 select-all">{order.payment_id}</span>
+                </div>
+              )}
+
               {order.payment_status === 'paid' ? (
                 <div className="bg-emerald-50 p-4 rounded-xl border border-emerald-100 flex items-center gap-3">
                   <CheckCircle2 size={16} className="text-emerald-500" />
@@ -828,7 +843,7 @@ export default function OrderDetailPage() {
                     <Clock size={16} className="text-amber-500" />
                     <span className="text-[10px] font-bold text-amber-700 uppercase tracking-wider">Awaiting Payment</span>
                   </div>
-                  {order.payment_id === 'MANUAL_UPI' && order.shipping_details?.payment_screenshot_url && (
+                  {order.shipping_details?.payment_screenshot_url && (
                     <button onClick={() => setShowScreenshot(true)} className="w-full py-3 bg-slate-100 text-slate-700 rounded-xl text-[10px] font-bold uppercase hover:bg-slate-200 transition-colors">View UPI Proof</button>
                   )}
                   <button onClick={() => handleUpdateStatus('Processing', { payment_status: 'paid' })} className="w-full py-3 bg-black text-white rounded-xl text-[10px] font-bold uppercase hover:bg-slate-800 transition-colors">Confirm Payment</button>

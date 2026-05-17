@@ -94,19 +94,9 @@ export async function POST(request: NextRequest) {
 
     const verifiedTotalAmount = Math.max(0, verifiedSubtotal + shippingFee - discountAmount);
 
-    // 2. Razorpay Signature Verification
-    if (!razorpayOrderId || !razorpaySignature) {
-      return NextResponse.json({ error: "Missing payment signature details" }, { status: 400 });
-    }
-
-    const secret = process.env.RAZORPAY_KEY_SECRET;
-    const generated_signature = crypto
-      .createHmac("sha256", secret!)
-      .update(razorpayOrderId + "|" + paymentId)
-      .digest("hex");
-
-    if (generated_signature !== razorpaySignature) {
-      return NextResponse.json({ error: "Invalid payment signature" }, { status: 400 });
+    // 2. Manual UPI Payment Verification
+    if (!paymentId || paymentId.trim().length < 8) {
+      return NextResponse.json({ error: "Invalid UPI Transaction Reference Number (UTR)" }, { status: 400 });
     }
 
     // 3. Persist Order
@@ -117,11 +107,15 @@ export async function POST(request: NextRequest) {
       .insert([{
         user_id: profileId,
         total_amount: verifiedTotalAmount,
-        status: 'Confirmed',
-        payment_status: 'Paid',
-        payment_id: paymentId,
-        payment_method: 'Razorpay',
-        shipping_details: shippingDetails,
+        status: 'Pending',             // Set status to 'Pending' for Manual UPI orders
+        payment_status: 'Pending',     // Set payment_status to 'Pending' for Manual UPI orders
+        payment_id: paymentId,         // User entered transaction ID / UTR
+        payment_method: 'Manual UPI',  // Save payment method as 'Manual UPI'
+        shipping_details: {
+          ...shippingDetails,
+          payment_method: 'Manual UPI',
+          payment_screenshot_url: shippingDetails.payment_screenshot_url || null
+        },
         notes: shippingDetails.notes,
         coupon_code: verifiedCouponCode,
         discount_amount: discountAmount

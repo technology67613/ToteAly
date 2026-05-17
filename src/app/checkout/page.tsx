@@ -7,14 +7,9 @@ import { useCartStore } from "@/store/cartStore";
 import { 
   ShoppingBag, CheckCircle, Loader2, ChevronRight, 
   ShieldCheck, Truck, Lock, CreditCard, ArrowLeft,
-  Sparkles, Package, MapPin, Phone, Mail, User, MessageSquare
+  Sparkles, Package, MapPin, Phone, Mail, User, MessageSquare,
+  Copy, Check, Upload, QrCode, AlertCircle
 } from "lucide-react";
-
-declare global {
-  interface Window {
-    Razorpay: any;
-  }
-}
 
 type Step = "details" | "payment" | "success";
 
@@ -30,6 +25,13 @@ export default function CheckoutPage() {
   const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
   const [applyingCoupon, setApplyingCoupon] = useState(false);
 
+  // Manual UPI States
+  const [utr, setUtr] = useState("");
+  const [screenshotUrl, setScreenshotUrl] = useState<string | null>(null);
+  const [uploadingScreenshot, setUploadingScreenshot] = useState(false);
+  const [copiedUpi, setCopiedUpi] = useState(false);
+  const [copiedAmount, setCopiedAmount] = useState(false);
+
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -43,19 +45,6 @@ export default function CheckoutPage() {
 
   useEffect(() => {
     setMounted(true);
-    // Load Razorpay Script
-    const script = document.createElement('script');
-    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-    script.async = true;
-    document.body.appendChild(script);
-    return () => { 
-      const existingScript = document.getElementById('razorpay-sdk');
-      if (existingScript) document.body.removeChild(existingScript);
-      else if (document.querySelector('script[src="https://checkout.razorpay.com/v1/checkout.js"]')) {
-         const rzpScript = document.querySelector('script[src="https://checkout.razorpay.com/v1/checkout.js"]');
-         if (rzpScript) document.body.removeChild(rzpScript);
-      }
-    };
   }, []);
 
   if (!mounted) return null;
@@ -101,79 +90,77 @@ export default function CheckoutPage() {
 
 
 
+  const copyToClipboard = (text: string, type: "upi" | "amount") => {
+    navigator.clipboard.writeText(text);
+    if (type === "upi") {
+      setCopiedUpi(true);
+      setTimeout(() => setCopiedUpi(false), 2000);
+    } else {
+      setCopiedAmount(true);
+      setTimeout(() => setCopiedAmount(false), 2000);
+    }
+  };
+
+  const handleScreenshotUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingScreenshot(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!res.ok) throw new Error("Upload failed");
+      const data = await res.json();
+      setScreenshotUrl(data.url);
+    } catch (err) {
+      console.error("Screenshot upload error:", err);
+      alert("Failed to upload screenshot. Please try again.");
+    } finally {
+      setUploadingScreenshot(false);
+    }
+  };
+
   const handlePayment = async () => {
+    if (!utr || utr.trim().length < 8) {
+      alert("Please enter a valid UPI Transaction Reference ID (UTR)");
+      return;
+    }
+
     setLoading(true);
     try {
-      // 1. Create Order on Backend
-      const res = await fetch("/api/checkout", {
+      const orderRes = await fetch("/api/orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount: total }), 
+        body: JSON.stringify({
+          items,
+          totalAmount: total,
+          paymentId: utr.trim(),
+          shippingDetails: {
+            ...form,
+            country: "India",
+            payment_method: "Manual UPI",
+            payment_screenshot_url: screenshotUrl,
+          },
+          couponCode: appliedCoupon?.code || null,
+        }),
       });
-      
-      const order = await res.json();
-      if (!res.ok) throw new Error(order.error || "Failed to create payment order");
 
-      // 2. Configure Razorpay
-      const options = {
-        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
-        amount: order.amount,
-        currency: order.currency,
-        name: "Tote-ally Iconic",
-        description: `Order for ${items.length} iconic items`,
-        image: "/icon.svg",
-        order_id: order.id,
-        prefill: {
-          name: form.name,
-          email: form.email,
-          contact: form.phone,
-        },
-        theme: {
-          color: "#900C3F",
-        },
-        handler: async function (response: any) {
-          setLoading(true);
-          try {
-            const orderRes = await fetch("/api/orders", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                items,
-                totalAmount: total,
-                paymentId: response.razorpay_payment_id,
-                razorpayOrderId: response.razorpay_order_id,
-                razorpaySignature: response.razorpay_signature,
-                shippingDetails: { ...form, country: "India" },
-                couponCode: appliedCoupon?.code || null,
-              }),
-            });
-            const orderResData = await orderRes.json();
-            if (!orderRes.ok) {
-              throw new Error(orderResData.error || "Order could not be saved.");
-            }
-            clearCart();
-            router.push(`/checkout/success?orderId=${orderResData.id}`);
-          } catch (e: any) {
-            console.error("Order completion failed:", e);
-            alert(e.message || "Order completion failed. Please contact support.");
-          } finally {
-            setLoading(false);
-          }
-        },
-        modal: {
-          ondismiss: () => setLoading(false),
-        },
-      };
+      const orderResData = await orderRes.json();
+      if (!orderRes.ok) {
+        throw new Error(orderResData.error || "Order could not be saved.");
+      }
 
-      const rzp = new (window as any).Razorpay(options);
-      rzp.on('payment.failed', (response: any) => {
-        alert(`Payment failed: ${response.error.description}`);
-        setLoading(false);
-      });
-      rzp.open();
-    } catch (error: any) {
-      console.error("Payment Process Error:", error);
-      alert(error.message || "Failed to process payment. Please try again.");
+      clearCart();
+      router.push(`/checkout/success?orderId=${orderResData.id}`);
+    } catch (e: any) {
+      console.error("Order completion failed:", e);
+      alert(e.message || "Order completion failed. Please contact support.");
     } finally {
       setLoading(false);
     }
@@ -308,28 +295,133 @@ export default function CheckoutPage() {
                  </div>
               </div>
 
-              <div className="flex flex-col gap-6">
-                <div className="flex flex-col gap-6">
-                  <div className="flex items-center gap-4 p-6 rounded-3xl border-2 border-[#900C3F] bg-[#900C3F]/5">
-                    <div className="w-12 h-12 bg-[#900C3F] text-white rounded-2xl flex items-center justify-center">
-                      <CreditCard size={24} />
+              <div className="flex flex-col gap-8">
+                {/* UPI QR & Payment Info */}
+                <div className="bg-gradient-to-br from-[#FFF8F0] to-[#FFF] p-8 rounded-[32px] border border-[#F5ECD7] flex flex-col items-center text-center gap-6 shadow-sm relative overflow-hidden">
+                  <div className="absolute top-0 left-0 right-0 h-1.5 bg-[#900C3F]" />
+                  <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-[#900C3F]">
+                    <QrCode size={16} /> Scan QR to Pay
+                  </div>
+                  
+                  {/* Glowing QR Frame */}
+                  <div className="relative p-4 bg-white rounded-3xl border-2 border-[#900C3F]/20 shadow-md group hover:border-[#FF69B4] transition-colors duration-300">
+                    <img 
+                      src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(`upi://pay?pa=toteallyiconic@ybl&pn=Tote-ally%20Iconic&am=${total}&cu=INR`)}`} 
+                      alt="UPI Payment QR Code"
+                      className="w-44 h-44 object-contain rounded-xl"
+                    />
+                    <div className="absolute -inset-0.5 rounded-3xl bg-gradient-to-tr from-[#900C3F] to-[#FF69B4] opacity-0 group-hover:opacity-10 transition-opacity duration-300 pointer-events-none -z-10" />
+                  </div>
+
+                  <p className="text-xs text-[#900C3F]/60 max-w-[280px]">
+                    Scan this QR using <strong>GPay, PhonePe, Paytm</strong>, or any UPI app. The payee and exact amount will be pre-filled automatically!
+                  </p>
+
+                  <div className="w-full h-[1px] bg-[#F5ECD7]" />
+
+                  {/* Payment Details */}
+                  <div className="w-full flex flex-col gap-3">
+                    <div className="flex items-center justify-between bg-white px-5 py-3.5 rounded-2xl border border-[#F5ECD7]">
+                      <div className="text-left">
+                        <p className="text-[9px] font-bold uppercase tracking-wider text-[#900C3F]/40">UPI ID</p>
+                        <p className="text-sm font-bold font-mono">toteallyiconic@ybl</p>
+                      </div>
+                      <button 
+                        onClick={() => copyToClipboard("toteallyiconic@ybl", "upi")}
+                        className="p-2 bg-[#900C3F]/5 text-[#900C3F] hover:bg-[#900C3F] hover:text-white rounded-xl transition-all active:scale-95"
+                        title="Copy UPI ID"
+                      >
+                        {copiedUpi ? <Check size={16} className="text-emerald-600" /> : <Copy size={16} />}
+                      </button>
                     </div>
-                    <div className="flex-1">
-                      <p className="font-bold">Razorpay Secure Checkout</p>
-                      <p className="text-xs text-[#900C3F]/60">Cards, UPI, NetBanking & Wallets</p>
+
+                    <div className="flex items-center justify-between bg-white px-5 py-3.5 rounded-2xl border border-[#F5ECD7]">
+                      <div className="text-left">
+                        <p className="text-[9px] font-bold uppercase tracking-wider text-[#900C3F]/40">Payable Amount</p>
+                        <p className="text-sm font-bold font-serif text-[#900C3F]">₹{total}</p>
+                      </div>
+                      <button 
+                        onClick={() => copyToClipboard(total.toString(), "amount")}
+                        className="p-2 bg-[#900C3F]/5 text-[#900C3F] hover:bg-[#900C3F] hover:text-white rounded-xl transition-all active:scale-95"
+                        title="Copy Amount"
+                      >
+                        {copiedAmount ? <Check size={16} className="text-emerald-600" /> : <Copy size={16} />}
+                      </button>
                     </div>
-                    <Lock size={18} className="text-[#900C3F]/20" />
                   </div>
                 </div>
 
-                <button
-                  onClick={handlePayment}
-                  disabled={loading}
-                  className="w-full py-6 bg-[#900C3F] text-white rounded-[32px] font-bold text-xl hover:bg-[#FF69B4] transition-all shadow-2xl shadow-[#900C3F]/30 flex items-center justify-center gap-4 disabled:opacity-50"
-                >
-                  {loading ? <Loader2 size={24} className="animate-spin" /> : <Lock size={20} />}
-                  {loading ? "Establishing Secure Link..." : `Authorize Payment • ₹${total}`}
-                </button>
+                {/* Verification Fields */}
+                <div className="flex flex-col gap-6 bg-white p-8 rounded-[32px] border border-[#F5ECD7]">
+                  <div className="flex items-start gap-3 text-[#900C3F]">
+                    <AlertCircle className="shrink-0 mt-0.5 text-[#FF69B4]" size={16} />
+                    <div className="flex flex-col gap-1">
+                      <h4 className="text-xs font-bold uppercase tracking-wider">Verification Details</h4>
+                      <p className="text-[11px] text-[#900C3F]/60">Enter your 12-digit UPI UTR / Ref No. and upload the transaction receipt to verify your order.</p>
+                    </div>
+                  </div>
+
+                  {/* UTR Input */}
+                  <div className="flex flex-col gap-2">
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-[#900C3F]/60">UPI Transaction Ref (UTR / Ref No.) <span className="text-[#FF69B4]">*</span></label>
+                    <input 
+                      type="text" 
+                      maxLength={12}
+                      value={utr}
+                      onChange={(e) => setUtr(e.target.value.replace(/[^0-9]/g, ""))}
+                      placeholder="Enter 12-digit UTR Reference Number" 
+                      className="w-full px-5 py-4 rounded-2xl bg-[#F8F9FA] border border-[#F5ECD7] focus:outline-none focus:border-[#FF69B4] focus:bg-white transition-all font-mono font-medium text-sm text-[#900C3F] tracking-widest placeholder:tracking-normal placeholder:font-sans"
+                    />
+                  </div>
+
+                  {/* Screenshot Upload */}
+                  <div className="flex flex-col gap-2">
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-[#900C3F]/60">Upload Payment Receipt / Screenshot (Recommended)</label>
+                    <label className="flex flex-col items-center justify-center border-2 border-dashed border-[#F5ECD7] hover:border-[#FF69B4] bg-[#F8F9FA] hover:bg-white rounded-2xl p-6 cursor-pointer transition-all relative overflow-hidden min-h-[100px]">
+                      <input 
+                        type="file" 
+                        accept="image/*" 
+                        onChange={handleScreenshotUpload}
+                        disabled={uploadingScreenshot}
+                        className="hidden" 
+                      />
+                      {uploadingScreenshot ? (
+                        <div className="flex flex-col items-center gap-2">
+                          <Loader2 size={24} className="animate-spin text-[#900C3F]" />
+                          <span className="text-xs font-bold text-[#900C3F]/60">Uploading proof...</span>
+                        </div>
+                      ) : screenshotUrl ? (
+                        <div className="flex items-center gap-4 w-full">
+                          <div className="w-12 h-12 rounded-lg overflow-hidden border border-[#F5ECD7] shrink-0 bg-white">
+                            <img src={screenshotUrl} alt="Receipt Preview" className="w-full h-full object-cover" />
+                          </div>
+                          <div className="flex-1 text-left min-w-0">
+                            <p className="text-xs font-bold text-emerald-600 truncate flex items-center gap-1.5">
+                              <CheckCircle size={14} /> Uploaded Successfully
+                            </p>
+                            <p className="text-[9px] text-[#900C3F]/40 truncate">Click to replace screenshot</p>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex flex-col items-center gap-2 text-[#900C3F]/40">
+                          <Upload size={24} />
+                          <span className="text-xs font-bold">Select Receipt Photo</span>
+                          <span className="text-[9px]">JPG, PNG supported</span>
+                        </div>
+                      )}
+                    </label>
+                  </div>
+
+                  {/* Submit Button */}
+                  <button
+                    onClick={handlePayment}
+                    disabled={loading || uploadingScreenshot || utr.trim().length < 8}
+                    className="w-full py-5 bg-[#900C3F] text-white rounded-[24px] font-bold text-base hover:bg-[#FF69B4] transition-all shadow-xl shadow-[#900C3F]/20 flex items-center justify-center gap-3 disabled:opacity-50 disabled:hover:scale-100 disabled:hover:bg-[#900C3F]"
+                  >
+                    {loading ? <Loader2 size={20} className="animate-spin" /> : <Lock size={16} />}
+                    {loading ? "Placing Order..." : `Submit Order • ₹${total}`}
+                  </button>
+                </div>
               </div>
 
               <div className="flex flex-wrap justify-center gap-8 opacity-40 grayscale mt-4">
