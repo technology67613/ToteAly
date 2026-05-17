@@ -130,7 +130,7 @@ export async function GET(request: NextRequest) {
     const { data: validOrders } = await supabase.from('orders').select('id').neq('status', 'Cancelled');
     const validOrderIds = new Set((validOrders || []).map((o: any) => o.id));
     
-    const totalItems = (allItems || []).filter(item => validOrderIds.has(item.order_id)).reduce((sum: number, item: any) => sum + (Number(item.quantity) || 1), 0);
+    const totalItems = (allItems || []).filter((item: any) => validOrderIds.has(item.order_id)).reduce((sum: number, item: any) => sum + (Number(item.quantity) || 1), 0);
     const totalOrdersCount = validOrderIds.size;
     const avgItemsPerOrder = (totalOrdersCount || 0) > 0 
       ? (totalItems / (totalOrdersCount || 1)).toFixed(1) 
