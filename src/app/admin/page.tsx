@@ -2,12 +2,13 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { useSession, signOut } from "next-auth/react";
+import { useSession, signIn, signOut } from "next-auth/react";
 import {
   BarChart2, ShoppingBag, Users, Package, TrendingUp,
   Search, Loader2, LogOut, Bell, Settings, Ticket, Megaphone,
   LayoutDashboard, Menu, X, ArrowUpRight, ChevronRight, ChevronDown, Globe, Calendar, Mail, Star,
-  Plus, Zap, Download, IndianRupee, History, CreditCard, AlertTriangle, Palette
+  Plus, Zap, Download, IndianRupee, History, CreditCard, AlertTriangle, Palette,
+  Lock, User, ShieldCheck
 } from "lucide-react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
@@ -94,6 +95,8 @@ export default function AdminPage() {
   const [notifications, setNotifications] = useState<any[]>([]);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const prevNotifIdsRef = useRef<string[]>([]);
+  const [form, setForm] = useState({ username: "", password: "" });
+  const [loginLoading, setLoginLoading] = useState(false);
 
   useEffect(() => {
     if (notifications.length > 0) {
@@ -174,11 +177,31 @@ export default function AdminPage() {
     session?.user?.email === process.env.NEXT_PUBLIC_ADMIN_USERNAME
   );
 
-  useEffect(() => {
-    if (status === "unauthenticated" || (status === "authenticated" && !isAdmin)) {
-      router.push("/admin/login");
+  const handleInlineLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoginLoading(true);
+    try {
+      const res = await signIn("credentials", {
+        username: form.username,
+        password: form.password,
+        redirect: false,
+      });
+
+      if (res?.error) {
+        toast.error("Invalid credentials");
+      } else {
+        toast.success("Welcome, Admin!");
+        // Small delay to allow session state to propagate
+        setTimeout(() => {
+          fetchData();
+        }, 300);
+      }
+    } catch (err) {
+      toast.error("Something went wrong");
+    } finally {
+      setLoginLoading(false);
     }
-  }, [status, isAdmin, router]);
+  };
 
   useEffect(() => {
     if (isAdmin) {
@@ -215,7 +238,7 @@ export default function AdminPage() {
     }
   };
 
-  const handleLogout = () => signOut({ callbackUrl: "/admin/login" });
+  const handleLogout = () => signOut({ callbackUrl: "/admin" });
 
   const handleExport = (type: string) => {
     const date = new Date().toISOString().split('T')[0];
@@ -223,13 +246,87 @@ export default function AdminPage() {
     window.open(`/api/admin/export/${filename}`, '_blank');
   };
 
-  if (status === "loading" || !isAdmin || (loading && !stats)) {
+  if (status === "loading" || (loading && !stats && isAdmin)) {
     return (
       <div className="min-h-screen w-full bg-[var(--admin-background)] flex items-center justify-center">
         <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }}>
           <Loader2 className="w-10 h-10 text-[var(--admin-primary)]" />
         </motion.div>
       </div>
+    );
+  }
+
+  if (!isAdmin) {
+    return (
+      <main className="min-h-screen w-full bg-[#121212] flex items-center justify-center px-4">
+        <div className="w-full max-w-md">
+          <div className="text-center mb-8">
+            <h1 className="text-2xl font-serif font-bold text-white tracking-tighter">
+              Tote-ally <span className="text-[#FF69B4]">Iconic</span>
+            </h1>
+            <div className="mt-4 flex items-center justify-center gap-2 text-[#FF69B4] font-bold text-[10px] uppercase tracking-[0.3em]">
+              <ShieldCheck size={14} /> Admin Terminal
+            </div>
+          </div>
+
+          <div className="bg-[#1A1A1A] rounded-[32px] border border-white/5 p-10 shadow-2xl shadow-black">
+            <form onSubmit={handleInlineLogin} className="flex flex-col gap-6" id="inline-admin-login-form">
+              <div className="flex flex-col gap-2">
+                <label 
+                  htmlFor="username"
+                  className="text-[10px] font-bold uppercase tracking-widest text-white/40 flex items-center gap-2 cursor-pointer"
+                >
+                  <User size={12} /> Username
+                </label>
+                <input
+                  id="username"
+                  name="username"
+                  type="text"
+                  autoComplete="username"
+                  required
+                  value={form.username}
+                  onChange={(e) => setForm({ ...form, username: e.target.value })}
+                  className="w-full px-5 py-4 bg-white/5 border border-white/10 rounded-2xl text-white focus:outline-none focus:border-[#FF69B4] transition-all"
+                  placeholder="admin@toteallyiconic.com"
+                />
+              </div>
+   
+              <div className="flex flex-col gap-2">
+                <label 
+                  htmlFor="password"
+                  className="text-[10px] font-bold uppercase tracking-widest text-white/40 flex items-center gap-2 cursor-pointer"
+                >
+                  <Lock size={12} /> Password
+                </label>
+                <input
+                  id="password"
+                  name="password"
+                  type="password"
+                  autoComplete="current-password"
+                  required
+                  value={form.password}
+                  onChange={(e) => setForm({ ...form, password: e.target.value })}
+                  className="w-full px-5 py-4 bg-white/5 border border-white/10 rounded-2xl text-white focus:outline-none focus:border-[#FF69B4] transition-all"
+                  placeholder="••••••••"
+                />
+              </div>
+   
+              <button
+                type="submit"
+                disabled={loginLoading}
+                className="w-full py-5 bg-[#FF69B4] text-white rounded-2xl font-bold uppercase tracking-widest text-xs shadow-xl shadow-[#FF69B4]/20 hover:bg-[#ff85c1] transition-all disabled:opacity-50 flex items-center justify-center gap-3 mt-4"
+              >
+                {loginLoading ? <Loader2 size={18} className="animate-spin" /> : <ShieldCheck size={18} />}
+                {loginLoading ? "Authenticating..." : "Access Dashboard"}
+              </button>
+            </form>
+          </div>
+
+          <p className="text-center text-[10px] font-bold uppercase tracking-widest text-white/20 mt-8">
+            Unauthorized Access Restricted
+          </p>
+        </div>
+      </main>
     );
   }
 

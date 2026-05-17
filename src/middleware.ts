@@ -13,20 +13,6 @@ export async function middleware(request: NextRequest) {
   const isApiRoute = request.nextUrl.pathname.startsWith('/api');
   const isMaintenancePage = request.nextUrl.pathname === '/maintenance.html';
 
-  // --- Strict Admin Route Guard ---
-  if (isAdminRoute && !isLoginPage) {
-    const isAuthorizedAdmin = 
-      token?.role === 'admin' || 
-      token?.email === 'admin@toteallyiconic.com' || 
-      token?.email === 'toteallyiconic@gmail.com' ||
-      token?.email === process.env.ADMIN_USERNAME;
-
-    if (!token || !isAuthorizedAdmin) {
-      const loginUrl = new URL('/admin/login', request.url);
-      return NextResponse.redirect(loginUrl);
-    }
-  }
-
   // --- Maintenance Mode Check ---
   // Only check for public storefront routes (not admin, api, or the maintenance page itself)
   if (!isAdminRoute && !isApiRoute && !isMaintenancePage && request.nextUrl.pathname !== '/_next/image' && !request.nextUrl.pathname.match(/\.(ico|png|jpg|jpeg|svg|css|js)$/)) {
