@@ -234,7 +234,12 @@ export default function ProfilePage() {
                       className="bg-white border border-[#F5ECD7] rounded-xl p-6 flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all hover:shadow-md cursor-pointer hover:border-[#FF69B4]/50 hover:bg-[#FFF8F0]/30"
                     >
                       <div className="flex flex-col gap-1">
-                        <p className="font-bold text-lg">Order #{order.id?.slice(-6).toUpperCase()}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="font-bold text-lg">Order #{order.id?.slice(-6).toUpperCase()}</p>
+                          {!order.user_id && (
+                            <span className="text-[9px] px-2 py-0.5 rounded-md font-bold uppercase tracking-wider bg-orange-100 text-orange-700 border border-orange-200">Guest User</span>
+                          )}
+                        </div>
                         <p className="text-sm text-[#900C3F]/60">{new Date(order.created_at).toLocaleDateString()} • {(order.order_items || order.items || [])?.length || 0} items</p>
                       </div>
                       <div className="flex flex-col md:items-end gap-2">
@@ -479,6 +484,9 @@ export default function ProfilePage() {
                 <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#FF69B4]">Order Details</span>
                 <h3 className="font-serif text-2xl font-bold flex items-center gap-2 mt-1">
                   #{selectedOrder.id?.slice(-8).toUpperCase()}
+                  {!selectedOrder.user_id && (
+                    <span className="text-[10px] px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider bg-orange-100 text-orange-700 border border-orange-200">Guest User</span>
+                  )}
                 </h3>
               </div>
               <button 
