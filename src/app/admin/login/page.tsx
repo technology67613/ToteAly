@@ -27,7 +27,7 @@ export default function AdminLoginPage() {
         toast.error("Invalid admin credentials");
       } else {
         toast.success("Welcome back, Admin!");
-        router.push("/admin");
+        window.location.href = "/admin";
       }
     } catch (err) {
       toast.error("Something went wrong");
@@ -37,7 +37,7 @@ export default function AdminLoginPage() {
   };
 
   return (
-    <main className="min-h-screen bg-[#121212] flex items-center justify-center px-4">
+    <main className="min-h-screen w-full bg-[#121212] flex items-center justify-center px-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <Link href="/" className="text-2xl font-serif font-bold text-white tracking-tighter">
