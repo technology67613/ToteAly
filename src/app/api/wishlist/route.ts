@@ -14,13 +14,27 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Database not configured" }, { status: 503 });
     }
 
-    const { data: profile } = await supabaseAdmin
+    let { data: profile } = await supabaseAdmin
       .from('profiles')
       .select('id')
       .eq('email', session.user.email)
-      .single();
+      .maybeSingle();
 
-    if (!profile) return NextResponse.json([]);
+    if (!profile) {
+      const { data: newProfile, error: insertError } = await supabaseAdmin
+        .from('profiles')
+        .insert([{
+          id: crypto.randomUUID(),
+          email: session.user.email,
+          name: session.user.name || session.user.email.split('@')[0],
+          updated_at: new Date().toISOString()
+        }])
+        .select('id')
+        .single();
+
+      if (insertError) return NextResponse.json([]);
+      profile = newProfile;
+    }
 
     const { data, error } = await supabaseAdmin
       .from("wishlist")
@@ -46,14 +60,28 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Database not configured" }, { status: 503 });
     }
 
-    const { data: profile } = await supabaseAdmin
+    let { data: profile } = await supabaseAdmin
       .from('profiles')
       .select('id')
       .eq('email', session.user.email)
-      .single();
+      .maybeSingle();
 
     if (!profile) {
-      return NextResponse.json({ error: "User profile not found" }, { status: 404 });
+      const { data: newProfile, error: insertError } = await supabaseAdmin
+        .from('profiles')
+        .insert([{
+          id: crypto.randomUUID(),
+          email: session.user.email,
+          name: session.user.name || session.user.email.split('@')[0],
+          updated_at: new Date().toISOString()
+        }])
+        .select('id')
+        .single();
+
+      if (insertError) {
+        return NextResponse.json({ error: "User profile not found and could not be created" }, { status: 404 });
+      }
+      profile = newProfile;
     }
 
     const { error } = await supabaseAdmin
@@ -82,14 +110,28 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ error: "Database not configured" }, { status: 503 });
     }
 
-    const { data: profile } = await supabaseAdmin
+    let { data: profile } = await supabaseAdmin
       .from('profiles')
       .select('id')
       .eq('email', session.user.email)
-      .single();
+      .maybeSingle();
 
     if (!profile) {
-      return NextResponse.json({ error: "User profile not found" }, { status: 404 });
+      const { data: newProfile, error: insertError } = await supabaseAdmin
+        .from('profiles')
+        .insert([{
+          id: crypto.randomUUID(),
+          email: session.user.email,
+          name: session.user.name || session.user.email.split('@')[0],
+          updated_at: new Date().toISOString()
+        }])
+        .select('id')
+        .single();
+
+      if (insertError) {
+        return NextResponse.json({ error: "User profile not found and could not be created" }, { status: 404 });
+      }
+      profile = newProfile;
     }
 
     const { error } = await supabaseAdmin
