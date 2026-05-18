@@ -11,7 +11,7 @@ export const metadata: Metadata = buildMetadata({
 
 const VALUES = [
   { icon: Sparkles, title: "Bold by Design", desc: "Every bag is a canvas for self-expression. We craft totes that start conversations." },
-  { icon: Leaf, title: "Sustainably Made", desc: "100% canvas, zero compromise. We source responsibly so the planet stays iconic too." },
+  { icon: Leaf, title: "Sustainably Made", desc: "Thoughtfully crafted for everyday use with durability, style, and sustainability in mind." },
   { icon: Heart, title: "Made with Love", desc: "Small batch, high quality. Each piece is made with care by people who love what they do." },
 ];
 
@@ -35,7 +35,7 @@ export default function About() {
       <section className="max-w-6xl mx-auto w-full px-8 py-24 grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
         <div className="w-full h-[500px] rounded-[40px] overflow-hidden border border-[#F5ECD7] shadow-2xl shadow-[#900C3F]/10 group">
           <img
-            src="/mockups/premium.png"
+            src="https://iggvqhjvplylawiciclv.supabase.co/storage/v1/object/public/assets/about/image_1779092495469.jpeg"
             alt="Tote-ally Iconic brand lifestyle"
             className="w-full h-full object-cover transition-transform duration-[2000ms] group-hover:scale-110"
           />
@@ -99,9 +99,9 @@ export default function About() {
               <span className="font-serif text-6xl font-bold text-[#900C3F]">A</span>
             </div>
             <h3 className="font-serif text-2xl font-bold">Abhirami Aluvila</h3>
-            <p className="text-[#900C3F]/60 font-semibold text-sm uppercase tracking-widest">Co-Founder &amp; Operations Lead</p>
+            <p className="text-[#900C3F]/60 font-semibold text-sm uppercase tracking-widest">Co-Founder &amp; Brand Strategist</p>
             <p className="text-[#900C3F]/70 text-sm leading-relaxed max-w-xs">
-              The backbone of the brand. Abhirami ensures every bag reaches you in perfect condition, on time.
+              The force behind the flawless experience. Abhirami ensures every bag reaches you perfectly, every time.
             </p>
           </div>
         </div>
