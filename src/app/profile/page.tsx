@@ -9,6 +9,7 @@ import {
   X, CheckCircle2, Clipboard, Phone, Calendar, CreditCard, Receipt, FileText, ChevronRight
 } from "lucide-react";
 import DownloadInvoice from "@/components/DownloadInvoice";
+import { useWishlistStore } from "@/store/wishlistStore";
 
 const STATUS_COLORS: Record<string, string> = {
   Delivered: "bg-green-100 text-green-700",
@@ -85,6 +86,10 @@ export default function ProfilePage() {
 
   const fetchWishlist = async () => {
     try {
+      // 1. Sync guest items from localStorage to Supabase first
+      await useWishlistStore.getState().syncWishlist(true);
+
+      // 2. Fetch the updated merged database wishlist
       const res = await fetch("/api/wishlist");
       const data = await res.json();
       if (Array.isArray(data)) {

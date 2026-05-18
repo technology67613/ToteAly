@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCartStore } from "@/store/cartStore";
 import { ShoppingBag, Menu, X } from "lucide-react";
+import { useWishlistStore } from "@/store/wishlistStore";
 import { useEffect, useState } from "react";
 import { useSession, signOut } from "next-auth/react";
 
@@ -22,9 +23,14 @@ export default function Navbar({ config = {} }: { config?: any }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
 
+  const { syncWishlist } = useWishlistStore();
+
   useEffect(() => {
     setMounted(true);
-  }, []);
+    if (session) {
+      syncWishlist(true);
+    }
+  }, [session, syncWishlist]);
 
   if (pathname?.startsWith("/admin")) return null;
 
