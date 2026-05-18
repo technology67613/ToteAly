@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 export default function AnnouncementBar({ announcement }: { announcement: string }) {
   const pathname = usePathname();
 
-  if (!announcement || pathname?.startsWith("/admin")) return null;
+  if (!announcement || pathname !== "/") return null;
 
   // Format text to a softer, editorial-grade casing for a high-end luxury feel
   const formattedText = announcement.toLowerCase() === "free delivery on orders above ₹999!" 
