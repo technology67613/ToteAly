@@ -25,7 +25,10 @@ export async function resolveProfile(email: string, name?: string, avatarUrl?: s
   let authUserId: string | null = null;
   
   try {
-    const { data: { users }, error: listError } = await supabase.auth.admin.listUsers();
+    const { data: { users }, error: listError } = await supabase.auth.admin.listUsers({
+      page: 1,
+      perPage: 1000
+    });
     if (!listError && users) {
       const authUser = users.find((u: any) => u.email?.toLowerCase() === normalizedEmail);
       if (authUser) {
@@ -49,24 +52,45 @@ export async function resolveProfile(email: string, name?: string, avatarUrl?: s
       });
 
       if (createError) {
-        console.error('Failed to create auth user:', createError.message);
-        // Fallback to deterministic UUID
-        authUserId = uuidv5(normalizedEmail, TOTEALY_NAMESPACE);
+        console.error('Failed to create auth user, checking list again:', createError.message);
+        
+        // Try searching user list once more in case of race condition or delayed indexing
+        const { data: { users }, error: listError } = await supabase.auth.admin.listUsers({
+          page: 1,
+          perPage: 1000
+        });
+        if (!listError && users) {
+          const authUser = users.find((u: any) => u.email?.toLowerCase() === normalizedEmail);
+          if (authUser) {
+            authUserId = authUser.id;
+          }
+        }
+        
+        if (!authUserId) {
+          throw new Error(`Auth user creation failed: ${createError.message}`);
+        }
       } else if (user) {
         authUserId = user.id;
         console.log(`Successfully created auth user for ${normalizedEmail} with ID: ${authUserId}`);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error in createUser block:", err);
-      authUserId = uuidv5(normalizedEmail, TOTEALY_NAMESPACE);
+      // Try listing one final time
+      const { data: { users } } = await supabase.auth.admin.listUsers({ page: 1, perPage: 1000 });
+      const authUser = users?.find((u: any) => u.email?.toLowerCase() === normalizedEmail);
+      if (authUser) {
+        authUserId = authUser.id;
+      } else {
+        throw new Error(`Failed to resolve auth user for profile creation: ${err.message}`);
+      }
     }
   }
 
   if (!authUserId) {
-    authUserId = uuidv5(normalizedEmail, TOTEALY_NAMESPACE);
+    throw new Error(`Unable to resolve a valid Auth User ID for ${normalizedEmail}`);
   }
 
-  // 4. Now upsert/insert the profile row using this authUserId
+  // 4. Now upsert/insert the profile row using this valid authUserId
   const { data: profile, error: upsertError } = await supabase
     .from('profiles')
     .upsert({

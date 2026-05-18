@@ -66,27 +66,12 @@ export const authOptions = {
 
       try {
         if (isSupabaseAdminConfigured()) {
-          const { data: existingProfile } = await supabase
-            .from('profiles')
-            .select('id')
-            .eq('email', user.email)
-            .maybeSingle();
-
-          const deterministicId = uuidv5(user.id || user.email, TOTEALY_NAMESPACE);
-
-          const { error } = await supabase
-            .from('profiles')
-            .upsert({
-              id: existingProfile?.id || deterministicId,
-              email: user.email,
-              name: user.name,
-              avatar_url: user.image,
-              updated_at: new Date().toISOString(),
-            }, { onConflict: 'email' });
-
-          if (error) {
-            console.error("Supabase Sync Error during Sign In:", error);
-          }
+          const { resolveProfile } = await import("@/lib/profileResolver");
+          await resolveProfile(
+            user.email,
+            user.name || undefined,
+            user.image || undefined
+          );
         }
         return true;
       } catch (err) {
