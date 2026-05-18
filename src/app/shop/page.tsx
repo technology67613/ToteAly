@@ -29,11 +29,11 @@ export default function Shop() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const { addItem, openCart } = useCartStore();
-  const { items: wishlistItems, toggleItem, fetchWishlist } = useWishlistStore();
+  const { items: wishlistItems, toggleItem, syncWishlist } = useWishlistStore();
 
   useEffect(() => {
-    if (session) fetchWishlist();
-  }, [session, fetchWishlist]);
+    syncWishlist(!!session);
+  }, [session, syncWishlist]);
 
   useEffect(() => {
     async function loadProducts() {
@@ -86,21 +86,25 @@ export default function Shop() {
   const handleWishlist = (e: React.MouseEvent, productId: string) => {
     e.preventDefault();
     e.stopPropagation();
-    if (!session) {
-      toast.error("Please login to save favorites", {
+    const isLoggedIn = !!session;
+    toggleItem(productId, isLoggedIn);
+    const isInWishlist = wishlistItems.includes(productId);
+    
+    if (!isLoggedIn) {
+      toast(isInWishlist ? "Removed from favorites" : "Saved to local favorites! Log in to sync.", {
+        icon: <Heart size={14} fill={isInWishlist ? "none" : "#FF69B4"} className="text-[#FF69B4]" />,
+        duration: 2000,
         action: {
           label: "Login",
           onClick: () => (window.location.href = "/login")
         }
       });
-      return;
+    } else {
+      toast(isInWishlist ? "Removed from favorites" : "Saved to favorites!", {
+        icon: <Heart size={14} fill={isInWishlist ? "none" : "#FF69B4"} className="text-[#FF69B4]" />,
+        duration: 1500
+      });
     }
-    toggleItem(productId);
-    const isInWishlist = wishlistItems.includes(productId);
-    toast(isInWishlist ? "Removed from favorites" : "Saved to favorites", {
-      icon: <Heart size={14} fill={isInWishlist ? "none" : "#FF69B4"} className="text-[#FF69B4]" />,
-      duration: 1500
-    });
   };
 
   return (

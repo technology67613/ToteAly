@@ -48,13 +48,16 @@ export default function ProductDetail() {
   const [newReview, setNewReview] = useState({ rating: 5, comment: "" });
   
   const { addItem, openCart } = useCartStore();
-  const { items: wishlistItems, toggleItem, fetchWishlist } = useWishlistStore();
+  const { items: wishlistItems, toggleItem, syncWishlist } = useWishlistStore();
 
   const isLiked = product ? wishlistItems.includes(product.id) : false;
+  const averageRating = reviews.length > 0 
+    ? (reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length).toFixed(1)
+    : "0.0";
 
   useEffect(() => {
-    if (session) fetchWishlist();
-  }, [session, fetchWishlist]);
+    syncWishlist(!!session);
+  }, [session, syncWishlist]);
 
   useEffect(() => {
     async function getProduct() {
@@ -111,11 +114,24 @@ export default function ProductDetail() {
 
   const handleWishlist = () => {
     if (!product) return;
-    if (!session) {
-      toast.error("Please login to save favorites");
-      return;
+    const isLoggedIn = !!session;
+    toggleItem(product.id, isLoggedIn);
+    
+    if (!isLoggedIn) {
+      toast(isLiked ? "Removed from favorites" : "Saved to local favorites! Log in to sync.", {
+        icon: <Heart size={14} fill={isLiked ? "none" : "#FF69B4"} className="text-[#FF69B4]" />,
+        duration: 2000,
+        action: {
+          label: "Login",
+          onClick: () => (window.location.href = "/login")
+        }
+      });
+    } else {
+      toast(isLiked ? "Removed from favorites" : "Saved to favorites!", {
+        icon: <Heart size={14} fill={isLiked ? "none" : "#FF69B4"} className="text-[#FF69B4]" />,
+        duration: 1500
+      });
     }
-    toggleItem(product.id);
   };
 
   const handleSubmitReview = async (e: React.FormEvent) => {
@@ -129,8 +145,15 @@ export default function ProductDetail() {
         body: JSON.stringify(newReview),
       });
       if (res.ok) {
-        toast.success("Review submitted for approval!");
+        toast.success("Review submitted successfully!");
         setNewReview({ rating: 5, comment: "" });
+        
+        // Dynamic fetch of reviews to show the new review instantly
+        const reviewsRes = await fetch(`/api/products/${product.id}/reviews`);
+        if (reviewsRes.ok) {
+          const reviewsData = await reviewsRes.json();
+          setReviews(reviewsData);
+        }
       } else {
         toast.error("Failed to submit review");
       }
@@ -140,6 +163,7 @@ export default function ProductDetail() {
       setSubmittingReview(false);
     }
   };
+
 
   if (loading) {
     return (
@@ -199,7 +223,7 @@ export default function ProductDetail() {
                 {reviews.length > 0 && (
                   <div className="flex items-center gap-2 bg-white px-3 py-1 rounded-full border border-[#F5ECD7] shadow-sm">
                     <Star size={14} fill="#FF69B4" className="text-[#FF69B4]" />
-                    <span className="text-xs font-bold">4.8 ({reviews.length})</span>
+                    <span className="text-xs font-bold">{averageRating} ({reviews.length})</span>
                   </div>
                 )}
               </div>

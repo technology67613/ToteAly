@@ -327,17 +327,17 @@ export default function ProfilePage() {
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   {wishlistItems.map((item) => (
-                    <Link key={item.id} href={`/shop/${item.product_id}`} className="bg-white border border-[#F5ECD7] rounded-2xl overflow-hidden group hover:shadow-xl transition-all duration-500">
+                    <Link key={item.product_id} href={`/shop/${item.product_id}`} className="bg-white border border-[#F5ECD7] rounded-2xl overflow-hidden group hover:shadow-xl transition-all duration-500">
                       <div className="aspect-square bg-[#F5ECD7]/30 relative overflow-hidden">
                         <img 
-                          src={item.products?.image_url || "/images/placeholder.jpg"} 
-                          alt={item.products?.name} 
+                          src={(item.products?.images && item.products.images.length > 0) ? item.products.images[0] : "/mockups/plain.png"} 
+                          alt={item.products?.title || "Product"} 
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                         />
                       </div>
                       <div className="p-4 border-t border-[#F5ECD7] flex justify-between items-center">
                         <div>
-                          <p className="font-bold text-[#900C3F]">{item.products?.name}</p>
+                          <p className="font-bold text-[#900C3F]">{item.products?.title || "Iconic Bag"}</p>
                           <p className="text-sm font-bold text-[#FF69B4]">₹{item.products?.price}</p>
                         </div>
                         <div className="w-10 h-10 rounded-full bg-[#FFF8F0] flex items-center justify-center text-[#FF69B4]">
@@ -346,6 +346,7 @@ export default function ProfilePage() {
                       </div>
                     </Link>
                   ))}
+
 
                   {wishlistItems.length === 0 && (
                     <div className="col-span-full bg-white border border-[#F5ECD7] rounded-2xl p-16 text-center text-[#900C3F]/50">
@@ -556,7 +557,7 @@ export default function ProfilePage() {
 
                     const imgUrl = (item.product_image && item.product_image !== "null")
                       ? item.product_image
-                      : (parsedDetails?.preview || parsedDetails?.previewImage || parsedDetails?.canvasData || item.products?.image_url || "/images/placeholder.jpg");
+                      : (parsedDetails?.preview || parsedDetails?.previewImage || parsedDetails?.canvasData || (item.products?.images && item.products.images.length > 0 ? item.products.images[0] : null) || "/mockups/plain.png");
 
                     return (
                       <div key={item.id || index} className="py-4 flex gap-4 items-center">

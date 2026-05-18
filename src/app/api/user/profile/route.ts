@@ -2,22 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { isSupabaseAdminConfigured, isSupabaseConfigured, supabaseAdmin as supabase } from "@/lib/supabase";
-import { v5 as uuidv5 } from "uuid";
-
-const TOTEALY_NAMESPACE = "1b671a64-40d5-491e-99b0-da01ff1f3341";
 
 export const runtime = "nodejs";
 
-async function getProfileByEmail(email: string) {
-  const { data, error } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("email", email)
-    .maybeSingle();
-
-  if (error) throw error;
-  return data;
-}
 
 export async function GET(_request: NextRequest) {
   try {
@@ -31,18 +18,12 @@ export async function GET(_request: NextRequest) {
       return NextResponse.json({ error: "Profile storage is not configured." }, { status: 503 });
     }
 
-    const profile = await getProfileByEmail(session.user.email);
-    if (!profile) {
-      return NextResponse.json({
-        _id: null,
-        id: null,
-        name: session.user.name || "",
-        email: session.user.email,
-        role: "user",
-        phone: "",
-        address: {},
-      });
-    }
+    const { resolveProfile } = await import("@/lib/profileResolver");
+    const profile = await resolveProfile(
+      session.user.email,
+      session.user.name || undefined,
+      session.user.image || undefined
+    );
 
     return NextResponse.json({
       _id: profile.id,
@@ -72,22 +53,23 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json();
-    const existingProfile = await getProfileByEmail(session.user.email);
-    const deterministicId = uuidv5(session.user.id || session.user.email, TOTEALY_NAMESPACE);
-    const payload = {
-      id: existingProfile?.id || deterministicId,
-      email: session.user.email,
-      name: body.name || session.user.name || "",
-      phone: body.phone || "",
-      address: body.address || {},
-      avatar_url: session.user.image || existingProfile?.avatar_url || null,
-      role: existingProfile?.role || "user",
-      updated_at: new Date().toISOString(),
-    };
+    const { resolveProfile } = await import("@/lib/profileResolver");
+    const profile = await resolveProfile(
+      session.user.email,
+      body.name || session.user.name || undefined,
+      session.user.image || undefined
+    );
 
+    // Update other fields
     const { data, error } = await supabase
       .from("profiles")
-      .upsert(payload, { onConflict: "email" })
+      .update({
+        name: body.name || profile.name || "",
+        phone: body.phone || "",
+        address: body.address || {},
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", profile.id)
       .select()
       .single();
 
@@ -98,3 +80,4 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
+
